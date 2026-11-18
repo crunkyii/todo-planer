@@ -5,13 +5,15 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo_liste/data/cloud.dart';
+import 'package:todo_liste/data/field_merge.dart';
+import 'package:todo_liste/data/local_db.dart';
 import 'package:todo_liste/data/settings_store.dart';
 
 /// Kleiner nachgebauter Supabase-Server (nur PostgREST-Teile, die der Sync braucht).
 /// Läuft im Test auf localhost – es wird nie eine echte Datenbank benutzt.
 ///
 /// Nachgebaut sind: Upsert über `on_conflict`, der `sync_guard`-Trigger aus
-/// `supabase/schema.sql` (neuester Stand gewinnt, `synced_at` setzt der Server) und
+/// `supabase/schema.sql` (je Feld gewinnt der neuere Wert, `synced_at` setzt der Server) und
 /// der Abruf mit `synced_at=gte.…`, `order` und `limit` sowie die Filter `eq` und `in`.
 class FakeSupabase {
   FakeSupabase._(this._server);
@@ -21,6 +23,9 @@ class FakeSupabase {
 
   /// Liefert `true` für Zeilen, die der Server ablehnen soll (wie ein CHECK-Fehler).
   bool Function(String table, Map<String, Object?> row)? reject;
+
+  /// `false` = Server mit älterem `schema.sql`: Er kennt die Spalte `field_times` nicht.
+  bool knowsFieldTimes = true;
 
   /// `true` = Abrufe scheitern (Server nicht erreichbar).
   bool failReads = false;
@@ -70,6 +75,14 @@ class FakeSupabase {
       if (reject != null && list.any((r) => reject!(table, r))) {
         status = 400;
         out = {'code': '23514', 'message': 'check constraint', 'details': null, 'hint': null};
+      } else if (!knowsFieldTimes && list.any((r) => r.containsKey(fieldTimesColumn))) {
+        status = 400;
+        out = {
+          'code': 'PGRST204',
+          'message': "Could not find the 'field_times' column of '$table' in the schema cache",
+          'details': null,
+          'hint': null,
+        };
       } else {
         final keys = (req.uri.queryParameters['on_conflict'] ?? 'id').split(',');
         final at = _now();
@@ -128,6 +141,13 @@ class FakeSupabase {
     }
   }
 
+  /// Lädt eine Zeile hoch wie eine ältere App-Version: nur die genannten Spalten, also ohne
+  /// `field_times` – die übrigen behalten am Server ihren Wert.
+  void put(String table, Map<String, Object?> row) => _upsert(table, ['id'], row, _now());
+
+  static final _groups = {for (final t in syncTables) t.name: t.groups};
+
+  /// Der Trigger `sync_guard` aus `supabase/schema.sql`, Zeile für Zeile nachgebaut.
   void _upsert(String table, List<String> keys, Map<String, Object?> row, String at) {
     final list = rows(table);
     final i = list.indexWhere((r) => keys.every((k) => r[k] == row[k]));
@@ -135,10 +155,37 @@ class FakeSupabase {
       list.add({...row, 'synced_at': at});
       return;
     }
-    // sync_guard: Ein älterer Stand darf einen neueren nicht überschreiben
-    final old = DateTime.parse(list[i]['updated_at'] as String);
-    if (DateTime.parse(row['updated_at'] as String).isBefore(old)) return;
-    list[i] = {...list[i], ...row, 'synced_at': at};
+    // Spalten, die nicht mitgeschickt werden, behalten ihren Wert (ON CONFLICT DO UPDATE).
+    final old = list[i], neu = {...old, ...row};
+    final groups = _groups[table] ?? const <String, List<String>>{};
+    final oldAt = DateTime.parse(old['updated_at'] as String), newAt = DateTime.parse(neu['updated_at'] as String);
+    final newTimes = groups.isEmpty ? null : validFieldTimes(neu);
+    final oldTimes = groups.isEmpty ? null : validFieldTimes(old);
+    if (newTimes == null || oldTimes == null) {
+      // Wie früher: Ein älterer Stand darf einen neueren nicht überschreiben
+      if (newAt.isBefore(oldAt)) return;
+      if (groups.isNotEmpty && newTimes == null && knowsFieldTimes) neu[fieldTimesColumn] = null;
+    } else {
+      // Je Gruppe gewinnt der neuere Wert
+      final times = <String, DateTime>{};
+      var won = false;
+      for (final MapEntry(key: group, value: columns) in groups.entries) {
+        final n = newTimes[group] ?? newAt, o = oldTimes[group] ?? oldAt;
+        if (n.isAfter(o)) {
+          won = true;
+          times[group] = n;
+        } else {
+          times[group] = o;
+          for (final c in columns) {
+            neu[c] = old[c];
+          }
+        }
+      }
+      if (!won) return;
+      neu[fieldTimesColumn] = encodeFieldTimes(times);
+      neu['updated_at'] = (newAt.isAfter(oldAt) ? newAt : oldAt).toIso8601String();
+    }
+    list[i] = {...neu, 'synced_at': at};
   }
 }
 

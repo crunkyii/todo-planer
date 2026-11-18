@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -524,6 +527,295 @@ void main() {
       await again.load();
       expect(again.doneEntries(), isEmpty);
       expect(again.olderWaiting(), 0);
+    });
+  });
+  group('Feldweise zusammenführen', () {
+    Task add(Device d, String title, {List<({String title, bool done})> subs = const []}) =>
+        d.store.addTask(title: title, categoryId: cat(d), dueDate: today(), dueTime: null, subs: subs);
+
+    /// Ändert nur die genannten Felder – wie das Bearbeiten-Formular, das alle Felder speichert.
+    void edit(Device d, Task t, {String? title, DateTime? dueDate, int? dueTime, String? notes}) => d.store.updateTask(
+      t,
+      title: title ?? t.title,
+      categoryId: t.categoryId,
+      dueDate: dueDate ?? t.dueDate,
+      dueTime: dueTime ?? t.dueTime,
+      subs: [for (final s in t.subs) (id: s.id, title: s.title)],
+      notes: notes,
+    );
+
+    /// Zwei Geräte mit derselben Aufgabe; danach ändern beide, ohne voneinander zu wissen.
+    Future<(Device, Device, Task, Task)> pair({List<({String title, bool done})> subs = const []}) async {
+      final a = await device();
+      final t = add(a, 'Start', subs: subs);
+      await a.sync.sync();
+      final b = await device();
+      await b.sync.sync();
+      await tick();
+      return (a, b, t, b.store.taskById(t.id)!);
+    }
+
+    /// Gleicht in der gegebenen Reihenfolge ab, bis beide Geräte alles haben.
+    Future<void> settle(Device first, Device second) async {
+      await first.sync.sync();
+      await second.sync.sync();
+      await first.sync.sync();
+    }
+
+    Map<String, Object?> serverTask(String id) => server.rows('tasks').firstWhere((r) => r['id'] == id);
+
+    for (final aFirst in [true, false]) {
+      final order = aFirst ? 'A lädt zuerst hoch' : 'B lädt zuerst hoch';
+
+      test('Titel am einen, Datum am anderen Gerät: beide Änderungen bleiben ($order)', () async {
+        final (a, b, ta, tb) = await pair();
+        final due = addDays(today(), 3);
+        edit(a, ta, title: 'Neuer Titel');
+        await tick();
+        edit(b, tb, dueDate: due, dueTime: 600);
+        await settle(aFirst ? a : b, aFirst ? b : a);
+
+        final row = serverTask(ta.id);
+        expect(row['title'], 'Neuer Titel');
+        expect(row['due_date'], isoDate(due));
+        expect(row['due_time'], '10:00');
+        for (final d in [a, b]) {
+          final t = d.store.taskById(ta.id)!;
+          expect((t.title, t.dueDate, t.dueTime), ('Neuer Titel', due, 600));
+          expect(await d.pending(), 0);
+          // Auch nach einem Neustart.
+          final again = Store(d.store.db);
+          await again.load();
+          expect(again.taskById(ta.id)!.title, 'Neuer Titel');
+          expect(again.taskById(ta.id)!.dueDate, due);
+        }
+      });
+
+      test('Dasselbe Feld auf beiden Geräten: der neuere Wert gewinnt ($order)', () async {
+        final (a, b, ta, tb) = await pair();
+        edit(a, ta, title: 'von A (älter)', notes: 'Notiz von A');
+        await tick();
+        edit(b, tb, title: 'von B (neuer)');
+        await settle(aFirst ? a : b, aFirst ? b : a);
+
+        expect(serverTask(ta.id)['title'], 'von B (neuer)');
+        expect(serverTask(ta.id)['notes'], 'Notiz von A', reason: 'die Notiz hat nur A geändert');
+        for (final d in [a, b]) {
+          expect(d.store.taskById(ta.id)!.title, 'von B (neuer)');
+          expect(d.store.taskById(ta.id)!.notes, 'Notiz von A');
+          expect(await d.pending(), 0);
+        }
+      });
+
+      test('Löschen gegen Bearbeiten: gelöscht bleibt gelöscht, die Änderung geht nicht verloren ($order)', () async {
+        final (a, b, ta, tb) = await pair();
+        a.store.deleteTask(ta);
+        await tick();
+        edit(b, tb, title: 'noch schnell geändert');
+        await settle(aFirst ? a : b, aFirst ? b : a);
+
+        expect(serverTask(ta.id)['deleted'], true);
+        expect(serverTask(ta.id)['title'], 'noch schnell geändert');
+        expect(a.store.tasks, isEmpty);
+        expect(b.store.tasks, isEmpty);
+      });
+
+      test('Abhaken am einen, Kategorie am anderen Gerät: erledigt samt Zeitpunkt bleibt ($order)', () async {
+        final (a, b, ta, tb) = await pair();
+        b.store.addCategory(name: 'Zweite', color: '#F07A5F', offset: 0);
+        final second = b.store.categories.last.id;
+        a.store.toggleTask(ta);
+        await tick();
+        b.store.updateTask(tb, title: tb.title, categoryId: second, dueDate: tb.dueDate, dueTime: null, subs: const []);
+        await settle(aFirst ? a : b, aFirst ? b : a);
+        await a.sync.sync();
+
+        final row = serverTask(ta.id);
+        expect(row['done'], true);
+        expect(DateTime.parse(row['done_at'] as String), ta.doneAt);
+        expect(row['category_id'], second);
+        for (final d in [a, b]) {
+          final t = d.store.taskById(ta.id)!;
+          expect((t.done, t.doneAt, t.categoryId), (true, ta.doneAt, second));
+        }
+      });
+    }
+
+    test('Unteraufgabe: Haken am einen, neuer Text am anderen Gerät', () async {
+      final (a, b, ta, tb) = await pair(subs: [(title: 'Teil', done: false)]);
+      a.store.toggleSub(ta.subs.single);
+      await tick();
+      b.store.updateTask(
+        tb,
+        title: tb.title,
+        categoryId: tb.categoryId,
+        dueDate: tb.dueDate,
+        dueTime: null,
+        subs: [(id: tb.subs.single.id, title: 'Teil (genauer)')],
+      );
+      await settle(b, a);
+      for (final d in [a, b]) {
+        final s = d.store.taskById(ta.id)!.subs.single;
+        expect((s.title, s.done), ('Teil (genauer)', true));
+      }
+    });
+
+    test('Kategorie und Wochenblock: Name am einen, Rest am anderen Gerät', () async {
+      final a = await device();
+      cat(a);
+      a.store.addBlocks(
+        name: 'Schule',
+        color: '#3D9BE9',
+        days: [0],
+        start: 480,
+        end: 780,
+        repeat: true,
+        weekStart: today(),
+      );
+      await a.sync.sync();
+      final b = await device();
+      await b.sync.sync();
+      await tick();
+      final ca = a.store.categories.single, cb = b.store.categories.single;
+      a.store.updateCategory(ca, name: 'Umbenannt', color: ca.color, offset: ca.offset);
+      a.store.updateBlock(
+        a.store.blocks.single,
+        name: 'Uni',
+        color: '#3D9BE9',
+        day: 0,
+        start: 480,
+        end: 780,
+        repeat: true,
+        weekStart: today(),
+      );
+      await tick();
+      b.store.updateCategory(cb, name: cb.name, color: cb.color, offset: 3, listFrom: ListFrom.week);
+      b.store.updateBlock(
+        b.store.blocks.single,
+        name: 'Schule',
+        color: '#3D9BE9',
+        day: 2,
+        start: 540,
+        end: 840,
+        repeat: true,
+        weekStart: today(),
+      );
+      await settle(a, b);
+      for (final d in [a, b]) {
+        final c = d.store.categories.single;
+        expect((c.name, c.offset, c.listFrom), ('Umbenannt', 3, ListFrom.week));
+        final w = d.store.blocks.single;
+        expect((w.name, w.day, w.start, w.end), ('Uni', 2, 540, 840));
+      }
+    });
+
+    test('Zeile ohne Feld-Zeitstempel: die ganze Zeile mit dem neueren Stand gewinnt', () async {
+      final a = await device();
+      final t = add(a, 'Start');
+      await a.sync.sync();
+      // Wie von einer älteren App-Version hochgeladen: neuer, aber ohne field_times.
+      final later = nowUtc().add(const Duration(minutes: 1)).toIso8601String();
+      server.put('tasks', {'id': t.id, 'title': 'alte App', 'due_date': '2026-12-24', 'updated_at': later});
+      expect(serverTask(t.id)['field_times'], isNull, reason: 'die Zeitstempel passen nicht mehr zur Zeile');
+
+      // Lokal inzwischen etwas anderes geändert – aber früher: verliert als Ganzes.
+      edit(a, t, notes: 'geht verloren');
+      await a.sync.sync();
+      expect(serverTask(t.id)['title'], 'alte App');
+      expect(serverTask(t.id)['notes'], '');
+      final got = a.store.taskById(t.id)!;
+      expect((got.title, got.notes, isoDate(got.dueDate)), ('alte App', '', '2026-12-24'));
+      expect(await a.pending(), 0);
+
+      // Ein älterer Stand ohne Zeitstempel überschreibt nichts.
+      server.put('tasks', {'id': t.id, 'title': 'uralt', 'updated_at': t.createdAt.toIso8601String()});
+      expect(serverTask(t.id)['title'], 'alte App');
+
+      // Die nächste Änderung der neuen App bekommt wieder Zeitstempel und gewinnt.
+      a.sync.online = false;
+      clock = () => DateTime.now().add(const Duration(minutes: 2));
+      addTearDown(() => clock = DateTime.now);
+      edit(a, a.store.taskById(t.id)!, title: 'neue App');
+      a.sync.online = true;
+      await a.sync.sync();
+      expect(serverTask(t.id)['title'], 'neue App');
+      expect(serverTask(t.id)['due_date'], '2026-12-24');
+      expect(serverTask(t.id)['field_times'], isA<Map<String, Object?>>());
+    });
+
+    test('Zeilen von vor dem Update (ohne Zeitstempel am Gerät) werden normal weiter abgeglichen', () async {
+      final db = LocalDb(NativeDatabase.memory());
+      final a = await device(db: db);
+      final t = add(a, 'Start');
+      await a.sync.sync();
+      // Stand wie vor dem Update: am Gerät und am Server ohne field_times.
+      await a.store.flush();
+      await db.customStatement('UPDATE tasks SET field_times = NULL');
+      serverTask(t.id)['field_times'] = null;
+
+      final again = await device(db: db);
+      await tick();
+      edit(again, again.store.taskById(t.id)!, title: 'nach dem Update');
+      await again.sync.sync();
+      expect(serverTask(t.id)['title'], 'nach dem Update');
+      final times = serverTask(t.id)['field_times'] as Map;
+      expect(times.keys, unorderedEquals(tasksTable.groups.keys));
+      expect(times['title'], serverTask(t.id)['updated_at']);
+      expect(times['due'], isNot(times['title']), reason: 'nur der Titel wurde geändert');
+    });
+
+    test('Server mit älterem schema.sql: es geht ohne field_times weiter, einmal mit Hinweis', () async {
+      server.knowsFieldTimes = false;
+      final a = await device();
+      final events = <SyncEvent>[];
+      final sub = a.sync.events.listen(events.add);
+      final t = add(a, 'Start');
+      await a.sync.sync();
+      await tick();
+      edit(a, t, title: 'geändert');
+      await a.sync.sync();
+      await tick();
+      await sub.cancel();
+
+      expect(serverTask(t.id)['title'], 'geändert');
+      expect(serverTask(t.id).containsKey('field_times'), isFalse);
+      expect(await a.pending(), 0);
+      expect(a.sync.rejected, 0);
+      expect(events.whereType<SchemaOutdated>(), hasLength(1));
+    });
+
+    test('Speichern ohne Änderung lässt Zeitstempel und updated_at, wie sie sind', () async {
+      final a = await device();
+      final t = add(a, 'Start');
+      final before = t.updatedAt;
+      await tick();
+      edit(a, t);
+      expect(t.updatedAt, before);
+      await tick();
+      edit(a, t, title: 'neu');
+      expect(t.updatedAt.isAfter(before), isTrue);
+    });
+
+    test('Die Uhr eines Geräts geht nach: seine Änderung gilt trotzdem', () async {
+      final a = await device();
+      final t = add(a, 'Start');
+      clock = () => DateTime.now().subtract(const Duration(hours: 1));
+      addTearDown(() => clock = DateTime.now);
+      edit(a, t, title: 'mit falscher Uhr');
+      await a.sync.sync();
+      expect(serverTask(t.id)['title'], 'mit falscher Uhr');
+      expect(await a.pending(), 0);
+    });
+
+    test('Die Feld-Gruppen in schema.sql sind dieselben wie in der App', () {
+      final sql = File('supabase/schema.sql').readAsStringSync();
+      final start = sql.indexOf("field_groups constant jsonb := '") + "field_groups constant jsonb := '".length;
+      final inSql = jsonDecode(sql.substring(start, sql.indexOf("';", start))) as Map<String, Object?>;
+      final inApp = {
+        for (final t in syncTables)
+          if (t.groups.isNotEmpty) t.name: t.groups,
+      };
+      expect(inSql, inApp);
     });
   });
 }
