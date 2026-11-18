@@ -7,7 +7,7 @@ Eine Aufgaben-App für Handy (Android) und PC (Windows, Linux), gebaut mit Flutt
 - **Gewohnheiten** mit Serien-Flamme
 - **Kalender** mit österreichischen Feiertagen, **Wochenplan** mit Zeitblöcken und **Statistik** mit Heatmap
 - **Erinnerungen** für Aufgaben mit Uhrzeit
-- **Startbildschirm-Widgets** (Android): „Heute fällig“ und Gewohnheiten zum Abhaken, Farben einstellbar
+- **Startbildschirm-Widgets** (Android): „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhaken, Farben einstellbar
 - **Export** aller Daten als PDF, Text oder CSV
 - **10 Themes**, hell/dunkel, Deutsch/Englisch
 - **Offline zuerst**: Alles wird sofort am Gerät gespeichert und später abgeglichen

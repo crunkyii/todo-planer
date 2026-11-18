@@ -42,9 +42,19 @@ class _AppShellState extends State<AppShell> {
     // „+“ im Startbildschirm-Widget: Sheet für eine neue Aufgabe öffnen.
     _widgets.listen(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Nur wenn gerade nichts offen ist: Wer mehrmals auf „+“ tippt (oder schon ein Sheet
-        // offen hat), bekommt kein zweites Formular über dem ersten.
-        if (mounted && (ModalRoute.of(context)?.isCurrent ?? true)) Sheets(context, ui).task(null);
+        if (!mounted) return;
+        final nav = Navigator.of(context);
+        // Liefert die oberste Route, ohne etwas zu schließen.
+        Route<dynamic>? top;
+        nav.popUntil((route) {
+          top = route;
+          return true;
+        });
+        // Schon ein Formular offen (z. B. mehrmals auf „+“ getippt): kein zweites darüber.
+        if (top is AppSheetRoute) return;
+        // Ein offenes ⋮-Menü zuerst schließen, sonst läge das Formular über dem Menü.
+        if (top is AppMenuRoute) nav.pop();
+        Sheets(context, ui).task(null);
       });
       WidgetsBinding.instance.scheduleFrame();
     }, store: app.store);

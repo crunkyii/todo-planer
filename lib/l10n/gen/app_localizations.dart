@@ -1523,7 +1523,7 @@ abstract class AppLocalizations {
   /// No description provided for @chartA11y.
   ///
   /// In de, this message translates to:
-  /// **'{count} erledigte Aufgaben in {days} Tagen'**
+  /// **'{count, plural, =1{1 erledigte Aufgabe} other{{count} erledigte Aufgaben}} in {days} Tagen'**
   String chartA11y(int count, int days);
 
   /// No description provided for @barTooltip.

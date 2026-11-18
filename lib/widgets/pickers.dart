@@ -126,7 +126,7 @@ class _TimeWheelState extends State<TimeWheel> {
           final focused = Focus.of(context).hasFocus;
           return Semantics(
             label: label,
-            value: pad2(c.hasClients ? c.selectedItem * mult : 0),
+            value: pad2((c.hasClients ? c.selectedItem : c.initialItem) * mult),
             child: Container(
               width: 72,
               height: Sizes.wheelH,
@@ -147,7 +147,10 @@ class _TimeWheelState extends State<TimeWheel> {
                 child: NotificationListener<ScrollEndNotification>(
                   onNotification: (_) {
                     Future.delayed(const Duration(milliseconds: 90), () {
-                      if (mounted) _commit();
+                      if (!mounted) return;
+                      _commit();
+                      // Screenreader lesen den Wert des Rads vor – nach dem Drehen neu melden.
+                      setState(() {});
                     });
                     return false;
                   },

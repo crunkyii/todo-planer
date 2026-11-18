@@ -317,7 +317,7 @@ class HabitsTaskCard extends StatelessWidget {
     final hs = store.habits;
     final done = hs.where((h) => store.habitDone(h.id, k)).length;
     final all = hs.isNotEmpty && done == hs.length;
-    final open = !ui.collapsed.contains('habits');
+    final open = !ui.collapsed.contains(UiState.habitsCard);
     final cc = tok.item(habitColorHex);
     final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular);
 
@@ -347,7 +347,7 @@ class HabitsTaskCard extends StatelessWidget {
                   child: Semantics(
                     expanded: open,
                     child: Pressable(
-                      onTap: () => ui.toggleCollapsed('habits'),
+                      onTap: () => ui.toggleCollapsed(UiState.habitsCard),
                       pressScale: 0.985,
                       radius: BorderRadius.circular(Sizes.rCard),
                       semanticLabel: '${l.habits}, ${l.daily}, ${l.progress(done, hs.length)}',

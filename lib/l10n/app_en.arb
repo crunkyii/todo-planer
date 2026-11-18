@@ -238,7 +238,7 @@
   "heatSummary": "<b>{total}</b> done on <b>{days}</b> days",
   "heatDay": "{date}: <b>{count}</b> done",
   "a11yHeatDay": "{date}: {count} done",
-  "chartA11y": "{count} tasks done in {days} days",
+  "chartA11y": "{count, plural, =1{1 task} other{{count} tasks}} done in {days} days",
   "barTooltip": "{day}: {count}",
   "byCategory": "By category",
   "language": "Language",

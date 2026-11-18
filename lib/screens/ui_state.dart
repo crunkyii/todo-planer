@@ -24,7 +24,10 @@ class UiState extends ChangeNotifier {
   String filterIn(Iterable<TaskCategory> categories) =>
       filter == filterAll || filter == filterHabits || categories.any((c) => c.id == filter) ? filter : filterAll;
 
-  /// Eingeklappte Abschnitte: `Section.name`, `k-<Kategorie>` oder `habits`.
+  /// Schlüssel der Karte „Gewohnheiten“ in [collapsed] (hat nichts mit [filterHabits] zu tun).
+  static const habitsCard = 'habits';
+
+  /// Eingeklappte Abschnitte: `Section.name`, `k-<Kategorie>` oder [habitsCard].
   final Set<String> collapsed = {'done'};
   SortMode sort = SortMode.date;
   bool hideDone = false;

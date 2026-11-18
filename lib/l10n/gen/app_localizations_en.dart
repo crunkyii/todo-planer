@@ -829,7 +829,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartA11y(int count, int days) {
-    return '$count tasks done in $days days';
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tasks', one: '1 task');
+    return '$_temp0 done in $days days';
   }
 
   @override

@@ -607,7 +607,7 @@
       }
     }
   },
-  "chartA11y": "{count} erledigte Aufgaben in {days} Tagen",
+  "chartA11y": "{count, plural, =1{1 erledigte Aufgabe} other{{count} erledigte Aufgaben}} in {days} Tagen",
   "@chartA11y": {
     "placeholders": {
       "count": {
