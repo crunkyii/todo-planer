@@ -3,64 +3,52 @@ import 'dart:io';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Übersetzt technische Fehler in verständliche deutsche Meldungen.
-String friendlyErrorMessage(Object error) {
-  if (_isNetworkError(error)) {
-    return 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.';
-  }
+import '../l10n/gen/app_localizations.dart';
+
+/// Übersetzt technische Fehler in verständliche Meldungen (Deutsch/Englisch).
+String friendlyErrorMessage(AppLocalizations l, Object error) {
+  if (isNetworkError(error)) return l.errNetwork;
 
   if (error is AuthException) {
     switch (error.code) {
       case 'invalid_credentials':
-        return 'E-Mail oder Passwort ist falsch.';
+        return l.errWrongLogin;
       case 'email_not_confirmed':
-        return 'Bitte bestätige zuerst deine E-Mail-Adresse (Link in der Bestätigungs-Mail).';
+        return l.errEmailNotConfirmed;
       case 'user_already_exists':
       case 'email_exists':
-        return 'Für diese E-Mail-Adresse gibt es bereits ein Konto. Bitte melde dich an.';
+        return l.errAccountExists;
       case 'weak_password':
-        return 'Das Passwort ist zu schwach. Verwende mindestens 6 Zeichen.';
+        return l.errWeakPassword;
       case 'email_address_invalid':
       case 'validation_failed':
-        return 'Bitte gib eine gültige E-Mail-Adresse ein.';
+        return l.errEmail;
       case 'over_email_send_rate_limit':
       case 'over_request_rate_limit':
-        return 'Zu viele Versuche. Bitte warte kurz und versuche es dann erneut.';
+        return l.errRateLimit;
       case 'signup_disabled':
-        return 'Registrierung ist derzeit deaktiviert.';
+        return l.errSignupDisabled;
       case 'session_expired':
       case 'refresh_token_not_found':
-        return 'Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.';
+        return l.errSessionExpired;
     }
-    if (error.statusCode == '400' &&
-        error.message.toLowerCase().contains('invalid login')) {
-      return 'E-Mail oder Passwort ist falsch.';
+    if (error.statusCode == '400' && error.message.toLowerCase().contains('invalid login')) {
+      return l.errWrongLogin;
     }
-    return 'Anmeldung fehlgeschlagen: ${error.message}';
+    return l.errAuthGeneric(error.message);
   }
 
   if (error is PostgrestException) {
-    if (error.code == '42501') {
-      return 'Keine Berechtigung für diese Aktion. Bitte melde dich erneut an.';
-    }
-    if (error.code == '42P01') {
-      return 'Die Tabelle "todos" fehlt. Wurde supabase/schema.sql ausgeführt?';
-    }
-    return 'Datenbankfehler: ${error.message}';
+    if (error.code == '42501') return l.errNoPermission;
+    if (error.code == '42P01' || error.code == 'PGRST205') return l.errTableMissing;
+    return l.errDbGeneric(error.message);
   }
 
-  if (error is RealtimeSubscribeException) {
-    return 'Live-Synchronisation unterbrochen. Bitte prüfe deine Internetverbindung.';
-  }
-
-  return 'Unerwarteter Fehler. Bitte versuche es erneut.';
+  return l.errUnexpected;
 }
 
-bool _isNetworkError(Object error) {
-  if (error is SocketException ||
-      error is TimeoutException ||
-      error is HandshakeException ||
-      error is AuthRetryableFetchException) {
+bool isNetworkError(Object error) {
+  if (error is SocketException || error is TimeoutException || error is HandshakeException || error is AuthRetryableFetchException) {
     return true;
   }
   // http.ClientException ("Failed host lookup", "Connection refused" …)
