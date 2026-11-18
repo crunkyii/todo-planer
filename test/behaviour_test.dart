@@ -1,4 +1,7 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
+
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -353,6 +356,23 @@ void main() {
         });
       }
     }
+
+    testWidgets('Tastatur-Fokus wird dem Screenreader gemeldet', (tester) async {
+      final handle = tester.ensureSemantics();
+      useFixedClock();
+      final app = await makeServices();
+      seedDemo(app.store, l10n('de'));
+      await pumpApp(tester, app);
+      bool anyFocused() => tester.semantics.simulatedAccessibilityTraversal().any(
+        (n) => n.flagsCollection.isButton && n.flagsCollection.isFocused == Tristate.isTrue,
+      );
+      expect(anyFocused(), isFalse);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      expect(anyFocused(), isTrue, reason: 'der fokussierte Knopf muss „fokussiert“ melden');
+      handle.dispose();
+      await finishApp(tester, app);
+    });
 
     testWidgets('Alle Tippflächen sind beschriftet', (tester) async {
       final handle = tester.ensureSemantics();

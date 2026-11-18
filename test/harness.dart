@@ -95,13 +95,16 @@ void seedDemo(Store store, AppLocalizations l) {
 
   // Erledigte Aufgaben an früheren Tagen (für Heatmap, Balken und Serie)
   final real = clock;
-  for (final (daysAgo, n) in [(9, 1), (6, 2), (5, 1), (3, 4), (2, 2), (1, 3)]) {
-    clock = () => addDays(real(), -daysAgo);
-    for (var i = 0; i < n; i++) {
-      store.toggleTask(add('Alt $daysAgo/$i', (daysAgo + i) % 4, -daysAgo));
+  try {
+    for (final (daysAgo, n) in [(9, 1), (6, 2), (5, 1), (3, 4), (2, 2), (1, 3)]) {
+      clock = () => addDays(real(), -daysAgo);
+      for (var i = 0; i < n; i++) {
+        store.toggleTask(add('Alt $daysAgo/$i', (daysAgo + i) % 4, -daysAgo));
+      }
     }
+  } finally {
+    clock = real;
   }
-  clock = real;
 
   add('Mathe S. 42 Nr. 3–7', 0, -1);
   add('Müll rausbringen', 1, 0, time: 18 * 60);

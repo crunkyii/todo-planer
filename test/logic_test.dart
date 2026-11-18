@@ -220,6 +220,8 @@ void main() {
       expect(contrast(black, white), closeTo(21, 0.01));
       final fg = ensure(const Color(0xFFF5B83D), white, 4.5);
       expect(contrast(fg, white), greaterThanOrEqualTo(4.5));
+      // Unerreichbares Verhältnis: geht bis ganz ans Ziel (früher blieb es durch Rundung bei 95 %).
+      expect(ensure(const Color(0xFF808080), white, 99), black);
     });
 
     test('Hex lesen und schreiben', () {

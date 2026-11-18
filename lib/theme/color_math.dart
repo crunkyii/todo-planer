@@ -50,8 +50,9 @@ double contrast(Color a, Color b) {
 Color ensure(Color fg, Color bg, double ratio) {
   final target = contrast(black, bg) >= contrast(white, bg) ? black : white;
   var c = fg;
-  for (var t = 0.0; t <= 1 && contrast(c, bg) < ratio; t += 0.05) {
-    c = mix(fg, target, t);
+  // Ganze Schritte statt t += 0.05: Rundungsfehler ließen den letzten Schritt (ganz Schwarz/Weiß) sonst aus.
+  for (var i = 1; i <= 20 && contrast(c, bg) < ratio; i++) {
+    c = mix(fg, target, i / 20);
   }
   return c;
 }

@@ -55,6 +55,7 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
   late final AnimationController _scale = AnimationController(vsync: this, value: 1, lowerBound: 0.8, upperBound: 1.1);
   final List<_Glow> _glows = [];
   bool _focus = false;
+  bool _hasFocus = false; // für Screenreader, auch wenn kein Fokus-Rahmen gezeigt wird
 
   bool get _reduced => Motion.reduced(context);
 
@@ -152,6 +153,7 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
       includeFocusSemantics: false,
       mouseCursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
       onShowFocusHighlight: (v) => setState(() => _focus = v),
+      onFocusChange: (v) => setState(() => _hasFocus = v),
       actions: {ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) => _activate())},
       child: child,
     );
@@ -159,6 +161,7 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
       button: true,
       enabled: widget.onTap != null,
       focusable: widget.onTap != null,
+      focused: widget.onTap != null && _hasFocus,
       label: widget.semanticLabel,
       selected: widget.selected,
       toggled: widget.toggled,
