@@ -40,15 +40,17 @@ flutter build windows
 
 Das Ergebnis liegt in `build/windows/x64/runner/Release/`.
 
-### Windows-Installer und Update-Datei
+### Windows-Installer
 
-Braucht [Inno Setup 6](https://jrsoftware.org/isinfo.php) und – nur für eigene Releases – einen eigenen Signier-Schlüssel (siehe [update.md](update.md)).
+Braucht [Inno Setup 6](https://jrsoftware.org/isinfo.php).
 
 ```bash
 pwsh tool/release/build-windows.ps1
 ```
 
-Das Skript baut die App, den Installer `build/dist/todo-planer-<Version>-setup.exe` und die signierte `build/dist/latest.json`.
+Das Skript baut die App und den Installer `build/dist/todo-planer-<Version>-setup.exe`.
+
+Ein ganzes Release – Installer, APK und die signierte `latest.json` fürs Auto-Update – baut `tool/release/build-release.ps1`; dafür braucht es eigene Schlüssel (siehe [update.md](update.md)).
 
 ## Android (Release-APK)
 

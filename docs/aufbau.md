@@ -42,7 +42,7 @@ Der Weg einer Änderung, z. B. „Aufgabe abhaken“: Tipp → `Store.toggleTask
 | `supabase/schema.sql` | Datenbank-Schema mit Row Level Security |
 | `test/`, `integration_test/` | Tests (siehe oben) |
 | `tool/icon/` | Quelle und Erzeuger des App-Symbols |
-| `tool/release/` | Windows-Installer (Inno Setup), Signier-Werkzeug und Release-Skript ([update.md](update.md)) |
+| `tool/release/` | Windows-Installer (Inno Setup), Signier-Werkzeug und Release-Skripte für Windows und Android ([update.md](update.md)) |
 
 Neue Texte immer in **beide** ARB-Dateien eintragen; `flutter pub get` erzeugt daraus den Code.
 

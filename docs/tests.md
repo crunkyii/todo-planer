@@ -17,7 +17,7 @@ flutter test
 | `test/behaviour_test.dart`, `test/widget_test.dart` | Die ganze App wird bedient: Formulare, Menüs, Tastatur, Schriftgrößen, Barrierefreiheit |
 | `test/screens_test.dart` | Bildvergleich jedes Tabs (Goldens in `test/goldens/`) |
 | `test/export_test.dart`, `test/home_widgets_test.dart`, `test/widget_config_test.dart` | Export, Daten für die Startbildschirm-Widgets und deren Einstellungen |
-| `test/updater_test.dart` | Auto-Update: Versionsvergleich, `latest.json`, Signaturprüfung (veränderte Datei, fremder Schlüssel, alte Datei unter neuer Nummer) |
+| `test/updater_test.dart` | Auto-Update für Windows und Android: Versionsvergleich, `latest.json` mit und ohne `android`, Signaturprüfung (veränderte Datei, fremder Schlüssel, alte Datei unter neuer Nummer); Android: fehlende Erlaubnis, Abbruch im Installer, offline, Test-Kopie ohne Updates. Android selbst wird dabei durch ein Double ersetzt – der echte Installer lässt sich nur am Handy ausprobieren. |
 
 Hat sich das Aussehen absichtlich geändert, die Vergleichsbilder neu erzeugen:
 
