@@ -48,6 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return; // Enter im Feld, während die Anmeldung schon läuft
     final l = context.l;
     final app = context.app;
     final email = _email.text.trim(), pw = _pw.text;

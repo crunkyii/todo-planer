@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_services.dart';
 import '../data/cloud.dart';
 import '../data/settings_store.dart';
+import '../services/error_messages.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
@@ -64,6 +65,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Future<void> _submit() async {
+    if (_connecting) return; // Enter im Feld, während der Verbindungstest schon läuft
     final l = context.l;
     final app = context.app;
     final url = normalizeUrl(_url.text);
@@ -89,7 +91,19 @@ class _SetupScreenState extends State<SetupScreen> {
       return;
     }
     final c = CloudConfig(url, key);
-    await app.connectCloud(c);
+    try {
+      await app.connectCloud(c);
+    } on Object catch (e) {
+      // Ohne das bliebe der Knopf für immer auf „Verbinde …“ stehen.
+      debugPrint('Verbinden fehlgeschlagen: ${errorLogLine(e)}');
+      if (mounted) {
+        setState(() {
+          _connecting = false;
+          _error = l.errNoConnection;
+        });
+      }
+      return;
+    }
     app.snack.show(l.connectedTo(c.host), icon: Ic.cloudok);
   }
 

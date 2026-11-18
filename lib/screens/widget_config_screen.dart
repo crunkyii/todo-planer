@@ -54,6 +54,7 @@ class WidgetConfigApp extends StatelessWidget {
         AppMode.dark => ThemeMode.dark,
         AppMode.system => ThemeMode.system,
       },
+      scrollBehavior: const AppScrollBehavior(),
       builder: (context, child) => MediaQuery.withClampedTextScaling(maxScaleFactor: 1.6, child: child!),
       home: WidgetConfigScreen(
         themeId: themeId,

@@ -49,7 +49,11 @@ class StatsTab extends StatelessWidget {
         final byDay = <String, Map<String, int>>{for (final d in days) d: {}};
         for (final e in entries) {
           final by = byDay[e.day];
-          if (by != null) by[e.cat] = (by[e.cat] ?? 0) + 1;
+          if (by == null) continue;
+          // Über catOf: Eine Aufgabe, deren Kategorie es nicht mehr gibt, zählt dort mit, wo
+          // sie auch in der Liste steht – sonst fehlte sie in den Balken, aber nicht in der Summe.
+          final cat = store.catOf(e.cat).id;
+          by[cat] = (by[cat] ?? 0) + 1;
         }
         final perDay = [for (final d in days) byDay[d]!];
         final totals = [for (final by in perDay) by.values.fold<int>(0, (a, b) => a + b)];
@@ -212,7 +216,7 @@ class _Heatmap extends StatelessWidget {
           LayoutBuilder(
             builder: (context, box) {
               const gap = 3.0, wdW = 20.0, colGap = 4.0;
-              final cell = (box.maxWidth - wdW - colGap - gap * (heatWeeks - 1)) / heatWeeks;
+              final cell = math.max(0.0, (box.maxWidth - wdW - colGap - gap * (heatWeeks - 1)) / heatWeeks);
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

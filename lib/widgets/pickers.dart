@@ -50,8 +50,12 @@ class _TimeWheelState extends State<TimeWheel> {
   bool _lock = false;
 
   int get _mCount => 60 ~/ widget.step;
-  int _hIdx(int v) => v ~/ 60;
-  int _mIdx(int v) => ((v % 60) / widget.step).round() % _mCount;
+
+  /// [v] auf den nächsten Schritt gerundet, den das Rad zeigen kann – als ganze Uhrzeit,
+  /// damit 10:50 im 30-Minuten-Raster 11:00 wird und nicht 10:00.
+  int _snap(int v) => ((v / widget.step).round() * widget.step).clamp(0, 24 * 60 - widget.step);
+  int _hIdx(int v) => _snap(v) ~/ 60;
+  int _mIdx(int v) => (_snap(v) % 60) ~/ widget.step;
 
   @override
   void initState() {
@@ -65,7 +69,7 @@ class _TimeWheelState extends State<TimeWheel> {
   void didUpdateWidget(TimeWheel old) {
     super.didUpdateWidget(old);
     final v = widget.value;
-    if (v == null || v == _current) return;
+    if (v == null || _snap(v) == _current) return;
     // Wert kam von außen (Schnellwahl, „Bis“ rutscht mit): Räder sanft nachdrehen
     _lock = true;
     final d = Motion.of(context, const Duration(milliseconds: 400));
@@ -190,7 +194,7 @@ class _TimeWheelState extends State<TimeWheel> {
               for (final q in widget.quick)
                 AppChip(
                   label: q.label,
-                  selected: widget.isSelected?.call(q) ?? (widget.value == q.minutes && q.minutes != null),
+                  selected: widget.isSelected?.call(q) ?? widget.value == q.minutes,
                   height: 32,
                   padding: 12,
                   fontSize: 13,

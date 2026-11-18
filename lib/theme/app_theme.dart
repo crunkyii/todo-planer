@@ -1,6 +1,17 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:material_ui/material_ui.dart';
 
 import 'tokens.dart';
+
+/// Scrollen wie am Handy, auch am PC: Listen lassen sich mit der Maus ziehen. Ohne das wären
+/// die waagrechten Chip-Leisten unter Windows und Linux nur mit Umschalt + Mausrad erreichbar.
+class AppScrollBehavior extends MaterialScrollBehavior {
+  const AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => PointerDeviceKind.values.toSet();
+}
 
 /// Baut das Material-Theme aus den Prototyp-Tokens. Die Widgets lesen ihre
 /// Farben über `context.tok`, Material-Bausteine (Textfelder, Dialoge) über das ColorScheme.

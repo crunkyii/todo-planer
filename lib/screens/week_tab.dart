@@ -372,6 +372,9 @@ class _DayColumn extends StatelessWidget {
                         final bc = tok.item(b.color);
                         final fs = one ? 13.0 : (narrow ? 9.5 : 10.0);
                         final lh = one ? 16.0 : (narrow ? 11.0 : 12.0);
+                        // Die Zeilen mit der Uhrzeit wachsen mit der Systemschrift – also auch
+                        // die Höhe, ab der sie Platz haben.
+                        final ts = MediaQuery.textScalerOf(context).scale(1);
                         final timeStyle = TextStyle(
                           fontSize: one ? 12 : fs,
                           height: lh / fs,
@@ -416,7 +419,7 @@ class _DayColumn extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  if (one && h > 26) ...[
+                                  if (one && h > 26 * ts) ...[
                                     const SizedBox(height: 2),
                                     Text(
                                       context.l.rangeDash(f.time(b.start), f.time(b.end)),
@@ -425,9 +428,9 @@ class _DayColumn extends StatelessWidget {
                                       style: timeStyle,
                                     ),
                                   ],
-                                  if (!one && h > 40)
+                                  if (!one && h > 40 * ts)
                                     Text(f.time(b.start), maxLines: 1, softWrap: false, style: timeStyle),
-                                  if (!one && h > 64)
+                                  if (!one && h > 64 * ts)
                                     Text(f.time(b.end), maxLines: 1, softWrap: false, style: timeStyle),
                                 ],
                               ),
