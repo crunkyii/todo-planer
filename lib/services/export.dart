@@ -25,7 +25,7 @@ enum ExportFormat {
 
 /// Eine Tabelle des Exports (Aufgaben, Gewohnheiten …) als fertige Texte.
 class ExportTable {
-  const ExportTable(this.title, this.head, this.rows, {this.main = 0, this.wide});
+  const ExportTable(this.title, this.head, this.rows, {this.main = 0, this.wide = const {}});
   final String title;
   final List<String> head;
   final List<List<String>> rows;
@@ -33,8 +33,8 @@ class ExportTable {
   /// Spalte mit dem Namen des Eintrags (im Text-Export die Überschrift der Zeile).
   final int main;
 
-  /// Zweite breite Spalte im PDF (Unteraufgaben), sonst `null`.
-  final int? wide;
+  /// Weitere breite Spalten im PDF (Unteraufgaben, Notiz).
+  final Set<int> wide;
 }
 
 /// Alles, was exportiert wird – in der Sprache der App, unabhängig vom Dateiformat.
@@ -61,7 +61,7 @@ ExportData buildExport(Store store, AppLocalizations l, Fmt f) {
     tables: [
       ExportTable(
         l.navTasks,
-        [l.colTitle, l.colCategory, l.colDue, l.time, l.done, l.yearly, l.subtasks],
+        [l.colTitle, l.colCategory, l.colDue, l.time, l.done, l.yearly, l.subtasks, l.notes],
         [
           for (final t in tasks)
             [
@@ -72,9 +72,10 @@ ExportData buildExport(Store store, AppLocalizations l, Fmt f) {
               yesNo(t.done),
               yesNo(isYearly(t.title)),
               [for (final s in t.subs) '${s.done ? '[x]' : '[ ]'} ${s.title}'].join(', '),
+              t.notes,
             ],
         ],
-        wide: 6,
+        wide: const {6, 7},
       ),
       ExportTable(
         l.habits,
@@ -245,7 +246,8 @@ Future<Uint8List> exportPdf(ExportData data) {
             pw.TableHelper.fromTextArray(
               headers: [for (final h in t.head) pdfSafe(h)],
               data: [
-                for (final r in t.rows) [for (final (i, v) in r.indexed) _pdfCell(v, wide: i == t.main || i == t.wide)],
+                for (final r in t.rows)
+                  [for (final (i, v) in r.indexed) _pdfCell(v, wide: i == t.main || t.wide.contains(i))],
               ],
               border: const pw.TableBorder(
                 horizontalInside: pw.BorderSide(color: line, width: 0.5),
@@ -258,9 +260,12 @@ Future<Uint8List> exportPdf(ExportData data) {
               cellAlignment: pw.Alignment.topLeft,
               cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               oddRowDecoration: const pw.BoxDecoration(color: stripe),
-              // Schmale Spalten (Datum, Ja/Nein …) so breit wie ihr Inhalt; Name und Unteraufgaben
-              // teilen sich den Rest.
-              columnWidths: {t.main: const pw.FlexColumnWidth(3), ?t.wide: const pw.FlexColumnWidth(2)},
+              // Schmale Spalten (Datum, Ja/Nein …) so breit wie ihr Inhalt; Name, Unteraufgaben und
+              // Notiz teilen sich den Rest.
+              columnWidths: {
+                t.main: const pw.FlexColumnWidth(3),
+                for (final w in t.wide) w: const pw.FlexColumnWidth(2),
+              },
               defaultColumnWidth: const pw.IntrinsicColumnWidth(),
             ),
         ],

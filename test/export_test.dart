@@ -35,6 +35,7 @@ void main() {
       dueDate: DateTime(2026, 12, 3),
       dueTime: 8 * 60,
       subs: [(title: 'Geschenk', done: true), (title: 'Karte', done: false)],
+      notes: 'Lieblingsfarbe: grün',
     );
     final done = store.addTask(title: 'Einkaufen; Milch', categoryId: cat, dueDate: today(), dueTime: null, subs: []);
     store.toggleTask(done);
@@ -56,7 +57,16 @@ void main() {
     final tasks = data.tables.first;
     expect(tasks.rows.last.first, 'Einkaufen; Milch'); // erledigt steht hinten
     final birthday = tasks.rows.firstWhere((r) => r.first.contains('Geburtstag'));
-    expect(birthday, ["Peter's Geburtstag", 'Termin', '03.12.2026', '08:00', 'Nein', 'Ja', '[x] Geschenk, [ ] Karte']);
+    expect(birthday, [
+      "Peter's Geburtstag",
+      'Termin',
+      '03.12.2026',
+      '08:00',
+      'Nein',
+      'Ja',
+      '[x] Geschenk, [ ] Karte',
+      'Lieblingsfarbe: grün',
+    ]);
     expect(data.tables[1].rows.single, ['Trinken', '2', '18.11.2026']);
     for (final t in data.tables) {
       for (final r in t.rows) {
@@ -75,8 +85,8 @@ void main() {
 
   test('Tabelle: Strichpunkte in Anführungszeichen, Formeln entschärft', () {
     final csv = exportCsv(buildExport(store, l, f));
-    expect(csv, contains('Titel;Kategorie;Abgabe;Uhrzeit;Erledigt;Jährlich;Unteraufgaben\r\n'));
-    expect(csv, contains('"Einkaufen; Milch";Termin;18.11.2026;;Ja;Nein;\r\n'));
+    expect(csv, contains('Titel;Kategorie;Abgabe;Uhrzeit;Erledigt;Jährlich;Unteraufgaben;Notiz\r\n'));
+    expect(csv, contains('"Einkaufen; Milch";Termin;18.11.2026;;Ja;Nein;;\r\n'));
     expect(csv, contains("'=SUMME(A1);Termin"));
     expect(csv, isNot(contains('\n=SUMME')));
   });
