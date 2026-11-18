@@ -639,6 +639,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String get doWhen => 'Erledigen';
 
   @override
+  String get showInTasks => 'In Aufgaben zeigen';
+
+  @override
+  String get listFromAlways => 'Immer';
+
+  @override
+  String get listFromWeek => 'Ab „Diese Woche“';
+
+  @override
+  String get listFromTomorrow => 'Ab „Morgen“';
+
+  @override
+  String get listFromToday => 'Ab „Heute“';
+
+  @override
+  String get listFromNever => 'Nie';
+
+  @override
+  String hiddenByCategory(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Aufgaben ausgeblendet',
+      one: '1 Aufgabe ausgeblendet',
+    );
+    return '$_temp0 – einstellbar bei der Kategorie';
+  }
+
+  @override
   String get offsetSameDay => 'Selber Tag';
 
   @override

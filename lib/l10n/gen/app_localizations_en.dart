@@ -635,6 +635,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doWhen => 'Complete';
 
   @override
+  String get showInTasks => 'Show in tasks';
+
+  @override
+  String get listFromAlways => 'Always';
+
+  @override
+  String get listFromWeek => 'From “This week”';
+
+  @override
+  String get listFromTomorrow => 'From “Tomorrow”';
+
+  @override
+  String get listFromToday => 'From “Today”';
+
+  @override
+  String get listFromNever => 'Never';
+
+  @override
+  String hiddenByCategory(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks hidden',
+      one: '1 task hidden',
+    );
+    return '$_temp0 – change it in the category';
+  }
+
+  @override
   String get offsetSameDay => 'Same day';
 
   @override

@@ -39,6 +39,37 @@ void main() {
   });
 
   group('Aufgaben', () {
+    testWidgets('In Aufgaben zeigen: späte Aufgaben der Kategorie sind ausgeblendet, Suche und Chip zeigen sie', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      final store = app.store;
+      store.addCategory(name: 'Geburtstag', color: '#AABBCC', offset: 0, listFrom: ListFrom.week);
+      final c = store.categories.last;
+      for (final (title, days) in [('Bald', 0), ('Peters Geburtstag', 20)]) {
+        store.addTask(title: title, categoryId: c.id, dueDate: addDays(today(), days), dueTime: null, subs: const []);
+      }
+      await pumpApp(tester, app);
+      expect(find.text('Bald'), findsOneWidget);
+      expect(find.text('Peters Geburtstag'), findsNothing);
+      expect(find.text(l.hiddenByCategory(1)), findsOneWidget);
+
+      // Der Chip der Kategorie zeigt alles.
+      await _tap(tester, find.text(c.name).first);
+      expect(find.text('Peters Geburtstag'), findsOneWidget);
+      expect(find.text(l.hiddenByCategory(1)), findsNothing);
+      await _tap(tester, find.text(l.all).first);
+
+      await _tap(tester, find.bySemanticsLabel(l.moreOptions).first);
+      await _tap(tester, find.text(l.search));
+      await tester.enterText(find.byType(TextField).first, 'geburtstag');
+      await tester.pumpAndSettle();
+      expect(find.text('Peters Geburtstag'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
     testWidgets('Notiz: Symbol öffnet das Feld, die Karte zeigt den Anfang, die Suche findet sie', (tester) async {
       final l = l10n('de');
       final app = await makeServices();

@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'dates.dart';
 
@@ -95,9 +96,20 @@ class Fmt {
   /// „Am selben Tag“ / „2 Tage vorher“ / „1 Woche vorher“ (für Kategorien).
   String offsetLabel(int o) => o == 0 ? l.offsetSameDay : (o == 7 ? l.offsetWeekBefore : l.offsetDaysBefore(o));
 
-  String categoryInfo(int offset, int open) => offset == 0
-      ? l.catDoSameDay(open)
-      : offset == 7
-      ? l.catDoWeekBefore(open)
-      : l.catDoDaysBefore(offset, open);
+  String categoryInfo(int offset, int open, [ListFrom from = ListFrom.always]) {
+    final s = offset == 0
+        ? l.catDoSameDay(open)
+        : offset == 7
+        ? l.catDoWeekBefore(open)
+        : l.catDoDaysBefore(offset, open);
+    return from == ListFrom.always ? s : '$s · ${listFromLabel(from)}';
+  }
+
+  String listFromLabel(ListFrom f) => switch (f) {
+    ListFrom.always => l.listFromAlways,
+    ListFrom.week => l.listFromWeek,
+    ListFrom.tomorrow => l.listFromTomorrow,
+    ListFrom.today => l.listFromToday,
+    ListFrom.never => l.listFromNever,
+  };
 }

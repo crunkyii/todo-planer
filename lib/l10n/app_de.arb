@@ -389,6 +389,20 @@
   "catTest": "Test",
   "catAppointment": "Termin",
   "doWhen": "Erledigen",
+  "showInTasks": "In Aufgaben zeigen",
+  "listFromAlways": "Immer",
+  "listFromWeek": "Ab „Diese Woche“",
+  "listFromTomorrow": "Ab „Morgen“",
+  "listFromToday": "Ab „Heute“",
+  "listFromNever": "Nie",
+  "hiddenByCategory": "{count, plural, =1{1 Aufgabe ausgeblendet} other{{count} Aufgaben ausgeblendet}} – einstellbar bei der Kategorie",
+  "@hiddenByCategory": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offsetSameDay": "Selber Tag",
   "offsetDaysBefore": "{count, plural, =1{1 Tag vorher} other{{count} Tage vorher}}",
   "@offsetDaysBefore": {

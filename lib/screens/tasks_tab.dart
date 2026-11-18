@@ -270,12 +270,21 @@ class _TaskList extends StatelessWidget {
     int off(Task t) => store.catOf(t.categoryId).offset;
     final searching = ui.search != null && ui.search!.trim().isNotEmpty;
     final filter = ui.filterIn(store.categories);
-    final list = filterTasks(
+    final now = clock();
+    final all = filterTasks(
       store.tasks,
       filter: filter == filterHabits ? filterAll : filter,
       hideDone: ui.hideDone,
       search: ui.search,
-    )..sort((a, b) => byDo(a, b, off));
+    );
+    // „In Aufgaben zeigen“ der Kategorie gilt nur in der normalen Liste: Die Suche und der
+    // Chip einer Kategorie zeigen alles.
+    final byFrom = ui.search == null && (filter == filterAll || filter == filterHabits);
+    final list = byFrom
+        ? all.where((t) => shownInList(store.catOf(t.categoryId).listFrom, sectionOf(t, off(t), now: now))).toList()
+        : all;
+    final hidden = all.length - list.length;
+    list.sort((a, b) => byDo(a, b, off));
     final showHabits = ui.search == null && (filter == filterAll || filter == filterHabits);
     final children = <Widget>[
       if (showHabits) ...[const SizedBox(height: 8), HabitsTaskCard(ui: ui)],
@@ -320,7 +329,6 @@ class _TaskList extends StatelessWidget {
           Section.later: l.later,
           Section.done: l.done,
         };
-        final now = clock();
         for (final s in Section.values) {
           var items = list.where((t) => sectionOf(t, off(t), now: now) == s).toList();
           if (items.isEmpty) continue;
@@ -339,6 +347,18 @@ class _TaskList extends StatelessWidget {
           if (open) children.addAll(items.map(card));
         }
       }
+    }
+    if (hidden > 0 && filter != filterHabits) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          child: Text(
+            l.hiddenByCategory(hidden),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: Fs.meta, color: context.tok.sub),
+          ),
+        ),
+      );
     }
     return ListView(
       padding: EdgeInsets.only(bottom: Sizes.contentBottom + MediaQuery.paddingOf(context).bottom),

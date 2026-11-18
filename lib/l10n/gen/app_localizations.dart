@@ -1232,6 +1232,48 @@ abstract class AppLocalizations {
   /// **'Erledigen'**
   String get doWhen;
 
+  /// No description provided for @showInTasks.
+  ///
+  /// In de, this message translates to:
+  /// **'In Aufgaben zeigen'**
+  String get showInTasks;
+
+  /// No description provided for @listFromAlways.
+  ///
+  /// In de, this message translates to:
+  /// **'Immer'**
+  String get listFromAlways;
+
+  /// No description provided for @listFromWeek.
+  ///
+  /// In de, this message translates to:
+  /// **'Ab „Diese Woche“'**
+  String get listFromWeek;
+
+  /// No description provided for @listFromTomorrow.
+  ///
+  /// In de, this message translates to:
+  /// **'Ab „Morgen“'**
+  String get listFromTomorrow;
+
+  /// No description provided for @listFromToday.
+  ///
+  /// In de, this message translates to:
+  /// **'Ab „Heute“'**
+  String get listFromToday;
+
+  /// No description provided for @listFromNever.
+  ///
+  /// In de, this message translates to:
+  /// **'Nie'**
+  String get listFromNever;
+
+  /// No description provided for @hiddenByCategory.
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Aufgabe ausgeblendet} other{{count} Aufgaben ausgeblendet}} – einstellbar bei der Kategorie'**
+  String hiddenByCategory(int count);
+
   /// No description provided for @offsetSameDay.
   ///
   /// In de, this message translates to:

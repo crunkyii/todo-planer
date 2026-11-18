@@ -465,7 +465,7 @@ class CategoriesPage extends StatelessWidget {
                   for (final c in store.categories)
                     SetRow(
                       title: c.name,
-                      subtitle: f.categoryInfo(c.offset, store.openCount(c.id)),
+                      subtitle: f.categoryInfo(c.offset, store.openCount(c.id), c.listFrom),
                       leading: Dot(tok.item(c.color).c, size: 14),
                       trailing: AppIcon(Ic.right, color: tok.sub),
                       onTap: () => Sheets(context, ui).category(c),

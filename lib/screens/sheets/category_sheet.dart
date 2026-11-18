@@ -10,7 +10,8 @@ import '../../widgets/ui.dart';
 import '../ui_state.dart';
 import 'sheet_parts.dart';
 
-/// Neue Kategorie oder Kategorie bearbeiten: Name, Farbe, Vorlauf („wann erledigen“).
+/// Neue Kategorie oder Kategorie bearbeiten: Name, Farbe, Vorlauf („wann erledigen“) und
+/// ab welchem Abschnitt ihre Aufgaben in der Liste stehen.
 class CategorySheet extends StatefulWidget {
   const CategorySheet({super.key, required this.cat, required this.ui});
   final TaskCategory? cat;
@@ -24,6 +25,7 @@ class _CategorySheetState extends State<CategorySheet> {
   late final TextEditingController _name = TextEditingController(text: widget.cat?.name ?? '');
   late String _color = widget.cat?.color ?? ColorPreset.mintGreen.hex;
   late int _offset = widget.cat?.offset ?? 0;
+  late ListFrom _listFrom = widget.cat?.listFrom ?? ListFrom.always;
   String? _error;
 
   @override
@@ -51,9 +53,9 @@ class _CategorySheetState extends State<CategorySheet> {
       return;
     }
     if (c == null) {
-      app.store.addCategory(name: name, color: _color, offset: _offset);
+      app.store.addCategory(name: name, color: _color, offset: _offset, listFrom: _listFrom);
     } else {
-      app.store.updateCategory(c, name: name, color: _color, offset: _offset);
+      app.store.updateCategory(c, name: name, color: _color, offset: _offset, listFrom: _listFrom);
     }
     Navigator.pop(context);
     app.snack.show(l.saved);
@@ -103,6 +105,15 @@ class _CategorySheetState extends State<CategorySheet> {
             ],
             value: _offset,
             onChanged: (v) => setState(() => _offset = v),
+          ),
+        ),
+        LabeledField(
+          label: l.showInTasks,
+          child: Seg<ListFrom>(
+            wrap: true,
+            options: [for (final o in ListFrom.values) (o, f.listFromLabel(o))],
+            value: _listFrom,
+            onChanged: (v) => setState(() => _listFrom = v),
           ),
         ),
         if (_error != null) SheetError(_error!),
