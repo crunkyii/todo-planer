@@ -146,9 +146,12 @@ class SyncService extends ChangeNotifier {
       for (var i = 0; i < rows.length; i += 200) {
         final chunk = rows.sublist(i, i + 200 > rows.length ? rows.length : i + 200);
         await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
-        for (final r in chunk) {
-          await store.db.markClean(t, r);
-        }
+        // Ein Commit pro Paket statt einem pro Zeile.
+        await store.db.transaction(() async {
+          for (final r in chunk) {
+            await store.db.markClean(t, r);
+          }
+        });
       }
     }
     if (settings.dirty) {

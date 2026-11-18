@@ -301,10 +301,8 @@ class _TaskSheetState extends State<_TaskSheet> {
     final store = context.app.store;
     final cat = store.catOf(_cat);
     final cc = tok.item(cat.color);
-    final info = cat.offset > 0
-        ? l.infoListFrom(l.infoHandIn(f.day(_date)), f.day(addDays(_date, -cat.offset)))
-        : l.infoDue(_time == null ? f.day(_date) : l.dayWithTime(f.day(_date), f.time(_time!)));
-    final infoText = cat.offset > 0 && _time != null ? info.replaceFirst(f.day(_date), l.dayWithTime(f.day(_date), f.time(_time!))) : info;
+    final due = f.dayTime(_date, _time);
+    final infoText = cat.offset > 0 ? l.infoListFrom(l.infoHandIn(due), f.day(addDays(_date, -cat.offset))) : l.infoDue(due);
     final isEdit = widget.task != null;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [

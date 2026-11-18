@@ -285,12 +285,11 @@ class _HourPicker extends StatelessWidget {
     final tok = context.tok;
     return Builder(builder: (btnContext) {
       return Pressable(
-        semanticLabel: '$label: ${pad2(value)}:00',
+        semanticLabel: '$label: ${hmString(value * 60)}',
         excludeChildSemantics: true,
         onTap: () {
-          final box = btnContext.findRenderObject() as RenderBox?;
-          if (box == null) return;
-          final rect = box.localToGlobal(Offset.zero) & box.size;
+          final rect = anchorRect(btnContext);
+          if (rect == null) return;
           Navigator.of(context).push(AppMenuRoute(
             anchor: rect,
             label: label,
@@ -298,7 +297,7 @@ class _HourPicker extends StatelessWidget {
               for (var h = from; h <= to; h++)
                 MenuItemRow(
                   entry: MenuEntry(
-                    label: '${pad2(h)}:00',
+                    label: hmString(h * 60),
                     radio: true,
                     checked: h == value,
                     onTap: () {
@@ -315,7 +314,7 @@ class _HourPicker extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 0, 8, 0),
           decoration: BoxDecoration(color: tok.bg, border: Border.all(color: tok.line), borderRadius: BorderRadius.circular(Sizes.rInput)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Text('${pad2(value)}:00', style: TextStyle(fontSize: 14, color: tok.text, fontFeatures: const [FontFeature.tabularFigures()])),
+            Text(hmString(value * 60), style: TextStyle(fontSize: 14, color: tok.text, fontFeatures: const [FontFeature.tabularFigures()])),
             const SizedBox(width: 4),
             AppIcon(Ic.down, size: 18, color: tok.sub),
           ]),

@@ -13,15 +13,17 @@ import 'services/reminders.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting();
-
-  final prefs = await SharedPreferences.getInstance();
-  final settings = SettingsStore(prefs);
   final store = Store(LocalDb());
-  await store.load();
-  final cloud = Cloud();
   final reminders = Reminders();
-  await reminders.init(appName: 'Todo-Liste');
+  // Unabhängige Vorbereitungen gleichzeitig.
+  final (_, prefs, _, _) = await (
+    initializeDateFormatting(),
+    SharedPreferences.getInstance(),
+    store.load(),
+    reminders.init(appName: 'Todo-Liste'),
+  ).wait;
+  final settings = SettingsStore(prefs);
+  final cloud = Cloud();
 
   final services = AppServices(
     settings: settings,

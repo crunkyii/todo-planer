@@ -15,7 +15,8 @@ class UiState extends ChangeNotifier {
 
   /// `alle`, eine Kategorie-ID oder `habits`.
   String filter = 'alle';
-  final Set<String> collapsed = {'erledigt'};
+  /// Eingeklappte Abschnitte: `Section.name`, `k-<Kategorie>` oder `habits`.
+  final Set<String> collapsed = {'done'};
   SortMode sort = SortMode.date;
   bool hideDone = false;
 

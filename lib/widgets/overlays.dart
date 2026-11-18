@@ -104,6 +104,12 @@ class AppSheetRoute<T> extends PopupRoute<T> {
 Future<T?> showAppSheet<T>(BuildContext context, {required String label, required WidgetBuilder builder}) =>
     Navigator.of(context).push(AppSheetRoute<T>(builder: builder, label: label, scrim: context.tok.scrim));
 
+/// Bildschirm-Rechteck eines Knopfs – dort klappt das Menü auf.
+Rect? anchorRect(BuildContext context) {
+  final box = context.findRenderObject() as RenderBox?;
+  return box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+}
+
 /// Eintrag im ⋮-Menü.
 class MenuEntry {
   const MenuEntry({required this.label, this.icon, required this.onTap, this.checked = false, this.radio = false});

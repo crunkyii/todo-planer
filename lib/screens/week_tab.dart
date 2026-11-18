@@ -223,7 +223,7 @@ class _Grid extends StatelessWidget {
                   Positioned(
                     top: (h - start) * Sizes.hour - 7,
                     right: 6,
-                    child: Text('${pad2(h)}:00',
+                    child: Text(hmString(h * 60),
                         style: TextStyle(fontSize: Fs.tiny, height: 1.3, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()])),
                   ),
               ]),

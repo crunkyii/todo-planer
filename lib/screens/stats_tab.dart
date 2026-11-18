@@ -66,8 +66,8 @@ class StatsTab extends StatelessWidget {
               children: [
                 _Tiles(total: total, streak: st, range: range),
                 _Heatmap(ui: ui, entries: entries),
-                _Chart(days: days, perDay: perDay, totals: totals, total: total, range: range),
-                _ByCategory(entries: entries, days: days.toSet()),
+                _Chart(days: days, perDay: perDay, totals: totals),
+                _ByCategory(perDay: perDay),
                 _Habits(ui: ui),
               ],
             ),
@@ -253,12 +253,10 @@ class _Heatmap extends StatelessWidget {
 }
 
 class _Chart extends StatelessWidget {
-  const _Chart({required this.days, required this.perDay, required this.totals, required this.total, required this.range});
+  const _Chart({required this.days, required this.perDay, required this.totals});
   final List<String> days;
   final List<Map<String, int>> perDay;
   final List<int> totals;
-  final int total;
-  final int range;
 
   @override
   Widget build(BuildContext context) {
@@ -268,6 +266,8 @@ class _Chart extends StatelessWidget {
     final store = context.app.store;
     final cats = store.categories;
     final max = chartMax(totals);
+    final range = days.length;
+    final total = totals.fold<int>(0, (a, b) => a + b);
     final reduced = Motion.reduced(context);
     const h = 130.0;
     final axis = TextStyle(fontSize: Fs.tiny, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()]);
@@ -367,16 +367,15 @@ class _Chart extends StatelessWidget {
 }
 
 class _ByCategory extends StatelessWidget {
-  const _ByCategory({required this.entries, required this.days});
-  final List<({String day, String cat})> entries;
-  final Set<String> days;
+  const _ByCategory({required this.perDay});
+  final List<Map<String, int>> perDay;
 
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
     final l = context.l;
     final cats = context.app.store.categories;
-    final by = [for (final c in cats) (c: c, n: entries.where((e) => e.cat == c.id && days.contains(e.day)).length)];
+    final by = [for (final c in cats) (c: c, n: perDay.fold<int>(0, (s, by) => s + (by[c.id] ?? 0)))];
     final max = math.max(1, by.fold<int>(0, (m, x) => math.max(m, x.n)));
     final reduced = Motion.reduced(context);
     return AppCard(

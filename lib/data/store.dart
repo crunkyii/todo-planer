@@ -390,7 +390,7 @@ class Store extends ChangeNotifier {
   }
 
   void _setLog(String habitId, String day, bool done) {
-    final l = _logs['$habitId|$day'] ?? HabitLog(habitId: habitId, day: day, done: done, updatedAt: nowUtc());
+    final l = _logs['$habitId|$day'] ?? HabitLog(habitId: habitId, day: day, done: false, updatedAt: nowUtc());
     _put(habitLogsTable, l..done = done);
   }
 

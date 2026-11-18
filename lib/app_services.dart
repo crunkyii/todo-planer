@@ -36,6 +36,7 @@ class AppServices extends ChangeNotifier {
   StreamSubscription<AuthState>? _authSub;
   String? _userId;
   Timer? _reminderTimer;
+  String? _reminderSig;
   AppLocalizations? _l;
 
   User? get user => cloud.user;
@@ -86,8 +87,12 @@ class AppServices extends ChangeNotifier {
       await settings.resetCursors();
       await settings.setOwner(owner);
     }
-    await sync.attach();
-    _ensureDefaults();
+    // Nicht darauf warten, damit der Start bei langsamem Netz nicht hängt. Standard-
+    // Kategorien erst nach dem ersten Abgleich – sonst entstehen sie auf jedem Gerät doppelt.
+    unawaited(sync.attach().then(
+      (_) => _ensureDefaults(),
+      onError: (Object e) => debugPrint('Abgleich nach dem Anmelden fehlgeschlagen: ${e.runtimeType}'),
+    ));
   }
 
   /// Die App braucht mindestens eine Kategorie. Beim allerersten Start werden die
@@ -162,10 +167,13 @@ class AppServices extends ChangeNotifier {
       final l = _l;
       if (l == null) return;
       final f = Fmt(l, l.localeName);
-      reminders.reschedule(
-        upcomingReminders(store.tasks, (t) => l.dayWithTime(store.catOf(t.categoryId).name, f.time(t.dueTime!))),
-        enabled: settings.remind,
-      );
+      final items = upcomingReminders(store.tasks, (t) => l.dayWithTime(store.catOf(t.categoryId).name, f.time(t.dueTime!)));
+      // Nur neu planen, wenn sich an den Erinnerungen wirklich etwas geändert hat
+      // (der Store meldet auch Gewohnheiten, Sync-Status usw.).
+      final sig = '${settings.remind}|${items.map((r) => '${r.id}@${r.at.millisecondsSinceEpoch}:${r.title}:${r.body}').join(',')}';
+      if (sig == _reminderSig) return;
+      _reminderSig = sig;
+      reminders.reschedule(items, enabled: settings.remind);
     });
   }
 

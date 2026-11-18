@@ -31,6 +31,9 @@ int byDo(Task a, Task b, int Function(Task) offsetOf) {
   return c != 0 ? c : a.due.compareTo(b.due);
 }
 
+/// Offene vor erledigten; `null` = beide gleich (dann weiter sortieren).
+int? doneLast(Task a, Task b) => a.done == b.done ? null : (a.done ? 1 : -1);
+
 /// Filter aus dem Prototyp: Kategorie, „Erledigte ausblenden“ und Suchtext (auch in Unteraufgaben).
 List<Task> filterTasks(Iterable<Task> tasks, {required String filter, required bool hideDone, String? search}) {
   final q = (search ?? '').trim().toLowerCase();

@@ -30,11 +30,14 @@ class CalendarTab extends StatelessWidget {
         final tasks = store.tasks;
         final selTasks = tasks.where((t) => sameDay(t.dueDate, sel)).toList()..sort((a, b) => a.due.compareTo(b.due));
 
+        // Ein Durchlauf: offene Kategorien je Tag (statt pro Zelle alle Aufgaben zu durchsuchen).
+        final catsByDay = <String, Set<String>>{};
+        for (final t in tasks) {
+          if (!t.done) (catsByDay[isoDate(t.dueDate)] ??= <String>{}).add(t.categoryId);
+        }
+
         Widget dots(DateTime d, bool selected) {
-          final cats = <String>[];
-          for (final t in tasks) {
-            if (!t.done && sameDay(t.dueDate, d) && !cats.contains(t.categoryId)) cats.add(t.categoryId);
-          }
+          final cats = (catsByDay[isoDate(d)] ?? const <String>{}).toList();
           return SizedBox(
             height: 9,
             child: cats.length > 4

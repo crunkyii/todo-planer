@@ -74,7 +74,6 @@ class AppChip extends StatelessWidget {
     this.height = Sizes.chipH,
     this.padding = 16,
     this.fontSize = 14,
-    this.translatable = true,
   });
 
   final String label;
@@ -84,9 +83,6 @@ class AppChip extends StatelessWidget {
   final double height;
   final double padding;
   final double fontSize;
-
-  /// `false` = eigener Eintrag des Nutzers (wird nie übersetzt; nur zur Doku).
-  final bool translatable;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +135,7 @@ class Seg<T> extends StatelessWidget {
         child: AnimatedContainer(
           duration: Motion.fast,
           height: h,
-          padding: EdgeInsets.symmetric(horizontal: mini ? 12 : 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: on ? tok.pc : Colors.transparent,
@@ -376,6 +372,7 @@ class AppInput extends StatelessWidget {
     this.autofocus = false,
     this.focusNode,
     this.onSubmitted,
+    this.onChanged,
     this.textInputAction,
     this.height = 46,
     this.fontSize = Fs.input,
@@ -393,6 +390,7 @@ class AppInput extends StatelessWidget {
   final bool autofocus;
   final FocusNode? focusNode;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
   final TextInputAction? textInputAction;
   final double height;
   final double fontSize;
@@ -416,6 +414,7 @@ class AppInput extends StatelessWidget {
         keyboardType: keyboardType,
         autofillHints: autofillHints,
         onSubmitted: onSubmitted,
+        onChanged: onChanged,
         textInputAction: textInputAction,
         maxLength: maxLength,
         maxLengthEnforcement: MaxLengthEnforcement.enforced,
@@ -424,7 +423,6 @@ class AppInput extends StatelessWidget {
         decoration: InputDecoration(
           counterText: '',
           hintText: hint,
-          labelText: null,
           semanticCounterText: '',
           hintStyle: TextStyle(color: tok.sub.withValues(alpha: 0.75), fontSize: fontSize),
           filled: true,
@@ -533,13 +531,12 @@ class ErrorBox extends StatelessWidget {
 
 /// Einstellungs-Zeile (.set-row): Titel (+ Untertitel) links, Bedienelement rechts.
 class SetRow extends StatelessWidget {
-  const SetRow({super.key, required this.title, this.subtitle, this.trailing, this.onTap, this.leading, this.titleWidget});
+  const SetRow({super.key, required this.title, this.subtitle, this.trailing, this.onTap, this.leading});
   final String title;
   final String? subtitle;
   final Widget? trailing;
   final Widget? leading;
   final VoidCallback? onTap;
-  final Widget? titleWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -558,8 +555,7 @@ class SetRow extends StatelessWidget {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               if (leading != null) ...[leading!, const SizedBox(width: 16)],
               Flexible(
-                child: titleWidget ??
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                       Text(title, style: TextStyle(fontSize: 16, color: tok.text)),
                       if (subtitle != null)
                         Padding(

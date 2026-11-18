@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
 import '../data/sync_service.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlays.dart';
@@ -63,17 +64,16 @@ class _AppShellState extends State<AppShell> {
     super.dispose();
   }
 
-  void _fab() {
+  /// Was der +-Knopf im aktuellen Tab macht (Beschriftung und Aktion an einer Stelle).
+  ({String label, VoidCallback onTap})? _fab(AppLocalizations l) {
     final sheets = Sheets(context, ui);
-    if (ui.tab == AppTab.settings && ui.cats) {
-      sheets.category(null);
-    } else if (ui.tab == AppTab.week) {
-      sheets.newBlock();
-    } else if (ui.tab == AppTab.stats || (ui.tab == AppTab.tasks && ui.filter == 'habits')) {
-      sheets.habit(null);
-    } else {
-      sheets.task(null, preset: ui.tab == AppTab.calendar ? ui.calSel : null);
-    }
+    return switch (ui.tab) {
+      AppTab.settings => ui.cats ? (label: l.newCategory, onTap: () => sheets.category(null)) : null,
+      AppTab.week => (label: l.newBlock, onTap: () => sheets.newBlock()),
+      AppTab.stats => (label: l.newHabit, onTap: () => sheets.habit(null)),
+      AppTab.tasks when ui.filter == 'habits' => (label: l.newHabit, onTap: () => sheets.habit(null)),
+      _ => (label: l.newTask, onTap: () => sheets.task(null, preset: ui.tab == AppTab.calendar ? ui.calSel : null)),
+    };
   }
 
   @override
@@ -92,13 +92,7 @@ class _AppShellState extends State<AppShell> {
             child: ListenableBuilder(
               listenable: ui,
               builder: (context, _) {
-                final fabLabel = ui.tab == AppTab.settings
-                    ? (ui.cats ? l.newCategory : null)
-                    : ui.tab == AppTab.week
-                        ? l.newBlock
-                        : (ui.tab == AppTab.stats || (ui.tab == AppTab.tasks && ui.filter == 'habits'))
-                            ? l.newHabit
-                            : l.newTask;
+                final fab = _fab(l);
                 return Stack(children: [
                   Positioned.fill(
                     child: Padding(
@@ -106,11 +100,11 @@ class _AppShellState extends State<AppShell> {
                       child: _PageSwitcher(ui: ui, child: _tab()),
                     ),
                   ),
-                  if (fabLabel != null)
+                  if (fab != null)
                     Positioned(
                       right: Sizes.fabRight,
                       bottom: (low ? 78 : Sizes.fabBottom) + mq.padding.bottom,
-                      child: _Fab(label: fabLabel, onTap: _fab, size: low ? 54 : Sizes.fab),
+                      child: _Fab(label: fab.label, onTap: fab.onTap, size: low ? 54 : Sizes.fab),
                     ),
                   Positioned(
                     left: Sizes.navGap,

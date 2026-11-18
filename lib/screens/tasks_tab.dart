@@ -37,7 +37,6 @@ class _ChipBar extends StatelessWidget {
     final store = context.app.store;
     final tok = context.tok;
     final l = context.l;
-    final moreKey = GlobalKey();
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 10, 4, 6),
       child: Row(children: [
@@ -64,20 +63,14 @@ class _ChipBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 4),
-        IconBtn(Ic.more, key: moreKey, label: l.moreOptions, onTap: () => _openMenu(context, moreKey)),
+        Builder(
+          builder: (btnContext) => IconBtn(Ic.more, label: l.moreOptions, onTap: () {
+            final rect = anchorRect(btnContext);
+            if (rect != null) _openMenuAt(context, rect);
+          }),
+        ),
       ]),
     );
-  }
-
-  void _openMenu(BuildContext context, GlobalKey key) {
-    final box = key.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null) return;
-    final rect = box.localToGlobal(Offset.zero) & box.size;
-    Navigator.of(context).push(AppMenuRoute(
-      anchor: rect,
-      label: context.l.moreOptions,
-      builder: (menuContext) => _mainMenu(context, menuContext, rect),
-    ));
   }
 
   List<Widget> _mainMenu(BuildContext context, BuildContext menuContext, Rect rect) {
@@ -196,48 +189,21 @@ class _SearchBarState extends State<_SearchBar> {
         IconBtn(Ic.back, label: l.closeSearch, onTap: () => widget.ui.set((s) => s.search = null)),
         const SizedBox(width: 4),
         Expanded(
-          child: _SearchField(ctrl: _ctrl, hint: l.search, label: l.searchTasks, onChanged: (v) => widget.ui.set((s) => s.search = v)),
-        ),
-      ]),
-    );
-  }
-}
-
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.ctrl, required this.hint, required this.label, required this.onChanged});
-  final TextEditingController ctrl;
-  final String hint;
-  final String label;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final tok = context.tok;
-    final r = BorderRadius.circular(20);
-    return SizedBox(
-      height: 40,
-      child: Semantics(
-        label: label,
-        textField: true,
-        child: TextField(
-          controller: ctrl,
-          autofocus: true,
-          onChanged: onChanged,
-          textInputAction: TextInputAction.search,
-          style: TextStyle(fontSize: 15, color: tok.text),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(fontSize: 15, color: tok.sub.withValues(alpha: 0.75)),
-            filled: true,
-            fillColor: tok.surf2,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-            border: OutlineInputBorder(borderRadius: r, borderSide: BorderSide.none),
-            enabledBorder: OutlineInputBorder(borderRadius: r, borderSide: BorderSide.none),
-            focusedBorder: OutlineInputBorder(borderRadius: r, borderSide: BorderSide(color: tok.p, width: 2)),
+          child: Semantics(
+            label: l.searchTasks,
+            child: AppInput(
+              controller: _ctrl,
+              hint: l.search,
+              filled: true,
+              height: 40,
+              fontSize: 15,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              onChanged: (v) => widget.ui.set((s) => s.search = v),
+            ),
           ),
         ),
-      ),
+      ]),
     );
   }
 }
@@ -265,7 +231,7 @@ class _TaskList extends StatelessWidget {
         children.add(EmptyState(icon: searching ? Ic.search : Ic.tasks, text: searching ? l.nothingFound : l.noTasks));
       } else if (ui.search != null || ui.sort == SortMode.name) {
         if (ui.sort == SortMode.name) {
-          list.sort((a, b) => a.done != b.done ? (a.done ? 1 : -1) : a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+          list.sort((a, b) => doneLast(a, b) ?? a.title.toLowerCase().compareTo(b.title.toLowerCase()));
         }
         children
           ..add(const SizedBox(height: 8))
@@ -274,7 +240,7 @@ class _TaskList extends StatelessWidget {
         final tok = context.tok;
         for (final c in store.categories) {
           final items = list.where((t) => t.categoryId == c.id).toList()
-            ..sort((a, b) => a.done != b.done ? (a.done ? 1 : -1) : byDo(a, b, off));
+            ..sort((a, b) => doneLast(a, b) ?? byDo(a, b, off));
           if (items.isEmpty) continue;
           final id = 'k-${c.id}';
           final open = !ui.collapsed.contains(id);
@@ -290,20 +256,12 @@ class _TaskList extends StatelessWidget {
           Section.later: l.later,
           Section.done: l.done,
         };
-        const ids = {
-          Section.overdue: 'ueberfaellig',
-          Section.today: 'heute',
-          Section.tomorrow: 'morgen',
-          Section.week: 'woche',
-          Section.later: 'spaeter',
-          Section.done: 'erledigt',
-        };
         final now = DateTime.now();
         for (final s in Section.values) {
           var items = list.where((t) => sectionOf(t, off(t), now: now) == s).toList();
           if (items.isEmpty) continue;
           if (s == Section.done) items = items.reversed.toList();
-          final id = ids[s]!;
+          final id = s.name;
           final open = !ui.collapsed.contains(id);
           children.add(SectionHead(label: labels[s]!, count: items.length, open: open, overdue: s == Section.overdue, onTap: () => ui.toggleCollapsed(id)));
           if (open) children.addAll(items.map(card));
