@@ -8,6 +8,7 @@
   "add": "Add",
   "added": "Added",
   "saved": "Saved",
+  "itemGone": "This item was deleted in the meantime.",
   "back": "Back",
   "all": "All",
   "name": "Name",

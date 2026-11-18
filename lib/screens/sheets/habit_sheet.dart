@@ -35,7 +35,10 @@ class _HabitSheetState extends State<HabitSheet> {
       setState(() => _error = l.errName);
       return;
     }
-    final h = widget.habit;
+    // Der Stand von jetzt, nicht der vom Öffnen (siehe TaskSheet).
+    final opened = widget.habit;
+    final h = opened == null ? null : app.store.habitById(opened.id);
+    if (opened != null && h == null) return closeSheetItemGone(context);
     if (h == null) {
       app.store.addHabit(name: name, color: _color);
     } else {
@@ -48,7 +51,8 @@ class _HabitSheetState extends State<HabitSheet> {
   void _delete() {
     final app = context.app;
     final l = context.l;
-    final h = widget.habit!;
+    final h = app.store.habitById(widget.habit!.id);
+    if (h == null) return closeSheetItemGone(context);
     Navigator.pop(context);
     final undo = app.store.deleteHabit(h);
     app.snack.show(l.deletedItem(h.name), undo: undo);

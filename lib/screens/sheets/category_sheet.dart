@@ -4,6 +4,7 @@ import '../../app_services.dart';
 import '../../data/models.dart';
 import '../../theme/tokens.dart';
 import '../../util/fmt.dart';
+import '../../util/task_logic.dart';
 import '../../widgets/pickers.dart';
 import '../../widgets/ui.dart';
 import '../ui_state.dart';
@@ -35,7 +36,10 @@ class _CategorySheetState extends State<CategorySheet> {
     final l = context.l;
     final app = context.app;
     final name = _name.text.trim();
-    final c = widget.cat;
+    // Der Stand von jetzt, nicht der vom Öffnen (siehe TaskSheet).
+    final opened = widget.cat;
+    final c = opened == null ? null : app.store.categoryById(opened.id);
+    if (opened != null && c == null) return closeSheetItemGone(context);
     String? err;
     if (name.isEmpty) {
       err = l.errName;
@@ -58,11 +62,12 @@ class _CategorySheetState extends State<CategorySheet> {
   void _delete() {
     final app = context.app;
     final l = context.l;
-    final c = widget.cat!;
+    final c = app.store.categoryById(widget.cat!.id);
+    if (c == null) return closeSheetItemGone(context);
     Navigator.pop(context);
     final r = app.store.deleteCategory(c);
     if (r == null) return;
-    if (widget.ui.filter == c.id) widget.ui.set((s) => s.filter = 'alle');
+    if (widget.ui.filter == c.id) widget.ui.set((s) => s.filter = filterAll);
     app.snack.show(r.moved > 0 ? l.deletedCatMoved(c.name, r.target.name) : l.deletedItem(c.name), undo: r.undo);
   }
 

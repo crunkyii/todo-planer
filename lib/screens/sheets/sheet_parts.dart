@@ -21,6 +21,15 @@ void showSavedToast(BuildContext context, {required bool isNew}) {
   }
 }
 
+/// Der Eintrag wurde gelöscht, während sein Sheet offen war (am anderen Gerät oder im
+/// Widget): Sheet schließen und das sagen, statt den alten Stand wieder anzulegen.
+void closeSheetItemGone(BuildContext context) {
+  final app = context.app;
+  final l = context.l;
+  Navigator.pop(context);
+  app.snack.show(l.itemGone);
+}
+
 /// Überschrift eines Sheets.
 class SheetTitle extends StatelessWidget {
   const SheetTitle(this.text, {super.key});

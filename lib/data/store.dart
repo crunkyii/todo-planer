@@ -55,16 +55,24 @@ class Store extends ChangeNotifier {
   List<WeekBlock> get blocks => _blocks.values.where((b) => !b.deleted).toList();
 
   /// Die Kategorie einer Aufgabe. Gibt es sie nicht mehr (gelöscht, noch nicht abgeglichen),
-  /// springt die erste vorhandene ein – und ganz ohne Kategorien ein namenloser Platzhalter,
-  /// damit die Oberfläche nie ohne Farbe und Vorlauf dasteht.
+  /// springt eine gleichnamige ein (nach [mergeDuplicateCategories] ist das ihre Nachfolgerin),
+  /// sonst die erste vorhandene – und ganz ohne Kategorien ein namenloser Platzhalter, damit
+  /// die Oberfläche nie ohne Farbe und Vorlauf dasteht.
   TaskCategory catOf(String id) {
     final c = _cats[id];
     if (c != null && !c.deleted) return c;
     final list = categories;
-    return list.isNotEmpty
-        ? list.first
-        : (c ?? TaskCategory(id: id, name: '', color: _placeholderColor, offset: 0, position: 0, updatedAt: nowUtc()));
+    if (list.isEmpty) {
+      return c ?? TaskCategory(id: id, name: '', color: _placeholderColor, offset: 0, position: 0, updatedAt: nowUtc());
+    }
+    if (c == null) return list.first;
+    final name = _nameKey(c.name);
+    return list.firstWhere((k) => _nameKey(k.name) == name, orElse: () => list.first);
   }
+
+  /// Zwei Kategorien gelten als dieselbe, wenn ihre Namen bis auf Groß-/Kleinschreibung und
+  /// Leerzeichen am Rand gleich sind.
+  static String _nameKey(String name) => name.trim().toLowerCase();
 
   /// Farbe des Platzhalters in [catOf] (das Himmelblau der ersten Standard-Kategorie).
   static const _placeholderColor = '#3D9BE9';
@@ -506,7 +514,7 @@ class Store extends ChangeNotifier {
   void mergeDuplicateCategories() {
     final byName = <String, List<TaskCategory>>{};
     for (final c in categories) {
-      (byName[c.name.trim().toLowerCase()] ??= []).add(c);
+      (byName[_nameKey(c.name)] ??= []).add(c);
     }
     var changed = false;
     for (final group in byName.values.where((g) => g.length > 1)) {

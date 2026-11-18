@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../app_services.dart';
@@ -49,10 +51,14 @@ class _BlockSheetState extends State<BlockSheet> {
 
   int get _raster => context.app.settings.raster;
 
+  /// Spätestes „Bis“: der letzte Raster-Schritt vor Mitternacht (24:00 kann das Rad nicht zeigen).
+  int get _lastEnd => 24 * 60 - _raster;
+
   void _setStart(int v) => setState(() {
-    _start = v;
-    // „Bis“ rutscht mit, wenn „Von“ darüber hinaus geschoben wird
-    if (_end <= _start) _end = (_start + 60).clamp(0, 24 * 60 - _raster);
+    // „Von“ lässt immer mindestens einen Raster-Schritt Platz bis zum spätesten „Bis“ …
+    _start = math.min(v, _lastEnd - _raster);
+    // … und „Bis“ rutscht mit, wenn „Von“ darüber hinaus geschoben wird.
+    if (_end <= _start) _end = math.min(_start + 60, _lastEnd);
   });
 
   void _save() {
@@ -76,7 +82,10 @@ class _BlockSheetState extends State<BlockSheet> {
       setState(() => _error = err);
       return;
     }
-    final b = widget.block;
+    // Der Stand von jetzt, nicht der vom Öffnen (siehe TaskSheet).
+    final opened = widget.block;
+    final b = opened == null ? null : app.store.blockById(opened.id);
+    if (opened != null && b == null) return closeSheetItemGone(context);
     final days = _days.toList()..sort();
     if (b != null) {
       app.store.updateBlock(
@@ -109,8 +118,10 @@ class _BlockSheetState extends State<BlockSheet> {
   void _delete() {
     final app = context.app;
     final l = context.l;
+    final b = app.store.blockById(widget.block!.id);
+    if (b == null) return closeSheetItemGone(context);
     Navigator.pop(context);
-    final undo = app.store.deleteBlock(widget.block!);
+    final undo = app.store.deleteBlock(b);
     app.snack.show(l.blockDeleted, undo: undo);
   }
 
@@ -222,7 +233,7 @@ class _BlockSheetState extends State<BlockSheet> {
                     ],
                     // Die Chips sind Dauern ab „Von“, keine Uhrzeiten.
                     isSelected: (q) => _end - _start == q.minutes,
-                    onQuick: (q) => setState(() => _end = (_start + q.minutes!).clamp(0, 24 * 60 - _raster)),
+                    onQuick: (q) => setState(() => _end = math.min(_start + q.minutes!, _lastEnd)),
                     onChanged: (v) => setState(() => _end = v),
                   ),
                 ),

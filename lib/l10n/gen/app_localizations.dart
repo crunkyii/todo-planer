@@ -140,6 +140,12 @@ abstract class AppLocalizations {
   /// **'Gespeichert'**
   String get saved;
 
+  /// No description provided for @itemGone.
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Eintrag wurde inzwischen gelöscht.'**
+  String get itemGone;
+
   /// No description provided for @back.
   ///
   /// In de, this message translates to:

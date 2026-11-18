@@ -143,6 +143,18 @@ void main() {
     expect(store.blocksFor(0, addDays(ws, 7)).map((b) => b.name), ['Schule']);
   });
 
+  test('catOf: Nach dem Zusammenlegen springt die gleichnamige Kategorie ein', () {
+    store.addCategory(name: ' aufgabe', color: '#F07A5F', offset: 0);
+    final twins = store.categories.where((c) => c.name.trim().toLowerCase() == 'aufgabe').toList();
+    expect(twins, hasLength(2));
+    store.mergeDuplicateCategories();
+    final kept = store.categories.singleWhere((c) => c.name.trim().toLowerCase() == 'aufgabe');
+    final gone = twins.firstWhere((c) => c.id != kept.id);
+    expect(kept.id, isNot(store.categories.first.id));
+    expect(store.catOf(gone.id).id, kept.id);
+    expect(store.catOf('gibt-es-nicht').id, store.categories.first.id);
+  });
+
   test('Server-Änderung: neuerer Stand gewinnt', () async {
     final t = add('lokal');
     await store.refreshPending();

@@ -6,6 +6,7 @@ import '../app_services.dart';
 import '../data/sync_service.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
+import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlays.dart';
 import '../widgets/pressable.dart';
@@ -41,7 +42,9 @@ class _AppShellState extends State<AppShell> {
     // „+“ im Startbildschirm-Widget: Sheet für eine neue Aufgabe öffnen.
     _widgets.listen(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Sheets(context, ui).task(null);
+        // Nur wenn gerade nichts offen ist: Wer mehrmals auf „+“ tippt (oder schon ein Sheet
+        // offen hat), bekommt kein zweites Formular über dem ersten.
+        if (mounted && (ModalRoute.of(context)?.isCurrent ?? true)) Sheets(context, ui).task(null);
       });
       WidgetsBinding.instance.scheduleFrame();
     }, store: app.store);
@@ -84,7 +87,7 @@ class _AppShellState extends State<AppShell> {
       AppTab.settings => ui.cats ? (label: l.newCategory, onTap: () => sheets.category(null)) : null,
       AppTab.week => (label: l.newBlock, onTap: () => sheets.newBlock()),
       AppTab.stats => (label: l.newHabit, onTap: () => sheets.habit(null)),
-      AppTab.tasks when ui.filter == 'habits' => (label: l.newHabit, onTap: () => sheets.habit(null)),
+      AppTab.tasks when ui.filter == filterHabits => (label: l.newHabit, onTap: () => sheets.habit(null)),
       _ => (label: l.newTask, onTap: () => sheets.task(null, preset: ui.tab == AppTab.calendar ? ui.calSel : null)),
     };
   }

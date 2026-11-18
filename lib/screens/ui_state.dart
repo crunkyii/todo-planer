@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../data/models.dart';
 import '../util/dates.dart';
+import '../util/task_logic.dart';
 
 enum AppTab { tasks, calendar, week, stats, settings }
 
@@ -13,8 +15,14 @@ class UiState extends ChangeNotifier {
   /// Unterseite „Kategorien“ in den Optionen.
   bool cats = false;
 
-  /// `alle`, eine Kategorie-ID oder `habits`.
-  String filter = 'alle';
+  /// [filterAll], eine Kategorie-ID oder [filterHabits]. Zum Lesen [filterIn] nehmen.
+  String filter = filterAll;
+
+  /// Der Filter, der gerade gilt: Zeigt er auf eine Kategorie, die es nicht mehr gibt
+  /// (z. B. am anderen Gerät gelöscht), gilt „Alle“ – sonst bliebe die Liste leer und kein
+  /// Chip wäre markiert.
+  String filterIn(Iterable<TaskCategory> categories) =>
+      filter == filterAll || filter == filterHabits || categories.any((c) => c.id == filter) ? filter : filterAll;
 
   /// Eingeklappte Abschnitte: `Section.name`, `k-<Kategorie>` oder `habits`.
   final Set<String> collapsed = {'done'};

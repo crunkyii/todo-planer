@@ -38,7 +38,8 @@ class _ChipBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const fadeLeft = 16.0, fadeRight = 32.0;
-    final store = context.app.store;
+    final categories = context.app.store.categories;
+    final filter = ui.filterIn(categories);
     final tok = context.tok;
     final l = context.l;
     return Padding(
@@ -66,14 +67,14 @@ class _ChipBar extends StatelessWidget {
                     children: [
                       AppChip(
                         label: l.all,
-                        selected: ui.filter == 'alle',
-                        onTap: () => ui.set((s) => s.filter = 'alle'),
+                        selected: filter == filterAll,
+                        onTap: () => ui.set((s) => s.filter = filterAll),
                       ),
-                      for (final c in store.categories) ...[
+                      for (final c in categories) ...[
                         const SizedBox(width: 8),
                         AppChip(
                           label: c.name,
-                          selected: ui.filter == c.id,
+                          selected: filter == c.id,
                           colors: tok.item(c.color),
                           onTap: () => ui.set((s) => s.filter = c.id),
                         ),
@@ -81,9 +82,9 @@ class _ChipBar extends StatelessWidget {
                       const SizedBox(width: 8),
                       AppChip(
                         label: l.habits,
-                        selected: ui.filter == 'habits',
+                        selected: filter == filterHabits,
                         colors: tok.item(habitColorHex),
-                        onTap: () => ui.set((s) => s.filter = 'habits'),
+                        onTap: () => ui.set((s) => s.filter = filterHabits),
                       ),
                     ],
                   ),
@@ -268,19 +269,20 @@ class _TaskList extends StatelessWidget {
     final l = context.l;
     int off(Task t) => store.catOf(t.categoryId).offset;
     final searching = ui.search != null && ui.search!.trim().isNotEmpty;
+    final filter = ui.filterIn(store.categories);
     final list = filterTasks(
       store.tasks,
-      filter: ui.filter == 'habits' ? 'alle' : ui.filter,
+      filter: filter == filterHabits ? filterAll : filter,
       hideDone: ui.hideDone,
       search: ui.search,
     )..sort((a, b) => byDo(a, b, off));
-    final showHabits = ui.search == null && (ui.filter == 'alle' || ui.filter == 'habits');
+    final showHabits = ui.search == null && (filter == filterAll || filter == filterHabits);
     final children = <Widget>[
       if (showHabits) ...[const SizedBox(height: 8), HabitsTaskCard(ui: ui)],
     ];
     TaskCard card(Task t) => TaskCard(key: ValueKey(t.id), task: t, ui: ui);
 
-    if (ui.filter != 'habits') {
+    if (filter != filterHabits) {
       if (list.isEmpty) {
         children.add(EmptyState(icon: searching ? Ic.search : Ic.tasks, text: searching ? l.nothingFound : l.noTasks));
       } else if (ui.search != null || ui.sort == SortMode.name) {

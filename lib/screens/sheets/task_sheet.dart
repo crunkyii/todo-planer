@@ -13,11 +13,12 @@ import '../../widgets/ui.dart';
 import '../ui_state.dart';
 import 'sheet_parts.dart';
 
+/// Eine Zeile im Abschnitt „Unteraufgaben“. [id] ist gesetzt, wenn es die Unteraufgabe schon gibt.
 class _SubEdit {
-  _SubEdit(String text, this.done) : ctrl = TextEditingController(text: text), focus = FocusNode();
+  _SubEdit(String text, {this.id}) : ctrl = TextEditingController(text: text), focus = FocusNode();
+  final String? id;
   final TextEditingController ctrl;
   final FocusNode focus;
-  final bool done;
 }
 
 /// Eingabefeld für den Titel: Das Wort, das die Aufgabe jährlich macht („Geburtstag“),
@@ -30,15 +31,27 @@ class _TitleController extends TextEditingController {
     final m = yearlyMatch(text);
     if (m == null) return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
     final tok = context.tok;
+    final mark = TextStyle(color: tok.p, fontWeight: FontWeight.w600, backgroundColor: tok.p.withValues(alpha: 0.16));
+    // Das Wort, das die Tastatur gerade vorschlägt, bleibt unterstrichen – wie in jedem Textfeld.
+    final composing = withComposing && value.isComposingRangeValid ? value.composing : null;
+    const underline = TextStyle(decoration: TextDecoration.underline);
+    final cuts = {
+      0,
+      m.start,
+      m.end,
+      text.length,
+      if (composing != null) ...[composing.start, composing.end],
+    }.toList()..sort();
     return TextSpan(
       style: style,
       children: [
-        TextSpan(text: text.substring(0, m.start)),
-        TextSpan(
-          text: text.substring(m.start, m.end),
-          style: TextStyle(color: tok.p, fontWeight: FontWeight.w600, backgroundColor: tok.p.withValues(alpha: 0.16)),
-        ),
-        TextSpan(text: text.substring(m.end)),
+        for (var i = 0; i + 1 < cuts.length; i++)
+          TextSpan(
+            text: text.substring(cuts[i], cuts[i + 1]),
+            style: (cuts[i] >= m.start && cuts[i + 1] <= m.end ? mark : const TextStyle()).merge(
+              composing != null && cuts[i] >= composing.start && cuts[i + 1] <= composing.end ? underline : null,
+            ),
+          ),
       ],
     );
   }
@@ -83,17 +96,17 @@ class _TaskSheetState extends State<TaskSheet> {
     final cats = store.categories;
     _title = _TitleController(text: t?.title ?? '')..addListener(_titleChanged);
     _yearly = isYearly(_title.text);
-    final f = widget.ui.filter;
+    final f = widget.ui.filterIn(cats);
     _cat =
         t?.categoryId ??
-        (f != 'alle' && f != 'habits' && store.categories.any((c) => c.id == f)
+        (f != filterAll && f != filterHabits
             ? f
             // sonst die Kategorie, die man zuletzt am häufigsten benutzt hat
             : (suggestCategory(store.tasks, [for (final c in cats) c.id]) ?? ''));
     _date = t?.dueDate ?? widget.preset ?? addDays(today(), store.catOf(_cat).offset);
     _time = t?.dueTime;
     _dateTouched = t != null || widget.preset != null;
-    _subs = [for (final s in t?.subs ?? const <Subtask>[]) _SubEdit(s.title, s.done)];
+    _subs = [for (final s in t?.subs ?? const <Subtask>[]) _SubEdit(s.title, id: s.id)];
     _dateOpen = widget.preset != null;
     _subsOpen = _subs.isNotEmpty;
   }
@@ -109,7 +122,7 @@ class _TaskSheetState extends State<TaskSheet> {
   }
 
   void _addSub() {
-    final s = _SubEdit('', false);
+    final s = _SubEdit('');
     setState(() => _subs.add(s));
     WidgetsBinding.instance.addPostFrameCallback((_) => s.focus.requestFocus());
   }
@@ -122,16 +135,20 @@ class _TaskSheetState extends State<TaskSheet> {
       setState(() => _error = l.errTaskTitle);
       return;
     }
+    // Der Stand von jetzt, nicht der vom Öffnen: Der Abgleich kann die Aufgabe inzwischen
+    // ersetzt (abgehakt, Unteraufgabe erledigt) oder gelöscht haben.
+    final opened = widget.task;
+    final t = opened == null ? null : app.store.taskById(opened.id);
+    if (opened != null && t == null) return closeSheetItemGone(context);
+    final doneNow = {for (final s in t?.subs ?? const <Subtask>[]) s.id: s.done};
     final subs = [
       for (final s in _subs)
-        if (s.ctrl.text.trim().isNotEmpty) (title: s.ctrl.text.trim(), done: s.done),
+        if (s.ctrl.text.trim().isNotEmpty) (title: s.ctrl.text.trim(), done: doneNow[s.id] ?? false),
     ];
     // Wurde die gewählte Kategorie inzwischen (z. B. auf einem anderen Gerät) gelöscht,
-    // landet die Aufgabe in der ersten vorhandenen – nie mit leerer Kategorie.
-    final cats = app.store.categories;
-    if (cats.isEmpty) app.ensureCategoriesNow(l);
-    final cat = cats.any((c) => c.id == _cat) ? _cat : app.store.categories.first.id;
-    final t = widget.task;
+    // landet die Aufgabe in ihrer Nachfolgerin – nie mit leerer Kategorie.
+    if (app.store.categories.isEmpty) app.ensureCategoriesNow(l);
+    final cat = app.store.catOf(_cat).id;
     if (t == null) {
       app.store.addTask(title: title, categoryId: cat, dueDate: _date, dueTime: _time, subs: subs);
     } else {
@@ -144,7 +161,8 @@ class _TaskSheetState extends State<TaskSheet> {
   void _delete() {
     final app = context.app;
     final l = context.l;
-    final t = widget.task!;
+    final t = app.store.taskById(widget.task!.id);
+    if (t == null) return closeSheetItemGone(context);
     Navigator.pop(context);
     final undo = app.store.deleteTask(t);
     app.snack.show(l.deletedItem(t.title), undo: undo);

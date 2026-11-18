@@ -6,10 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:todo_liste/data/local_db.dart';
+import 'package:todo_liste/data/models.dart';
 import 'package:todo_liste/data/sync_service.dart';
+import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/services/export.dart';
 import 'package:todo_liste/screens/week_tab.dart';
+import 'package:todo_liste/theme/app_theme.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/theme/tokens.dart';
 import 'package:todo_liste/util/dates.dart';
@@ -176,7 +180,109 @@ void main() {
     });
   });
 
+  group('Formular offen, während der Abgleich Daten ändert', () {
+    // Dieselbe Zeile, wie sie ein anderes Gerät eine Minute später hochgeladen hätte.
+    Map<String, Object?> newer(Map<String, Object?> json, Map<String, Object?> change) => {
+      ...json,
+      ...change,
+      'updated_at': DateTime.parse(json['updated_at'] as String).add(const Duration(minutes: 1)).toIso8601String(),
+    };
+
+    testWidgets('Am anderen Gerät abgehakt: Speichern behält Haken und erledigte Unteraufgabe', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      final t = app.store.tasks.firstWhere((t) => t.title == 'Referat Geschichte');
+      final open = t.subs.firstWhere((s) => !s.done);
+      await _tap(tester, find.text('Referat Geschichte'));
+      expect(find.bySemanticsLabel(l.save), findsOneWidget);
+
+      await tester.runAsync(() async {
+        await app.store.applyRemote(tasksTable, [
+          newer(t.toJson(), {'done': true, 'done_at': nowUtc().toIso8601String()}),
+        ]);
+        await app.store.applyRemote(subtasksTable, [
+          newer(open.toJson(), {'done': true}),
+        ]);
+      });
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'Referat neu');
+      await _tap(tester, find.bySemanticsLabel(l.save));
+      final saved = app.store.taskById(t.id)!;
+      expect(saved.title, 'Referat neu');
+      expect(saved.done, isTrue);
+      expect(saved.subs, hasLength(2));
+      expect(saved.subs.every((s) => s.done), isTrue);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Am anderen Gerät gelöscht: Speichern legt die Aufgabe nicht wieder an', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      final t = app.store.tasks.firstWhere((t) => t.title == 'Zahnarzt');
+      await _tap(tester, find.text('Zahnarzt'));
+
+      await tester.runAsync(
+        () => app.store.applyRemote(tasksTable, [
+          newer(t.toJson(), {'deleted': true}),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'Zahnarzt neu');
+      await _tap(tester, find.bySemanticsLabel(l.save));
+      expect(find.text(l.itemGone), findsOneWidget);
+      expect(app.store.taskById(t.id), isNull);
+      expect(app.store.tasks.any((x) => x.title == 'Zahnarzt neu'), isFalse);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Filter auf eine Kategorie, die am anderen Gerät gelöscht wurde: Liste zeigt wieder alles', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      final cat = app.store.categories.firstWhere((c) => c.name == l.catHomework);
+      await _tap(tester, find.text(l.catHomework).first);
+      expect(find.text('Müll rausbringen'), findsNothing);
+
+      await tester.runAsync(
+        () => app.store.applyRemote(categoriesTable, [
+          newer(cat.toJson(), {'deleted': true}),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Müll rausbringen'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+  });
+
   group('Kalender und Woche', () {
+    testWidgets('Zeit-Rad rundet auf die ganze Uhrzeit: 10:50 im 30-Minuten-Raster zeigt 11:00', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme('himmel', dark: false),
+          locale: const Locale('de'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates],
+          home: Scaffold(
+            body: TimeWheel(value: 10 * 60 + 50, step: 30, onChanged: (_) {}),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final wheels = tester.widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView)).toList();
+      int item(int i) => (wheels[i].controller! as FixedExtentScrollController).selectedItem;
+      expect((item(0), item(1) * 30), (11, 0));
+    });
+
     testWidgets('Mehr als 4 Kategorien an einem Tag: Kalender zeigt die Anzahl', (tester) async {
       final l = l10n('de');
       useFixedClock();

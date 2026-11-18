@@ -95,12 +95,19 @@ int byDo(Task a, Task b, int Function(Task) offsetOf) {
 /// Offene vor erledigten; `null` = beide gleich (dann weiter sortieren).
 int? doneLast(Task a, Task b) => a.done == b.done ? null : (a.done ? 1 : -1);
 
-/// Filter aus dem Prototyp: Kategorie, „Erledigte ausblenden“ und Suchtext (auch in Unteraufgaben).
+/// Filter der Aufgabenliste: alle Kategorien …
+const filterAll = 'alle';
+
+/// … oder nur die Gewohnheiten (alles andere ist die ID einer Kategorie).
+const filterHabits = 'habits';
+
+/// Filtert nach Kategorie ([filterAll] oder eine ID), „Erledigte ausblenden“ und Suchtext
+/// (auch in Unteraufgaben).
 List<Task> filterTasks(Iterable<Task> tasks, {required String filter, required bool hideDone, String? search}) {
   final q = (search ?? '').trim().toLowerCase();
   return [
     for (final t in tasks)
-      if ((filter == 'alle' || t.categoryId == filter) &&
+      if ((filter == filterAll || t.categoryId == filter) &&
           !(hideDone && t.done) &&
           (q.isEmpty || '${t.title} ${t.subs.map((s) => s.title).join(' ')}'.toLowerCase().contains(q)))
         t,

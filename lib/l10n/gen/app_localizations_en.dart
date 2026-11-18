@@ -34,6 +34,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saved => 'Saved';
 
   @override
+  String get itemGone => 'This item was deleted in the meantime.';
+
+  @override
   String get back => 'Back';
 
   @override

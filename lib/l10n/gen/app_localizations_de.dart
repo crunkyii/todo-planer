@@ -34,6 +34,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get saved => 'Gespeichert';
 
   @override
+  String get itemGone => 'Dieser Eintrag wurde inzwischen gelöscht.';
+
+  @override
   String get back => 'Zurück';
 
   @override
