@@ -37,6 +37,7 @@ class _ChipBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const fadeLeft = 16.0, fadeRight = 32.0;
     final store = context.app.store;
     final tok = context.tok;
     final l = context.l;
@@ -50,28 +51,42 @@ class _ChipBar extends StatelessWidget {
               label: l.filterByCategory,
               child: SizedBox(
                 height: Sizes.chipH + 4,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(16, 2, 4, 2),
-                  children: [
-                    AppChip(label: l.all, selected: ui.filter == 'alle', onTap: () => ui.set((s) => s.filter = 'alle')),
-                    for (final c in store.categories) ...[
+                // Chips laufen an beiden Rändern weich aus, statt hart abgeschnitten zu werden.
+                // Der Innenabstand ist so groß wie der Verlauf: am Anfang und am Ende der
+                // Liste ist der erste bzw. letzte Chip ganz zu sehen.
+                child: ShaderMask(
+                  blendMode: BlendMode.dstIn,
+                  shaderCallback: (r) => LinearGradient(
+                    colors: const [Color(0x00FFFFFF), Color(0xFFFFFFFF), Color(0xFFFFFFFF), Color(0x00FFFFFF)],
+                    stops: [0, fadeLeft / r.width, 1 - fadeRight / r.width, 1],
+                  ).createShader(r),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(fadeLeft, 2, fadeRight, 2),
+                    children: [
+                      AppChip(
+                        label: l.all,
+                        selected: ui.filter == 'alle',
+                        onTap: () => ui.set((s) => s.filter = 'alle'),
+                      ),
+                      for (final c in store.categories) ...[
+                        const SizedBox(width: 8),
+                        AppChip(
+                          label: c.name,
+                          selected: ui.filter == c.id,
+                          colors: tok.item(c.color),
+                          onTap: () => ui.set((s) => s.filter = c.id),
+                        ),
+                      ],
                       const SizedBox(width: 8),
                       AppChip(
-                        label: c.name,
-                        selected: ui.filter == c.id,
-                        colors: tok.item(c.color),
-                        onTap: () => ui.set((s) => s.filter = c.id),
+                        label: l.habits,
+                        selected: ui.filter == 'habits',
+                        colors: tok.item(habitColorHex),
+                        onTap: () => ui.set((s) => s.filter = 'habits'),
                       ),
                     ],
-                    const SizedBox(width: 8),
-                    AppChip(
-                      label: l.habits,
-                      selected: ui.filter == 'habits',
-                      colors: tok.item(habitColorHex),
-                      onTap: () => ui.set((s) => s.filter = 'habits'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
