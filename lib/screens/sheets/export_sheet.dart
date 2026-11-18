@@ -28,8 +28,7 @@ class _ExportSheetState extends State<ExportSheet> {
       final f = Fmt.of(context);
       // Ältere erledigte Aufgaben liegen nur online: für den Export alle holen. Klappt das
       // nicht (offline), steht im Export und in der Meldung, wie viele fehlen.
-      await app.sync.loadAllOlderDone();
-      final data = buildExport(app.store, l, f);
+      final data = buildExport(app.store, l, f, older: await app.sync.fetchOlderDone());
       final bytes = await exportBytes(data, format, english: f.en);
       final saved = await saveExportFile(exportFileName(format), bytes, format.mime);
       if (!saved) return; // abgebrochen: Auswahl bleibt offen

@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../data/models.dart';
 import '../data/store.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../util/dates.dart';
@@ -54,12 +55,13 @@ class ExportData {
 /// Gewohnheiten, Wochenplan und Kategorien.
 ///
 /// Ältere erledigte Aufgaben liegen im Modus „Auf allen Geräten“ nur online: Der Aufrufer
-/// lädt sie vorher nach. Was dabei fehlt (offline), steht als Hinweis im Export.
-ExportData buildExport(Store store, AppLocalizations l, Fmt f) {
+/// holt sie vorher und gibt sie als [older] mit. Ohne sie (offline) steht im Export ein
+/// Hinweis, wie viele fehlen.
+ExportData buildExport(Store store, AppLocalizations l, Fmt f, {List<Task>? older}) {
   String yesNo(bool v) => v ? l.yes : l.no;
 
-  final missing = store.olderWaiting();
-  final tasks = store.tasksWithOlder..sort((a, b) => doneLast(a, b) ?? a.due.compareTo(b.due));
+  final missing = older == null ? store.olderWaiting() : 0;
+  final tasks = [...store.tasksWithOlder, ...?older]..sort((a, b) => doneLast(a, b) ?? a.due.compareTo(b.due));
   final blocks = store.blocks..sort((a, b) => a.day != b.day ? a.day.compareTo(b.day) : a.start.compareTo(b.start));
 
   return ExportData(

@@ -164,9 +164,10 @@ void main() {
     expect(exportTxt(offline), isNot(contains('Lange her')));
     expect(ascii.decode((await exportBytes(offline, ExportFormat.pdf)).sublist(0, 5)), '%PDF-');
 
-    store.addOlder([old.id], [old.toJson()], const []); // wie vom Server nachgeladen
-    final online = buildExport(store, l, f);
+    // Wie vom Server geholt: nur für den Export, nicht für die Aufgabenliste.
+    final online = buildExport(store, l, f, older: store.readOlder([old.toJson()], const []));
     expect(online.note, isNull);
+    expect(store.tasksWithOlder.map((t) => t.title), isNot(contains('Lange her')));
     expect(online.tables.first.rows.map((r) => r.first), contains('Lange her'));
     expect(exportTxt(online), contains('AUFGABEN (4)'));
   });
