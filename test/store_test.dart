@@ -63,6 +63,15 @@ void main() {
     expect(store.tasks.single.subs.single.title, 'x');
   });
 
+  test('Rückgängig holt keine früher entfernten Unteraufgaben zurück', () {
+    final t = add('Referat', subs: [(title: 'A', done: false), (title: 'B', done: false)]);
+    store.deleteTask(t)();
+    // B im Bearbeiten-Sheet entfernen, dann erneut löschen und rückgängig machen
+    store.updateTask(t, title: t.title, categoryId: t.categoryId, dueDate: t.dueDate, dueTime: null, subs: [(title: 'A', done: false)]);
+    store.deleteTask(t)();
+    expect(store.tasks.single.subs.map((s) => s.title), ['A']);
+  });
+
   test('Erledigte löschen behält die Statistik', () {
     final a = add('a');
     add('b');

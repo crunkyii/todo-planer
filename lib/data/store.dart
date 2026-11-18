@@ -189,6 +189,9 @@ class Store extends ChangeNotifier {
     _writes.add(f);
   }
 
+  /// Alle Ansichten neu zeichnen, ohne etwas zu ändern (z. B. neuer Tag um Mitternacht).
+  void touch() => notifyListeners();
+
   void _changed() {
     _attachSubs();
     notifyListeners();
@@ -284,22 +287,28 @@ class Store extends ChangeNotifier {
     _changed();
   }
 
-  void _setTaskDeleted(Task t, bool deleted) {
-    for (final s in _subs.values.where((s) => s.taskId == t.id && s.deleted != deleted && (deleted || _restorable.contains(s.id)))) {
-      _put(subtasksTable, s..deleted = deleted);
-      if (deleted) _restorable.add(s.id);
+  /// Löscht die Aufgabe samt Unteraufgaben und gibt zurück, wie es rückgängig geht.
+  /// Wiederhergestellt werden nur die Unteraufgaben, die *dieser* Aufruf gelöscht hat –
+  /// nicht solche, die schon vorher (z. B. im Bearbeiten-Sheet) entfernt wurden.
+  void Function() _deleteTask(Task t) {
+    final subs = _subs.values.where((s) => s.taskId == t.id && !s.deleted).toList();
+    for (final s in subs) {
+      _put(subtasksTable, s..deleted = true);
     }
-    _put(tasksTable, t..deleted = deleted);
+    _put(tasksTable, t..deleted = true);
+    return () {
+      for (final s in subs) {
+        _put(subtasksTable, s..deleted = false);
+      }
+      _put(tasksTable, t..deleted = false);
+    };
   }
 
-  /// Unteraufgaben, die beim Löschen einer Aufgabe mitgelöscht wurden (für Rückgängig).
-  final Set<String> _restorable = {};
-
   Undo deleteTask(Task t) {
-    _setTaskDeleted(t, true);
+    final restore = _deleteTask(t);
     _changed();
     return () {
-      _setTaskDeleted(t, false);
+      restore();
       _changed();
     };
   }
@@ -308,15 +317,13 @@ class Store extends ChangeNotifier {
   ({int count, Undo undo})? clearDone() {
     final removed = tasks.where((t) => t.done).toList();
     if (removed.isEmpty) return null;
-    for (final t in removed) {
-      _setTaskDeleted(t, true);
-    }
+    final restores = [for (final t in removed) _deleteTask(t)];
     _changed();
     return (
       count: removed.length,
       undo: () {
-        for (final t in removed) {
-          _setTaskDeleted(t, false);
+        for (final r in restores) {
+          r();
         }
         _changed();
       },
