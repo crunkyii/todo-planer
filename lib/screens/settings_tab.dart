@@ -226,7 +226,7 @@ class _ThemePreview extends StatelessWidget {
                 color: card,
                 borderRadius: BorderRadius.circular(6),
                 border: Border(left: BorderSide(color: primary, width: 3)),
-                boxShadow: const [BoxShadow(color: Color(0x14000000), offset: Offset(0, 1), blurRadius: 3)],
+                boxShadow: context.tok.previewShadow,
               ),
             ),
           );
@@ -259,7 +259,7 @@ class _ThemePreview extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: primary,
                     shape: BoxShape.circle,
-                    boxShadow: const [BoxShadow(color: Color(0x2E000000), offset: Offset(0, 2), blurRadius: 6)],
+                    boxShadow: context.tok.previewFabShadow,
                   ),
                 ),
               ),

@@ -313,14 +313,12 @@ class _Chart extends StatelessWidget {
                               ),
                               child: ClipRRect(
                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(6), bottom: Radius.circular(2)),
-                                child: SizedBox(
+                                child: _StackedBar(
                                   height: totals[i] / max * h,
-                                  child: Column(verticalDirection: VerticalDirection.up, children: [
-                                    for (final c in cats.where((c) => (perDay[i][c.id] ?? 0) > 0)) ...[
-                                      Expanded(flex: perDay[i][c.id]!, child: Container(constraints: const BoxConstraints(minHeight: 2), color: tok.item(c.color).c)),
-                                      const SizedBox(height: 1),
-                                    ],
-                                  ]),
+                                  segments: [
+                                    for (final c in cats)
+                                      if ((perDay[i][c.id] ?? 0) > 0) (count: perDay[i][c.id]!, color: tok.item(c.color).c),
+                                  ],
                                 ),
                               ),
                             ),
@@ -361,6 +359,28 @@ class _Chart extends StatelessWidget {
               Text(c.name, style: TextStyle(fontSize: 12, color: tok.sub)),
             ]),
         ]),
+      ]),
+    );
+  }
+}
+
+/// Gestapelter Balken. Die 1-px-Lücken zwischen den Farben gibt es nur, wenn der Balken
+/// hoch genug ist – sonst würden sie bei kleinen Werten über den Balken hinausragen.
+class _StackedBar extends StatelessWidget {
+  const _StackedBar({required this.height, required this.segments});
+  final double height;
+  final List<({int count, Color color})> segments;
+
+  @override
+  Widget build(BuildContext context) {
+    final gap = height >= segments.length * 3 ? 1.0 : 0.0;
+    return SizedBox(
+      height: height,
+      child: Column(verticalDirection: VerticalDirection.up, children: [
+        for (var j = 0; j < segments.length; j++) ...[
+          if (j > 0 && gap > 0) SizedBox(height: gap),
+          Expanded(flex: segments[j].count, child: ColoredBox(color: segments[j].color)),
+        ],
       ]),
     );
   }

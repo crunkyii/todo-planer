@@ -165,6 +165,11 @@ class AppTokens extends ThemeExtension<AppTokens> {
       const [BoxShadow(color: Color(0x2E000000), offset: Offset(0, 10), blurRadius: 30)];
   List<BoxShadow> get sheetShadow =>
       const [BoxShadow(color: Color(0x24000000), offset: Offset(0, -6), blurRadius: 24)];
+  /// Kleiner Schatten der Mini-Karten in der Theme-Vorschau.
+  List<BoxShadow> get previewShadow =>
+      const [BoxShadow(color: Color(0x14000000), offset: Offset(0, 1), blurRadius: 3)];
+  List<BoxShadow> get previewFabShadow =>
+      const [BoxShadow(color: Color(0x2E000000), offset: Offset(0, 2), blurRadius: 6)];
   List<BoxShadow> get snackShadow =>
       const [BoxShadow(color: Color(0x40000000), offset: Offset(0, 4), blurRadius: 12)];
   List<BoxShadow> get fabShadow => [
