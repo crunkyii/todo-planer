@@ -1,95 +1,36 @@
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'config.dart';
-import 'screens/auth_gate.dart';
-import 'services/auth_service.dart';
-import 'services/todo_service.dart';
-
-const _seedColor = Colors.indigo;
+import 'app.dart';
+import 'app_services.dart';
+import 'data/cloud.dart';
+import 'data/local_db.dart';
+import 'data/settings_store.dart';
+import 'data/store.dart';
+import 'data/sync_service.dart';
+import 'services/reminders.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting();
 
-  if (!isConfigured) {
-    runApp(const _ConfigMissingApp());
-    return;
-  }
+  final prefs = await SharedPreferences.getInstance();
+  final settings = SettingsStore(prefs);
+  final store = Store(LocalDb());
+  await store.load();
+  final cloud = Cloud();
+  final reminders = Reminders();
+  await reminders.init(appName: 'Todo-Liste');
 
-  await Supabase.initialize(
-    url: AppConfig.supabaseUrl,
-    // Nimmt sowohl den klassischen "anon" Key als auch den neuen
-    // "publishable" Key (sb_publishable_…) an.
-    publishableKey: AppConfig.supabaseAnonKey,
+  final services = AppServices(
+    settings: settings,
+    store: store,
+    cloud: cloud,
+    sync: SyncService(store: store, settings: settings, cloud: cloud),
+    reminders: reminders,
   );
-  final client = Supabase.instance.client;
+  await services.boot();
 
-  runApp(TodoApp(
-    authService: AuthService(client.auth),
-    todoService: TodoService(client),
-  ));
-}
-
-/// `false`, solange lib/config.dart noch die Platzhalter der Vorlage enthält.
-bool get isConfigured =>
-    !AppConfig.supabaseUrl.contains('DEIN-PROJEKT') &&
-    !AppConfig.supabaseAnonKey.contains('DEIN-ANON-KEY');
-
-ThemeData buildTheme(Brightness brightness) {
-  return ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: _seedColor,
-      brightness: brightness,
-    ),
-  );
-}
-
-class TodoApp extends StatelessWidget {
-  const TodoApp({
-    super.key,
-    required this.authService,
-    required this.todoService,
-  });
-
-  final AuthService authService;
-  final TodoService todoService;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Todo-Liste',
-      debugShowCheckedModeBanner: false,
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
-      themeMode: ThemeMode.system,
-      home: AuthGate(authService: authService, todoService: todoService),
-    );
-  }
-}
-
-class _ConfigMissingApp extends StatelessWidget {
-  const _ConfigMissingApp();
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Todo-Liste',
-      debugShowCheckedModeBanner: false,
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
-      home: const Scaffold(
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Text(
-              'Supabase ist noch nicht konfiguriert.\n\n'
-              'Bitte trage in lib/config.dart deine Project URL und den '
-              'anon key ein (siehe README) und baue die App neu.',
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  runApp(TodoApp(services: services));
 }

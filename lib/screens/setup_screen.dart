@@ -1,0 +1,254 @@
+import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../app_services.dart';
+import '../data/cloud.dart';
+import '../data/settings_store.dart';
+import '../theme/tokens.dart';
+import '../widgets/app_icon.dart';
+import '../widgets/pressable.dart';
+import '../widgets/snack.dart';
+import '../widgets/ui.dart';
+import 'auth_layout.dart';
+
+/// Ersteinrichtung: Willkommen (Speicherort + Sprache) und „Datenbank verbinden“.
+class SetupScreen extends StatefulWidget {
+  const SetupScreen({super.key, this.startAtDb = false});
+
+  /// `true` = aus Anmeldung/Optionen geöffnet („Andere Datenbank verbinden“).
+  final bool startAtDb;
+
+  @override
+  State<SetupScreen> createState() => _SetupScreenState();
+}
+
+class _SetupScreenState extends State<SetupScreen> {
+  late bool _db = widget.startAtDb;
+  final _url = TextEditingController();
+  final _key = TextEditingController();
+  String? _error;
+  bool _connecting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final c = context.app.settings.cloud;
+    if (c != null && widget.startAtDb) _url.text = c.url;
+  }
+
+  @override
+  void dispose() {
+    _url.dispose();
+    _key.dispose();
+    super.dispose();
+  }
+
+  void _back() {
+    if (widget.startAtDb) {
+      context.app.closeSetup();
+    } else {
+      setState(() {
+        _db = false;
+        _error = null;
+      });
+    }
+  }
+
+  Future<void> _copySql() async {
+    final app = context.app;
+    final msg = context.l.sqlCopied;
+    final sql = await rootBundle.loadString('supabase/schema.sql');
+    await Clipboard.setData(ClipboardData(text: sql));
+    app.snack.show(msg, icon: Ic.copy);
+  }
+
+  Future<void> _submit() async {
+    final l = context.l;
+    final app = context.app;
+    final url = normalizeUrl(_url.text);
+    final key = _key.text.trim();
+    final err = validateSetup(url, key);
+    setState(() => _error = switch (err) {
+          SetupError.url => l.errUrl,
+          SetupError.secretKey => l.errSecretKey,
+          SetupError.keyFormat => l.errKeyFormat,
+          null => null,
+        });
+    if (err != null) return;
+    setState(() => _connecting = true);
+    final ok = await testConnection(url, key);
+    if (!mounted) return;
+    if (!ok) {
+      setState(() {
+        _connecting = false;
+        _error = l.errNoConnection;
+      });
+      return;
+    }
+    final c = CloudConfig(url, key);
+    await app.connectCloud(c);
+    app.snack.show(l.connectedTo(c.host), icon: Ic.cloudok);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l;
+    final app = context.app;
+    return Stack(children: [
+      _db ? _dbStep(context) : _welcome(context),
+      SnackHost(controller: app.snack, undoLabel: l.undo, bottom: 24),
+    ]);
+  }
+
+  Widget _welcome(BuildContext context) {
+    final l = context.l;
+    final tok = context.tok;
+    final app = context.app;
+    return AuthLayout(children: [
+      LogoTitle(l.welcome),
+      Transform.translate(
+        offset: const Offset(0, -20),
+        child: Text(l.setupLead, textAlign: TextAlign.center, style: TextStyle(color: tok.sub, fontSize: 15, height: 22 / 15)),
+      ),
+      const SizedBox(height: 4),
+      _Choice(icon: Ic.sync, title: l.setupCloudTitle, text: l.setupCloudText, onTap: () => setState(() => _db = true)),
+      _Choice(icon: Ic.phone, title: l.setupLocalTitle, text: l.setupLocalText, onTap: app.chooseLocal),
+      const SizedBox(height: 12),
+      Center(child: LangSeg(settings: app.settings)),
+    ]);
+  }
+
+  Widget _dbStep(BuildContext context) {
+    final l = context.l;
+    final tok = context.tok;
+    final stepStyle = TextStyle(fontSize: 14.5, height: 21 / 14.5, color: tok.text);
+    Widget step(int n, String text, [Widget? action]) => Semantics(
+          container: true,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Transform.translate(
+                offset: const Offset(0, -2),
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: tok.pc, shape: BoxShape.circle),
+                  child: Text('$n', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: tok.onPc)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  RichB(text, style: stepStyle),
+                  if (action != null) Padding(padding: const EdgeInsets.only(top: 6), child: action),
+                ]),
+              ),
+            ]),
+          ),
+        );
+    return AuthLayout(
+      topPadding: 8,
+      top: TopBar(title: l.connectDb, onBack: _back, backLabel: l.back),
+      children: [
+        step(1, l.setupStep1, AppButton(
+          label: l.openSupabase,
+          icon: Ic.ext,
+          kind: BtnKind.tonal,
+          height: 34,
+          fontSize: 13,
+          padding: 14,
+          onTap: () => launchUrl(Uri.parse('https://supabase.com/dashboard'), mode: LaunchMode.externalApplication),
+        )),
+        step(2, l.setupStep2, AppButton(label: l.copySql, icon: Ic.copy, kind: BtnKind.tonal, height: 34, fontSize: 13, padding: 14, onTap: _copySql)),
+        step(3, l.setupStep3),
+        step(4, l.setupStep4),
+        const SizedBox(height: 4),
+        AppField(
+          label: l.projectUrl,
+          controller: _url,
+          hint: l.projectUrlHint,
+          keyboardType: TextInputType.url,
+          textInputAction: TextInputAction.next,
+        ),
+        AppField(
+          label: l.publishableKey,
+          controller: _key,
+          hint: l.publishableKeyHint,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _submit(),
+        ),
+        if (_error != null) ErrorBox(_error!),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: RichB(l.secretNote, style: TextStyle(fontSize: 13, height: 19 / 13, color: tok.sub)),
+        ),
+        AppButton(label: _connecting ? l.connecting : l.connect, big: true, loading: _connecting, onTap: _submit),
+      ],
+    );
+  }
+}
+
+/// Auswahl-Karte im Willkommen-Bildschirm (.choice).
+class _Choice extends StatelessWidget {
+  const _Choice({required this.icon, required this.title, required this.text, required this.onTap});
+  final Ic icon;
+  final String title;
+  final String text;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tok = context.tok;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Pressable(
+        onTap: onTap,
+        pressScale: 0.97,
+        radius: BorderRadius.circular(Sizes.rChoice),
+        semanticLabel: '$title. $text',
+        excludeChildSemantics: true,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: tok.card, borderRadius: BorderRadius.circular(Sizes.rChoice), boxShadow: tok.cardShadow),
+          child: Row(children: [
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: tok.pc, borderRadius: BorderRadius.circular(16)),
+              child: AppIcon(icon, size: 26, color: tok.onPc),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: tok.text)),
+                const SizedBox(height: 2),
+                Text(text, style: TextStyle(fontSize: 13, height: 18 / 13, color: tok.sub)),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Sprachwahl – die Namen stehen immer in der eigenen Sprache, damit man sie auch
+/// in der falschen Sprache findet.
+class LangSeg extends StatelessWidget {
+  const LangSeg({super.key, required this.settings});
+  final SettingsStore settings;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l;
+    return Seg<String>(
+      label: l.languageBoth,
+      options: [('de', l.langDe), ('en', l.langEn)],
+      value: settings.lang,
+      onChanged: (v) => settings.update((s) => s.lang = v),
+    );
+  }
+}

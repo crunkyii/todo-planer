@@ -1,180 +1,164 @@
-import 'dart:io';
-
+import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:todo_liste/models/todo.dart';
-import 'package:todo_liste/screens/login_screen.dart';
-import 'package:todo_liste/screens/todo_list_screen.dart';
-import 'package:todo_liste/services/auth_service.dart';
-import 'package:todo_liste/services/error_messages.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_liste/app.dart';
+import 'package:todo_liste/app_services.dart';
+import 'package:todo_liste/data/cloud.dart';
+import 'package:todo_liste/data/local_db.dart';
+import 'package:todo_liste/data/settings_store.dart';
+import 'package:todo_liste/data/store.dart';
+import 'package:todo_liste/data/sync_service.dart';
+import 'package:todo_liste/screens/shell.dart';
+import 'package:todo_liste/services/reminders.dart';
 
-class _FakeAuthService implements AuthService {
-  Object? signInError;
-  bool signUpSignsIn = false;
-  String? lastEmail;
-
-  @override
-  Future<void> signIn({required String email, required String password}) async {
-    lastEmail = email;
-    if (signInError != null) throw signInError!;
-  }
-
-  @override
-  Future<bool> signUp({required String email, required String password}) async {
-    lastEmail = email;
-    return signUpSignsIn;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+Future<AppServices> _services({String? syncMode}) async {
+  SharedPreferences.setMockInitialValues({
+    if (syncMode != null) 'sync.v1': '{"mode":"$syncMode"}',
+    'settings.v1': '{"lang":"de"}',
+  });
+  final prefs = await SharedPreferences.getInstance();
+  final settings = SettingsStore(prefs);
+  final store = Store(LocalDb(NativeDatabase.memory()));
+  await store.load();
+  final cloud = Cloud();
+  return AppServices(
+    settings: settings,
+    store: store,
+    cloud: cloud,
+    sync: SyncService(store: store, settings: settings, cloud: cloud),
+    reminders: Reminders(),
+  );
 }
 
-Widget _wrap(Widget child) => MaterialApp(home: child);
+Future<void> _pump(WidgetTester tester, AppServices app) async {
+  tester.view.physicalSize = const Size(400, 860);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(TodoApp(services: app));
+  await tester.pumpAndSettle();
+}
+
+/// Räumt Timer (Snackbar, Erinnerungen) und die Datenbank auf.
+Future<void> _finish(WidgetTester tester, AppServices app) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(seconds: 5));
+  await app.store.refreshPending();
+  await app.store.db.close();
+}
 
 void main() {
-  group('Todo.fromMap', () {
-    test('liest alle Felder', () {
-      final todo = Todo.fromMap({
-        'id': 'a1',
-        'user_id': 'u1',
-        'title': 'Milch kaufen',
-        'done': true,
-        'created_at': '2026-11-18T10:00:00Z',
-        'updated_at': '2026-11-18T11:00:00Z',
-      });
-      expect(todo.id, 'a1');
-      expect(todo.userId, 'u1');
-      expect(todo.title, 'Milch kaufen');
-      expect(todo.done, isTrue);
-      expect(todo.createdAt, DateTime.utc(2026, 11, 18, 10));
-    });
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  setUpAll(() => initializeDateFormatting());
 
-    test('done fehlt -> false', () {
-      final todo = Todo.fromMap({
-        'id': 'a1',
-        'user_id': 'u1',
-        'title': 'x',
-        'done': null,
-        'created_at': '2026-11-18T10:00:00Z',
-        'updated_at': '2026-11-18T10:00:00Z',
-      });
-      expect(todo.done, isFalse);
-    });
+  testWidgets('Willkommen → „Nur auf diesem Gerät“ öffnet die App mit Standard-Kategorien', (tester) async {
+    final app = await _services();
+    await _pump(tester, app);
+    expect(find.text('Willkommen'), findsOneWidget);
+
+    await tester.tap(find.text('Nur auf diesem Gerät'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(find.text('Hausübung'), findsOneWidget);
+    expect(find.text('Gewohnheiten'), findsWidgets);
+    expect(app.settings.syncMode, SyncMode.local);
+    await _finish(tester, app);
   });
 
-  group('friendlyErrorMessage', () {
-    test('kein Internet', () {
-      expect(friendlyErrorMessage(const SocketException('Failed host lookup')),
-          contains('Internetverbindung'));
-      expect(friendlyErrorMessage(AuthRetryableFetchException()),
-          contains('Internetverbindung'));
-    });
-
-    test('falsches Passwort', () {
-      expect(
-        friendlyErrorMessage(const AuthException('Invalid login credentials',
-            statusCode: '400', code: 'invalid_credentials')),
-        'E-Mail oder Passwort ist falsch.',
-      );
-    });
-
-    test('Konto existiert bereits', () {
-      expect(
-        friendlyErrorMessage(
-            const AuthException('exists', code: 'user_already_exists')),
-        contains('bereits ein Konto'),
-      );
-    });
-
-    test('unbekannter Fehler', () {
-      expect(friendlyErrorMessage(StateError('x')), contains('Unerwarteter Fehler'));
-    });
+  testWidgets('Sprache umstellen übersetzt den Willkommen-Bildschirm', (tester) async {
+    final app = await _services();
+    await _pump(tester, app);
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome'), findsOneWidget);
+    await _finish(tester, app);
   });
 
-  group('LoginScreen', () {
-    testWidgets('validiert leere Eingaben', (tester) async {
-      final auth = _FakeAuthService();
-      await tester.pumpWidget(_wrap(LoginScreen(authService: auth)));
-
-      await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
-      await tester.pump();
-
-      expect(find.text('Bitte gib deine E-Mail-Adresse ein.'), findsOneWidget);
-      expect(find.text('Bitte gib ein Passwort ein.'), findsOneWidget);
-      expect(auth.lastEmail, isNull);
-    });
-
-    testWidgets('zeigt verständliche Meldung bei falschem Passwort',
-        (tester) async {
-      final auth = _FakeAuthService()
-        ..signInError = const AuthException('Invalid login credentials',
-            statusCode: '400', code: 'invalid_credentials');
-      await tester.pumpWidget(_wrap(LoginScreen(authService: auth)));
-
-      await tester.enterText(find.byType(TextFormField).at(0), ' max@example.at ');
-      await tester.enterText(find.byType(TextFormField).at(1), 'geheim123');
-      await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('E-Mail oder Passwort ist falsch.'), findsOneWidget);
-    });
-
-    testWidgets('Registrierung verlangt mind. 6 Zeichen und zeigt Bestätigungshinweis',
-        (tester) async {
-      final auth = _FakeAuthService();
-      await tester.pumpWidget(_wrap(LoginScreen(authService: auth)));
-
-      await tester.tap(find.text('Noch kein Konto? Registrieren'));
-      await tester.pump();
-      await tester.enterText(find.byType(TextFormField).at(0), 'max@example.at');
-      await tester.enterText(find.byType(TextFormField).at(1), '123');
-      await tester.tap(find.widgetWithText(FilledButton, 'Registrieren'));
-      await tester.pump();
-      expect(find.text('Mindestens 6 Zeichen.'), findsOneWidget);
-
-      await tester.enterText(find.byType(TextFormField).at(1), '123456');
-      await tester.tap(find.widgetWithText(FilledButton, 'Registrieren'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('bestätige deine E-Mail-Adresse'), findsOneWidget);
-    });
+  testWidgets('Secret Key wird bei der Einrichtung abgelehnt', (tester) async {
+    final app = await _services();
+    await _pump(tester, app);
+    await tester.tap(find.text('Auf allen Geräten'));
+    await tester.pumpAndSettle();
+    expect(find.text('Datenbank verbinden'), findsOneWidget);
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'https://abcdefgh.supabase.co');
+    await tester.enterText(fields.at(1), 'sb_secret_abcdefghijklmnop');
+    await tester.ensureVisible(find.text('Verbinden'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verbinden'));
+    await tester.pumpAndSettle();
+    expect(find.text('Das ist der geheime Schlüssel. Bitte den Publishable Key nehmen.'), findsOneWidget);
+    await _finish(tester, app);
   });
 
-  group('Todo-Dialog', () {
-    String? result;
+  testWidgets('Aufgabe über + anlegen, abhaken und per Wischen löschen', (tester) async {
+    final app = await _services(syncMode: 'local');
+    await _pump(tester, app);
 
-    Future<void> openDialog(WidgetTester tester, {String? initial}) async {
-      result = null;
-      await tester.pumpWidget(_wrap(Builder(
-        builder: (context) => TextButton(
-          onPressed: () async =>
-              result = await showTodoTitleDialog(context, initial: initial),
-          child: const Text('öffnen'),
-        ),
-      )));
-      await tester.tap(find.text('öffnen'));
-      await tester.pumpAndSettle();
-    }
+    await tester.tap(find.bySemanticsLabel('Neue Aufgabe').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Vokabeln lernen');
+    await tester.tap(find.bySemanticsLabel('Hinzufügen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Vokabeln lernen'), findsOneWidget);
+    expect(app.store.tasks.single.title, 'Vokabeln lernen');
 
-    testWidgets('leerer Titel wird abgelehnt, Text wird getrimmt',
-        (tester) async {
-      await openDialog(tester);
+    await tester.drag(find.text('Vokabeln lernen'), const Offset(-200, 0));
+    await tester.pumpAndSettle();
+    expect(app.store.tasks, isEmpty);
+    expect(find.text('Rückgängig'), findsOneWidget);
+    await tester.tap(find.text('Rückgängig'));
+    await tester.pumpAndSettle();
+    expect(app.store.tasks, hasLength(1));
 
-      await tester.tap(find.text('Hinzufügen'));
-      await tester.pump();
-      expect(find.text('Bitte gib einen Text ein.'), findsOneWidget);
+    // Abgehakt wandert sie in den (eingeklappten) Abschnitt „Erledigt“.
+    await tester.tap(find.bySemanticsLabel('Erledigt: Vokabeln lernen'));
+    await tester.pumpAndSettle();
+    expect(app.store.tasks.single.done, isTrue);
+    expect(find.text('ERLEDIGT (1)'), findsOneWidget);
+    expect(find.text('Vokabeln lernen'), findsNothing);
+    await _finish(tester, app);
+  });
 
-      await tester.enterText(find.byType(TextFormField), '  Brot  ');
-      await tester.tap(find.text('Hinzufügen'));
-      await tester.pumpAndSettle();
-      expect(result, 'Brot');
-    });
+  testWidgets('Leere Aufgabe zeigt einen Hinweis', (tester) async {
+    final app = await _services(syncMode: 'local');
+    await _pump(tester, app);
+    await tester.tap(find.bySemanticsLabel('Neue Aufgabe').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Hinzufügen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bitte gib ein, was zu tun ist.'), findsOneWidget);
+    await _finish(tester, app);
+  });
 
-    testWidgets('Bearbeiten zeigt alten Titel', (tester) async {
-      await openDialog(tester, initial: 'Alt');
-      expect(find.text('Todo bearbeiten'), findsOneWidget);
-      expect(find.text('Alt'), findsOneWidget);
-      expect(find.text('Speichern'), findsOneWidget);
-    });
+  testWidgets('Alle Tabs lassen sich öffnen', (tester) async {
+    final app = await _services(syncMode: 'local');
+    app.store.addHabit(name: 'Wasser trinken', color: '#3D9BE9');
+    await _pump(tester, app);
+    expect(find.text('Wasser trinken'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Kalender'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nichts fällig.'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Wochenplan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Heute'), findsWidgets);
+
+    await tester.tap(find.bySemanticsLabel('Statistik'));
+    await tester.pumpAndSettle();
+    expect(find.text('Aktivität'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Wasser trinken'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('Wasser trinken'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Einstellungen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Raster (Minuten)'), findsOneWidget);
+    await tester.tap(find.text('Dunkel'));
+    await tester.pumpAndSettle();
+    expect(app.settings.mode, AppMode.dark);
+    await _finish(tester, app);
   });
 }
