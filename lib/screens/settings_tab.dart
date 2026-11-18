@@ -196,7 +196,8 @@ class _Themes extends StatelessWidget {
       container: true,
       label: l.theme,
       child: SizedBox(
-        height: 70 * 4 / 3 + 6 + 20 + 18,
+        // Die Zeile für den Namen wächst mit der Schriftgröße des Systems mit.
+        height: 70 * 4 / 3 + 6 + MediaQuery.textScalerOf(context).scale(20) + 18,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),

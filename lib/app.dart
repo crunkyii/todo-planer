@@ -34,6 +34,9 @@ class TodoApp extends StatelessWidget {
             AppMode.system => ThemeMode.system,
           },
           themeAnimationDuration: const Duration(milliseconds: 200),
+          // Sehr große Systemschrift (bis 2×) würde das dichte Layout sprengen: bis 1,6× wächst
+          // alles mit, darüber bleibt es bei 1,6×.
+          builder: (context, child) => MediaQuery.withClampedTextScaling(maxScaleFactor: 1.6, child: child!),
           home: const RootGate(),
         ),
       ),

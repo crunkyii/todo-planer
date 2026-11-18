@@ -236,41 +236,45 @@ class _GlassNav extends StatelessWidget {
                         decoration: BoxDecoration(color: tok.pc, borderRadius: BorderRadius.circular(Sizes.rNavInd)),
                       ),
                     ),
-                    Row(
-                      children: [
-                        for (final t in tabs)
-                          Expanded(
-                            child: Pressable(
-                              onTap: () => ui.goTab(t.$1),
-                              semanticLabel: t.$4,
-                              selected: ui.tab == t.$1,
-                              radius: BorderRadius.circular(Sizes.rNavInd),
-                              excludeChildSemantics: true,
-                              child: SizedBox.expand(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    AppIcon(t.$3, size: 22, color: ui.tab == t.$1 ? tok.onPc : tok.sub),
-                                    const SizedBox(height: 1),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      child: Text(
-                                        t.$2,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: Fs.nav,
-                                          fontWeight: FontWeight.w500,
-                                          color: ui.tab == t.$1 ? tok.onPc : tok.sub,
+                    // Die Leiste ist fest hoch – die Beschriftung wächst nur begrenzt mit.
+                    MediaQuery.withClampedTextScaling(
+                      maxScaleFactor: 1.15,
+                      child: Row(
+                        children: [
+                          for (final t in tabs)
+                            Expanded(
+                              child: Pressable(
+                                onTap: () => ui.goTab(t.$1),
+                                semanticLabel: t.$4,
+                                selected: ui.tab == t.$1,
+                                radius: BorderRadius.circular(Sizes.rNavInd),
+                                excludeChildSemantics: true,
+                                child: SizedBox.expand(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      AppIcon(t.$3, size: 22, color: ui.tab == t.$1 ? tok.onPc : tok.sub),
+                                      const SizedBox(height: 1),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                                        child: Text(
+                                          t.$2,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: Fs.nav,
+                                            fontWeight: FontWeight.w500,
+                                            color: ui.tab == t.$1 ? tok.onPc : tok.sub,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 );
