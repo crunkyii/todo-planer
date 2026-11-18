@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
@@ -21,7 +23,7 @@ class Sheets {
   void task(Task? t, {DateTime? preset}) {
     final l = context.l;
     final app = context.app;
-    if (app.store.categories.isEmpty) app.enterApp(l);
+    if (app.store.categories.isEmpty) app.ensureCategoriesNow(l);
     showAppSheet<void>(context, label: t == null ? l.newTask : l.editTask, builder: (_) => _TaskSheet(task: t, preset: preset, ui: ui));
   }
 
@@ -29,8 +31,11 @@ class Sheets {
     final l = context.l;
     final s = context.app.settings;
     final d = day ?? (ui.weekDay ?? (sameDay(ui.weekStart, monday(DateTime.now())) ? wdIndex(DateTime.now()) : 0));
-    final from = start ?? 15 * 60;
-    final to = start == null ? 16 * 60 : (from + 60).clamp(0, 24 * 60 - s.raster);
+    // Spätestes „Bis“ ist der letzte Raster-Schritt vor Mitternacht; „Von“ muss mindestens
+    // einen Schritt davor liegen, sonst wäre der Block leer.
+    final last = 24 * 60 - s.raster;
+    final from = math.min(start ?? 15 * 60, last - s.raster);
+    final to = start == null ? 16 * 60 : (from + 60).clamp(from + s.raster, last);
     showAppSheet<void>(context, label: l.newBlock, builder: (_) => _BlockSheet(block: null, days: [d], start: from, end: to, ui: ui));
   }
 
@@ -274,11 +279,16 @@ class _TaskSheetState extends State<_TaskSheet> {
       for (final s in _subs)
         if (s.ctrl.text.trim().isNotEmpty) (title: s.ctrl.text.trim(), done: s.done),
     ];
+    // Wurde die gewählte Kategorie inzwischen (z. B. auf einem anderen Gerät) gelöscht,
+    // landet die Aufgabe in der ersten vorhandenen – nie mit leerer Kategorie.
+    final cats = app.store.categories;
+    if (cats.isEmpty) app.ensureCategoriesNow(l);
+    final cat = cats.any((c) => c.id == _cat) ? _cat : app.store.categories.first.id;
     final t = widget.task;
     if (t == null) {
-      app.store.addTask(title: title, categoryId: _cat, dueDate: _date, dueTime: _time, subs: subs);
+      app.store.addTask(title: title, categoryId: cat, dueDate: _date, dueTime: _time, subs: subs);
     } else {
-      app.store.updateTask(t, title: title, categoryId: _cat, dueDate: _date, dueTime: _time, subs: subs);
+      app.store.updateTask(t, title: title, categoryId: cat, dueDate: _date, dueTime: _time, subs: subs);
     }
     Navigator.pop(context);
     _savedToast(context, isNew: t == null);

@@ -44,6 +44,7 @@ class WeekTab extends StatefulWidget {
 
 class _WeekTabState extends State<WeekTab> {
   late final ScrollController _scroll;
+  final _gridKey = GlobalKey();
   Timer? _tick;
 
   @override
@@ -72,7 +73,9 @@ class _WeekTabState extends State<WeekTab> {
       listenable: Listenable.merge([app.store, app.settings]),
       builder: (context, _) {
         final one = ui.weekDay != null;
-        final grid = Column(children: [
+        // GlobalKey: Beim Wechsel Woche ↔ Tag wird das Raster nur umgehängt, nicht neu
+        // gebaut – so bleibt die Scroll-Position erhalten.
+        final grid = Column(key: _gridKey, children: [
           _DayHeads(ui: ui),
           Expanded(
             child: SingleChildScrollView(
