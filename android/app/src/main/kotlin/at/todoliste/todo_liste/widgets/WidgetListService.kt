@@ -1,5 +1,6 @@
 package at.todoliste.todo_liste.widgets
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.view.View
@@ -15,18 +16,26 @@ class WidgetListService : RemoteViewsService() {
         } catch (e: IllegalArgumentException) {
             ListMode.TODAY
         }
-        return Factory(applicationContext, mode)
+        val id = intent.getIntExtra(Widgets.EXTRA_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+        return Factory(applicationContext, mode, id)
     }
 
-    private class Factory(private val context: Context, private val mode: ListMode) : RemoteViewsFactory {
-        private var data = WidgetData.load(context)
+    private class Factory(
+        private val context: Context,
+        private val mode: ListMode,
+        private val widgetId: Int,
+    ) : RemoteViewsFactory {
+        private lateinit var data: WidgetData
+        private lateinit var look: WidgetLook
         private var tasks: List<WTask> = emptyList()
 
         override fun onCreate() = onDataSetChanged()
 
         override fun onDataSetChanged() {
+            val cfg = WidgetConfig.load(context, widgetId)
             data = WidgetData.load(context)
-            tasks = if (mode == ListMode.TODAY) data.dueToday else data.tasks
+            look = WidgetLook(context, cfg, data)
+            tasks = if (mode == ListMode.TODAY) data.dueToday(cfg.cats) else data.tasks(cfg.cats)
         }
 
         override fun onDestroy() {}
@@ -35,6 +44,7 @@ class WidgetListService : RemoteViewsService() {
 
         override fun getViewAt(position: Int): RemoteViews {
             val v = RemoteViews(context.packageName, R.layout.widget_row)
+            look.text(v, R.id.text) { it.text }
             if (mode == ListMode.HABITS) {
                 val h = data.habits.getOrNull(position) ?: return v
                 val done = data.today in h.days
@@ -43,7 +53,7 @@ class WidgetListService : RemoteViewsService() {
                 v.setViewVisibility(R.id.sub, View.GONE)
                 v.setViewVisibility(R.id.mark, View.VISIBLE)
                 v.setImageViewResource(R.id.mark, if (done) R.drawable.widget_check else R.drawable.widget_circle)
-                v.setInt(R.id.mark, "setColorFilter", if (done) h.color else context.getColor(R.color.widget_sub))
+                look.tint(v, R.id.mark) { if (done) h.color else it.sub }
             } else {
                 val t = tasks.getOrNull(position) ?: return v
                 val sub = data.subLabel(t, withDay = mode == ListMode.UPCOMING)
@@ -51,10 +61,7 @@ class WidgetListService : RemoteViewsService() {
                 v.setInt(R.id.bar, "setColorFilter", t.color)
                 v.setTextViewText(R.id.sub, sub)
                 v.setViewVisibility(R.id.sub, if (sub.isEmpty()) View.GONE else View.VISIBLE)
-                v.setTextColor(
-                    R.id.sub,
-                    context.getColor(if (t.day < data.today) R.color.widget_overdue else R.color.widget_sub),
-                )
+                look.text(v, R.id.sub) { if (t.day < data.today) it.overdue else it.sub }
                 v.setViewVisibility(R.id.mark, View.GONE)
             }
             // Tippen auf die Zeile öffnet die App (füllt die Vorlage des Widgets aus).

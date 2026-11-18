@@ -1,13 +1,15 @@
 package at.todoliste.todo_liste.widgets
 
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Color
 import org.json.JSONObject
 import java.util.Calendar
 
 /** Eine offene Aufgabe, wie die App sie ins Widget schreibt. */
-data class WTask(val title: String, val day: Int, val minutes: Int?, val color: Int)
+data class WTask(val title: String, val day: Int, val minutes: Int?, val color: Int, val cat: String)
+
+/** Eine Kategorie (für die Auswahl „nur diese Kategorien“ je Widget). */
+data class WCat(val id: String, val name: String)
 
 /** Eine Gewohnheit mit den erledigten Tagen der letzten zwei Wochen. */
 data class WHabit(val name: String, val color: Int, val days: Set<Int>)
@@ -20,7 +22,8 @@ data class WHabit(val name: String, val color: Int, val days: Set<Int>)
  * Mitternacht stimmt, wenn die App nicht läuft.
  */
 class WidgetData private constructor(
-    val tasks: List<WTask>,
+    private val allTasks: List<WTask>,
+    private val categories: List<WCat>,
     val habits: List<WHabit>,
     private val labels: Map<String, String>,
     private val weekdays: List<String>,
@@ -32,17 +35,26 @@ class WidgetData private constructor(
 
     fun label(key: String, fallback: String): String = labels[key] ?: fallback
 
-    /** Überfällige und heute fällige Aufgaben. */
-    val dueToday: List<WTask> get() = tasks.filter { it.day <= today }
-    val overdueCount: Int get() = tasks.count { it.day < today }
+    /** Die gewählten Kategorien, die es noch gibt (gelöschte zählen nicht mehr). */
+    private fun chosen(cats: Set<String>): List<WCat> = categories.filter { it.id in cats }
 
-    /** Akzentfarbe des App-Themes, passend zu hell/dunkel des Systems. */
-    fun accent(context: Context): Int {
-        val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        return (if (night) accentDark else accentLight)
-            ?: context.getColor(at.todoliste.todo_liste.R.color.widget_accent)
+    /** Offene Aufgaben dieses Widgets: alle oder nur die gewählten Kategorien. */
+    fun tasks(cats: Set<String>): List<WTask> {
+        val ids = chosen(cats).map { it.id }.toSet()
+        return if (ids.isEmpty()) allTasks else allTasks.filter { it.cat in ids }
     }
+
+    /** Überfällige und heute fällige Aufgaben. */
+    fun dueToday(cats: Set<String>): List<WTask> = tasks(cats).filter { it.day <= today }
+
+    /** Titel mit den gewählten Kategorien dahinter, z. B. „Heute · Test, Termin“. */
+    fun title(base: String, cats: Set<String>): String {
+        val names = chosen(cats).map { it.name }
+        return if (names.isEmpty()) base else base + " · " + names.joinToString(", ")
+    }
+
+    /** Akzentfarbe des App-Themes für hell bzw. dunkel (null: noch keine Daten von der App). */
+    fun accent(dark: Boolean): Int? = if (dark) accentDark else accentLight
 
     /** „Heute“, „Morgen“, „Gestern“, sonst „Mo 24.11.“ bzw. „Mo 11/24“. */
     fun dayLabel(day: Int): String = when (day - today) {
@@ -95,7 +107,15 @@ class WidgetData private constructor(
                         day = day,
                         minutes = if (t.isNull("m")) null else t.optInt("m"),
                         color = parseColor(t.optString("c")) ?: Color.GRAY,
+                        cat = t.optString("k"),
                     )
+                }
+            }
+            val cats = ArrayList<WCat>()
+            o.optJSONArray("cats")?.let { a ->
+                for (i in 0 until a.length()) {
+                    val c = a.getJSONObject(i)
+                    cats += WCat(c.optString("id"), c.optString("n"))
                 }
             }
             val habits = ArrayList<WHabit>()
@@ -114,7 +134,8 @@ class WidgetData private constructor(
             val wd = ArrayList<String>()
             o.optJSONArray("wd")?.let { a -> for (i in 0 until a.length()) wd += a.optString(i) }
             return WidgetData(
-                tasks = tasks,
+                allTasks = tasks,
+                categories = cats,
                 habits = habits,
                 labels = labels,
                 weekdays = wd,

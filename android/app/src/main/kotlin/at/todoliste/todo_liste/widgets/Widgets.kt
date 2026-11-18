@@ -20,6 +20,7 @@ object Widgets {
     const val EXTRA_ACTION = "widget_action"
     const val ACTION_NEW_TASK = "new_task"
     const val EXTRA_MODE = "mode"
+    const val EXTRA_ID = "widget_id"
 
     private val listWidgets = mapOf(
         TodayWidget::class.java to ListMode.TODAY,
@@ -40,16 +41,17 @@ object Widgets {
 
     fun updateList(context: Context, mgr: AppWidgetManager, id: Int, mode: ListMode, data: WidgetData) {
         val v = RemoteViews(context.packageName, R.layout.widget_list)
-        val accent = data.accent(context)
+        val cfg = WidgetConfig.load(context, id)
+        val look = WidgetLook(context, cfg, data)
         val (title, count, empty) = when (mode) {
             ListMode.TODAY -> Triple(
-                data.label("today", "Heute"),
-                data.dueToday.size.toString(),
+                data.title(data.label("today", "Heute"), cfg.cats),
+                data.dueToday(cfg.cats).size.toString(),
                 data.label("nothingDue", "Nichts fällig."),
             )
             ListMode.UPCOMING -> Triple(
-                data.label("upcoming", "Demnächst"),
-                data.tasks.size.toString(),
+                data.title(data.label("upcoming", "Demnächst"), cfg.cats),
+                data.tasks(cfg.cats).size.toString(),
                 data.label("nothingDue", "Nichts fällig."),
             )
             ListMode.HABITS -> Triple(
@@ -58,17 +60,21 @@ object Widgets {
                 data.label("noHabits", "Noch keine Gewohnheiten."),
             )
         }
+        look.background(v)
         v.setTextViewText(R.id.title, title)
+        look.text(v, R.id.title) { it.text }
         v.setTextViewText(R.id.count, count)
-        v.setTextColor(R.id.count, accent)
+        look.text(v, R.id.count) { it.accent }
         v.setTextViewText(R.id.empty, empty)
-        v.setInt(R.id.plus, "setColorFilter", accent)
+        look.text(v, R.id.empty) { it.sub }
+        look.tint(v, R.id.plus) { it.accent }
         v.setContentDescription(R.id.plus, data.label("newTask", "Neue Aufgabe"))
         v.setViewVisibility(R.id.plus, if (mode == ListMode.HABITS) View.GONE else View.VISIBLE)
 
         // Jede Liste braucht eine eigene Adresse, sonst teilt Android sie zwischen den Widgets.
         val service = Intent(context, WidgetListService::class.java)
             .putExtra(EXTRA_MODE, mode.name)
+            .putExtra(EXTRA_ID, id)
             .setData(Uri.parse("todoliste://widget/${mode.name}/$id"))
         @Suppress("DEPRECATION")
         v.setRemoteAdapter(R.id.list, service)
@@ -86,10 +92,16 @@ object Widgets {
 
     fun updateCount(context: Context, mgr: AppWidgetManager, id: Int, data: WidgetData) {
         val v = RemoteViews(context.packageName, R.layout.widget_count)
-        val overdue = data.overdueCount
-        v.setTextViewText(R.id.number, data.dueToday.size.toString())
-        v.setTextColor(R.id.number, data.accent(context))
+        val cfg = WidgetConfig.load(context, id)
+        val look = WidgetLook(context, cfg, data)
+        val due = data.dueToday(cfg.cats)
+        val overdue = due.count { it.day < data.today }
+        look.background(v)
+        v.setTextViewText(R.id.number, due.size.toString())
+        look.text(v, R.id.number) { it.accent }
         v.setTextViewText(R.id.label, data.label("today", "Heute"))
+        look.text(v, R.id.label) { it.text }
+        look.text(v, R.id.extra) { it.overdue }
         v.setViewVisibility(R.id.extra, if (overdue > 0) View.VISIBLE else View.GONE)
         v.setTextViewText(R.id.extra, "${data.label("overdue", "Überfällig")}: $overdue")
         v.setOnClickPendingIntent(R.id.root, openApp(context, null))
@@ -111,6 +123,9 @@ object Widgets {
 
 abstract class BaseWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, mgr: AppWidgetManager, ids: IntArray) = Widgets.updateAll(context)
+
+    /** Widget vom Startbildschirm entfernt: seine Einstellungen löschen. */
+    override fun onDeleted(context: Context, ids: IntArray) = WidgetConfig.delete(context, ids)
 }
 
 /** Überfällige und heute fällige Aufgaben. */

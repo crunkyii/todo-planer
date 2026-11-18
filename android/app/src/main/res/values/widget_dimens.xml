@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Eckenradius der Form „rund“ (ab Android 12 der Radius des Systems, siehe values-v31). -->
+    <dimen name="widget_radius">24dp</dimen>
+    <dimen name="widget_radius_soft">10dp</dimen>
+</resources>

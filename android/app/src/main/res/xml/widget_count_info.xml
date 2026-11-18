@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Größe frei veränderbar. Alle 30 Minuten neu zeichnen (z. B. nach Mitternacht),
+<!-- Größe frei veränderbar; Einstellungen über „gedrückt halten → Einstellungen“ (nicht schon beim Ablegen).
+     Alle 30 Minuten neu zeichnen (z. B. nach Mitternacht),
      sonst sofort bei jeder Änderung in der App. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="at.todoliste.todo_liste.widgets.WidgetConfigActivity"
     android:description="@string/widget_count_desc"
     android:initialLayout="@layout/widget_count"
     android:minWidth="40dp"
@@ -13,4 +15,5 @@
     android:targetCellWidth="1"
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional" />
