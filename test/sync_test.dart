@@ -385,10 +385,12 @@ void main() {
       expect(b.store.tasksWithOlder, hasLength(1 + SyncService.olderPage));
       expect(b.store.olderWaiting(), 620 - SyncService.olderPage);
       expect(await localIds(b, tasksTable), hasLength(1));
-      // Für den Export: alle.
-      expect(await b.sync.loadAllOlderDone(), isTrue);
-      expect(b.store.tasksWithOlder, hasLength(621));
-      expect(b.store.tasksWithOlder.where((t) => t.subs.isNotEmpty), hasLength(3));
+      // Für den Export: alle übrigen, ohne sie in die Liste zu laden.
+      final rest = (await b.sync.fetchOlderDone())!;
+      expect(rest, hasLength(620 - SyncService.olderPage));
+      expect(b.store.tasksWithOlder, hasLength(1 + SyncService.olderPage));
+      expect([...b.store.tasksWithOlder, ...rest].where((t) => t.subs.isNotEmpty), hasLength(3));
+      expect(b.store.olderWaiting(), 620 - SyncService.olderPage);
       expect(stats(b.store), expected);
     });
 
@@ -427,7 +429,7 @@ void main() {
       b.sync.online = true;
       server.failReads = true;
       expect(await b.sync.loadOlderDone(), isFalse);
-      expect(await b.sync.loadAllOlderDone(), isFalse);
+      expect(await b.sync.fetchOlderDone(), isNull);
       expect(b.store.olderWaiting(), 1);
       server.failReads = false;
       expect(await b.sync.loadOlderDone(), isTrue);

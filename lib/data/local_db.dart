@@ -10,7 +10,7 @@ import 'models.dart';
 /// Neue Tabelle anlegen – an diesen Stellen eintragen:
 /// 1. hier eine `TableSpec` und in [syncTables] (Reihenfolge = Reihenfolge beim Hochladen),
 /// 2. ein Modell mit `toJson()`/`fromJson()` in `models.dart`,
-/// 3. im `Store`: eine eigene Map sowie `_put`, `_ingest` und `_existingUpdatedAt`,
+/// 3. im `Store`: eine eigene Map sowie `_put`, `_ingest` und `_merge`,
 /// 4. in `supabase/schema.sql`: die Tabelle und ihr Name in der Schleife für Trigger, RLS und Realtime
 ///    (samt Feld-Gruppen, wenn sie feldweise zusammengeführt werden soll).
 class TableSpec {

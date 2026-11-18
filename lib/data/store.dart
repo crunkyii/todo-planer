@@ -88,6 +88,9 @@ class Store extends ChangeNotifier {
   /// Wie [tasks], dazu die nachgeladenen älteren erledigten (Aufgabenliste, Kalender, Export).
   List<Task> get tasksWithOlder => [...tasks, ..._older.values];
 
+  /// Liegt die Aufgabe nur online (am Gerät gibt es nur ihren Merkzettel)?
+  bool _onlyOnline(Object? id) => _archived.containsKey(id) && !_tasks.containsKey(id);
+
   bool _waiting(ArchivedDone a, String? categoryId, String? dueDay) =>
       a.due != null &&
       (categoryId == null || a.cat == categoryId) &&
@@ -850,7 +853,7 @@ class Store extends ChangeNotifier {
         }
       }
       // Unteraufgaben einer ausgelagerten Aufgabe bleiben ebenfalls online.
-      if (t.name == 'subtasks' && _archived.containsKey(r['task_id']) && !_tasks.containsKey(r['task_id'])) continue;
+      if (t.name == 'subtasks' && _onlyOnline(r['task_id'])) continue;
       final merged = _merge(t, r);
       if (merged == null) continue;
       (merged.ahead ? ahead : accepted).add(merged.row);
@@ -874,8 +877,7 @@ class Store extends ChangeNotifier {
     final now = nowUtc();
     return [
       for (final r in rows)
-        if (_archived.containsKey(r['id']) && !_tasks.containsKey(r['id']) && !Task.fromJson(r).isOldDone(now))
-          r['id'] as String,
+        if (_onlyOnline(r['id']) && !Task.fromJson(r).isOldDone(now)) r['id'] as String,
     ];
   }
 
@@ -887,11 +889,12 @@ class Store extends ChangeNotifier {
   /// ändert sich nichts. Was noch in der Warteschlange steht, bleibt am Gerät.
   /// Gibt zurück, wie viele Aufgaben ausgelagert wurden.
   Future<int> archiveOldDone() async {
+    final now = nowUtc();
+    if (!_tasks.values.any((t) => t.isOldDone(now))) return 0;
     await flush();
     final waiting = await db.dirtyTaskIds();
     // Während der Abfrage hat sich etwas geändert: beim nächsten Abgleich wieder versuchen.
     if (_writes.isNotEmpty) return 0;
-    final now = nowUtc();
     final gone = [
       for (final t in _tasks.values)
         if (t.isOldDone(now) && !waiting.contains(t.id)) t,
@@ -926,23 +929,32 @@ class Store extends ChangeNotifier {
   /// Datenbank). [requested] sind die angefragten IDs: Was der Server dazu nicht (mehr) als
   /// alte erledigte Aufgabe liefert, wird in dieser Sitzung nicht noch einmal angefragt.
   void addOlder(List<String> requested, List<Map<String, Object?>> tasks, List<Map<String, Object?>> subs) {
+    final taskRows = {for (final r in tasks) r['id']: r}, subRows = {for (final r in subs) r['id']: r};
+    for (final x in readOlder(tasks, subs)) {
+      _older[x.id] = x;
+      _remember(tasksTable, x.toJson(), taskRows[x.id]!, older: true);
+      for (final s in x.subs) {
+        _remember(subtasksTable, s.toJson(), subRows[s.id]!, older: true);
+      }
+    }
+    _olderMissing.addAll(requested.where((id) => !_older.containsKey(id) && !_tasks.containsKey(id)));
+    notifyListeners();
+  }
+
+  /// Macht aus Server-Zeilen die älteren erledigten Aufgaben samt Unteraufgaben, ohne sie zu
+  /// behalten (für den Export). Was am Gerät liegt oder nicht mehr dazugehört, bleibt weg.
+  List<Task> readOlder(List<Map<String, Object?>> tasks, List<Map<String, Object?>> subs) {
     final now = nowUtc();
     final subsOf = <String, List<Subtask>>{};
     for (final r in subs) {
       final s = Subtask.fromJson(r);
-      if (s.deleted) continue;
-      (subsOf[s.taskId] ??= []).add(s);
-      _remember(subtasksTable, s.toJson(), r, older: true);
+      if (!s.deleted) (subsOf[s.taskId] ??= []).add(s);
     }
-    for (final r in tasks) {
-      final x = Task.fromJson(r);
-      if (x.deleted || !x.isOldDone(now) || _tasks.containsKey(x.id) || !_archived.containsKey(x.id)) continue;
-      x.subs = (subsOf[x.id] ?? [])..sort((a, b) => a.position.compareTo(b.position));
-      _older[x.id] = x;
-      _remember(tasksTable, x.toJson(), r, older: true);
-    }
-    _olderMissing.addAll(requested.where((id) => !_older.containsKey(id) && !_tasks.containsKey(id)));
-    notifyListeners();
+    return [
+      for (final r in tasks)
+        if (Task.fromJson(r) case final x when !x.deleted && x.isOldDone(now) && _onlyOnline(x.id))
+          x..subs = ((subsOf[x.id] ?? [])..sort((a, b) => a.position.compareTo(b.position))),
+    ];
   }
 
   /// Ob die Server-Zeile [r] etwas Neues bringt: `false`, wenn hier schon derselbe oder ein

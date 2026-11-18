@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'cloud.dart';
 import 'field_merge.dart';
 import 'local_db.dart';
+import 'models.dart';
 import 'settings_store.dart';
 import 'store.dart';
 
@@ -202,10 +202,7 @@ class SyncService extends ChangeNotifier {
       if (k != fieldTimesColumn)
         k: t.bools.contains(k) ? row[k] == 1 || row[k] == true : row[k]
       else if (_serverMergesFields)
-        k: switch (row[k]) {
-          final String s => jsonDecode(s),
-          final other => other,
-        },
+        k: decodeFieldTimes(row[k]),
   };
 
   /// `false`, sobald der Server die Spalte `field_times` ablehnt (älteres `schema.sql`).
@@ -229,16 +226,17 @@ class SyncService extends ChangeNotifier {
     final db = cloud.client;
     var bad = 0;
     for (final t in syncTables) {
+      Future<void> send(Object rows) => db.from(t.name).upsert(rows, onConflict: t.keys.join(','));
       final rows = await store.dirtyRows(t);
       for (var i = 0; i < rows.length; i += _pushChunk) {
         final chunk = rows.sublist(i, i + _pushChunk > rows.length ? rows.length : i + _pushChunk);
         var ok = chunk;
         try {
           try {
-            await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
+            await send([for (final r in chunk) _remote(t, r)]);
           } on PostgrestException catch (e) {
             if (!_unknownColumn(e)) rethrow;
-            await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
+            await send([for (final r in chunk) _remote(t, r)]); // jetzt ohne die unbekannte Spalte
           }
         } on PostgrestException {
           // Lehnt der Server ein Paket ab, Zeile für Zeile versuchen: Eine fehlerhafte Zeile
@@ -246,7 +244,7 @@ class SyncService extends ChangeNotifier {
           ok = [];
           for (final r in chunk) {
             try {
-              await db.from(t.name).upsert(_remote(t, r), onConflict: t.keys.join(','));
+              await send(_remote(t, r));
               ok.add(r);
             } on PostgrestException catch (e) {
               bad++;
@@ -309,6 +307,10 @@ class SyncService extends ChangeNotifier {
   /// Läuft gerade ein Nachladen?
   bool loadingOlder = false;
 
+  /// Aufgaben und Unteraufgaben zu den [ids], beides gleichzeitig abgerufen.
+  Future<(List<Map<String, Object?>>, List<Map<String, Object?>>)> _olderRows(List<String> ids) =>
+      (_rowsFor(tasksTable, 'id', ids), _rowsFor(subtasksTable, 'task_id', ids)).wait;
+
   /// Alle Zeilen von [t], deren [column] einen der Werte [ids] hat.
   Future<List<Map<String, Object?>>> _rowsFor(TableSpec t, String column, List<String> ids) async {
     final out = <Map<String, Object?>>[];
@@ -329,8 +331,7 @@ class SyncService extends ChangeNotifier {
     loadingOlder = true;
     notifyListeners();
     try {
-      final tasks = await _rowsFor(tasksTable, 'id', ids);
-      final subs = await _rowsFor(subtasksTable, 'task_id', ids);
+      final (tasks, subs) = await _olderRows(ids);
       store.addOlder(ids, tasks, subs);
       return true;
     } on Object catch (e) {
@@ -342,12 +343,20 @@ class SyncService extends ChangeNotifier {
     }
   }
 
-  /// Holt alle älteren erledigten Aufgaben (für den Export). `false`, wenn welche fehlen.
-  Future<bool> loadAllOlderDone() async {
-    while (store.olderWaiting() > 0) {
-      if (!await loadOlderDone(limit: _pullPage)) return false;
+  /// Für den Export: alle älteren erledigten Aufgaben, die noch nicht nachgeladen sind – nur als
+  /// Liste. Sie kommen nicht in die Aufgabenliste (sonst träfe „Erledigte löschen“ danach alle).
+  /// `null`, wenn es nicht geklappt hat (offline, Server nicht erreichbar).
+  Future<List<Task>?> fetchOlderDone() async {
+    final ids = store.olderIdsToLoad(limit: store.olderWaiting());
+    if (ids.isEmpty) return const [];
+    if (!canLoadOlder) return null;
+    try {
+      final (tasks, subs) = await _olderRows(ids);
+      return store.readOlder(tasks, subs);
+    } on Object catch (e) {
+      debugPrint('Nachladen fehlgeschlagen: ${e.runtimeType}');
+      return null;
     }
-    return true;
   }
 
   @override

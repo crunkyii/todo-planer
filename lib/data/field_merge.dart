@@ -25,10 +25,7 @@ DateTime _time(Object? v) => DateTime.parse(v as String).toUtc();
 /// als JSON-Text, vom Server kommt sie als Map.)
 Map<String, DateTime>? validFieldTimes(Map<String, Object?> row) {
   try {
-    final raw = switch (row[fieldTimesColumn]) {
-      final String s => jsonDecode(s),
-      final other => other,
-    };
+    final raw = decodeFieldTimes(row[fieldTimesColumn]);
     if (raw is! Map || raw.isEmpty) return null;
     final times = {for (final e in raw.entries) e.key as String: _time(e.value)};
     final latest = times.values.reduce((a, b) => a.isAfter(b) ? a : b);
@@ -37,6 +34,9 @@ Map<String, DateTime>? validFieldTimes(Map<String, Object?> row) {
     return null; // unlesbar: wie eine Zeile ohne Zeitstempel behandeln
   }
 }
+
+/// Der Inhalt der Spalte als JSON-Wert: lokal steht er als Text, vom Server kommt er fertig.
+Object? decodeFieldTimes(Object? value) => value is String ? jsonDecode(value) : value;
 
 /// Zeitstempel in der Form, in der sie gespeichert und hochgeladen werden.
 Map<String, String> encodeFieldTimes(Map<String, DateTime> times) => {
