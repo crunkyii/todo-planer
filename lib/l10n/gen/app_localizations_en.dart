@@ -1136,6 +1136,41 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get updates => 'Updates';
+
+  @override
+  String updateVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String updateCurrent(String version) {
+    return 'Version $version – up to date';
+  }
+
+  @override
+  String get updateChecking => 'Checking for updates …';
+
+  @override
+  String updateAvailable(String version) {
+    return 'Version $version is available';
+  }
+
+  @override
+  String get updateInstall => 'Install';
+
+  @override
+  String updateDownloading(int percent) {
+    return 'Downloading … $percent %';
+  }
+
+  @override
+  String get updateInstalling => 'Installing – the app will restart shortly';
+
+  @override
+  String get updateFailed => 'Update failed – tap to try again';
+
+  @override
   String get langDe => 'Deutsch';
 
   @override

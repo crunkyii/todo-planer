@@ -331,6 +331,15 @@
   "colLeadDays": "Lead time (days)",
   "exportStamp": "As of {date}",
   "exportWeekOf": "Only week of {date}",
+  "updates": "Updates",
+  "updateVersion": "Version {version}",
+  "updateCurrent": "Version {version} – up to date",
+  "updateChecking": "Checking for updates …",
+  "updateAvailable": "Version {version} is available",
+  "updateInstall": "Install",
+  "updateDownloading": "Downloading … {percent} %",
+  "updateInstalling": "Installing – the app will restart shortly",
+  "updateFailed": "Update failed – tap to try again",
   "langDe": "Deutsch",
   "langEn": "English"
 }

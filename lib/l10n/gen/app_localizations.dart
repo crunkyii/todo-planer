@@ -2078,6 +2078,60 @@ abstract class AppLocalizations {
   /// **'Nur Woche ab {date}'**
   String exportWeekOf(String date);
 
+  /// No description provided for @updates.
+  ///
+  /// In de, this message translates to:
+  /// **'Updates'**
+  String get updates;
+
+  /// No description provided for @updateVersion.
+  ///
+  /// In de, this message translates to:
+  /// **'Version {version}'**
+  String updateVersion(String version);
+
+  /// No description provided for @updateCurrent.
+  ///
+  /// In de, this message translates to:
+  /// **'Version {version} – aktuell'**
+  String updateCurrent(String version);
+
+  /// No description provided for @updateChecking.
+  ///
+  /// In de, this message translates to:
+  /// **'Suche nach Updates …'**
+  String get updateChecking;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In de, this message translates to:
+  /// **'Version {version} ist verfügbar'**
+  String updateAvailable(String version);
+
+  /// No description provided for @updateInstall.
+  ///
+  /// In de, this message translates to:
+  /// **'Installieren'**
+  String get updateInstall;
+
+  /// No description provided for @updateDownloading.
+  ///
+  /// In de, this message translates to:
+  /// **'Lädt herunter … {percent} %'**
+  String updateDownloading(int percent);
+
+  /// No description provided for @updateInstalling.
+  ///
+  /// In de, this message translates to:
+  /// **'Wird installiert – die App startet gleich neu'**
+  String get updateInstalling;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In de, this message translates to:
+  /// **'Update fehlgeschlagen – tippen, um es noch einmal zu versuchen'**
+  String get updateFailed;
+
   /// No description provided for @langDe.
   ///
   /// In de, this message translates to:

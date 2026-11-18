@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../app_services.dart';
 import '../data/settings_store.dart';
 import '../l10n/gen/app_localizations.dart';
+import '../services/updater.dart';
 import '../theme/color_math.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
@@ -37,7 +38,7 @@ class SettingsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     return ListenableBuilder(
-      listenable: Listenable.merge([app, app.settings, app.store, app.sync]),
+      listenable: Listenable.merge([app, app.settings, app.store, app.sync, ?app.updater]),
       builder: (context, _) {
         final s = app.settings;
         final l = context.l;
@@ -121,6 +122,7 @@ class SettingsTab extends StatelessWidget {
                     chevron: true,
                     onTap: () => Sheets(context, ui).export(),
                   ),
+                  if (app.updater case final u? when u.supported) ...[CapsHeading(l.updates), _UpdateRow(updater: u)],
                 ],
               ),
             ),
@@ -176,6 +178,36 @@ class SettingsTab extends StatelessWidget {
       ),
       SetRow(title: l.connectToDb, subtitle: l.connectToDbSub, chevron: true, onTap: app.openSetup),
     ];
+  }
+}
+
+/// Zeile „Updates“: zeigt die Version, sucht beim Antippen nach einer neueren und installiert sie.
+class _UpdateRow extends StatelessWidget {
+  const _UpdateRow({required this.updater});
+  final Updater updater;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l;
+    final available = updater.state == UpdateState.available;
+    final status = switch (updater.state) {
+      UpdateState.idle => l.updateVersion(updater.currentVersion),
+      UpdateState.upToDate => l.updateCurrent(updater.currentVersion),
+      UpdateState.checking => l.updateChecking,
+      UpdateState.available => l.updateAvailable(updater.found?.version ?? ''),
+      UpdateState.downloading => l.updateDownloading((updater.progress * 100).floor()),
+      UpdateState.installing => l.updateInstalling,
+      UpdateState.failed => l.updateFailed,
+    };
+    return Semantics(
+      liveRegion: true,
+      child: SetRow(
+        title: l.updates,
+        subtitle: status,
+        onTap: updater.busy || available ? null : updater.check,
+        trailing: available ? AppButton(label: l.updateInstall, kind: BtnKind.tonal, onTap: updater.install) : null,
+      ),
+    );
   }
 }
 

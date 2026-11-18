@@ -10,10 +10,12 @@ import 'data/sync_service.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'services/home_widgets.dart';
 import 'services/reminders.dart';
+import 'services/updater.dart';
 import 'theme/tokens.dart';
 import 'util/dates.dart';
 import 'util/fmt.dart';
 import 'util/task_logic.dart';
+import 'widgets/app_icon.dart';
 import 'widgets/snack.dart';
 
 /// Alle Dienste der App an einem Ort; über [AppScope] im Widget-Baum erreichbar.
@@ -24,7 +26,9 @@ class AppServices extends ChangeNotifier {
     required this.cloud,
     required this.sync,
     required this.reminders,
+    this.updater,
   }) {
+    updater?.addListener(_announceUpdate);
     store.onLocalChange = _onLocalChange;
     store.addListener(_refreshRemindersAndWidgets);
     settings.addListener(_onSettingsChanged);
@@ -67,6 +71,10 @@ class AppServices extends ChangeNotifier {
   final Reminders reminders;
   final snack = SnackController();
 
+  /// Auto-Update (nur die installierte Windows-App; sonst `null` oder ohne Wirkung).
+  final Updater? updater;
+  bool _updateAnnounced = false;
+
   /// `true` = Einrichtung „Datenbank verbinden“ wurde aus Login/Optionen geöffnet.
   bool setupOpen = false;
 
@@ -84,6 +92,7 @@ class AppServices extends ChangeNotifier {
 
   /// Startet Supabase, falls eine Datenbank eingerichtet ist.
   Future<void> boot() async {
+    unawaited(updater?.check());
     await sync.start();
     if (settings.syncMode == SyncMode.cloud && settings.cloud != null) {
       try {
@@ -161,6 +170,7 @@ class AppServices extends ChangeNotifier {
   void enterApp(AppLocalizations l) {
     final changed = _l?.localeName != l.localeName;
     _l = l;
+    _announceUpdate();
     reminders.setTexts(channelName: l.notifChannelName, channelDesc: l.notifChannelDesc);
     if (settings.syncMode == SyncMode.local || (signedIn && _firstSyncDone)) _ensureDefaults();
     if (changed) _refreshRemindersAndWidgets();
@@ -210,6 +220,14 @@ class AppServices extends ChangeNotifier {
     await _authChanged();
   }
 
+  /// Einmal pro Start melden, dass es eine neue Version gibt (installiert wird in den Optionen).
+  void _announceUpdate() {
+    final l = _l, version = updater?.found?.version;
+    if (l == null || version == null || _updateAnnounced || updater?.state != UpdateState.available) return;
+    _updateAnnounced = true;
+    snack.show(l.updateAvailable(version), icon: Ic.sync);
+  }
+
   void _onLocalChange() {
     if (signedIn) sync.schedule();
   }
@@ -256,6 +274,9 @@ class AppServices extends ChangeNotifier {
       ..onLocalChange = null;
     settings.removeListener(_onSettingsChanged);
     sync.onPulled = null;
+    updater
+      ?..removeListener(_announceUpdate)
+      ..dispose();
     _lifecycle.dispose();
     snack.dispose();
     super.dispose();

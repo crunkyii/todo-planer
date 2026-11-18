@@ -1145,6 +1145,41 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get updates => 'Updates';
+
+  @override
+  String updateVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String updateCurrent(String version) {
+    return 'Version $version – aktuell';
+  }
+
+  @override
+  String get updateChecking => 'Suche nach Updates …';
+
+  @override
+  String updateAvailable(String version) {
+    return 'Version $version ist verfügbar';
+  }
+
+  @override
+  String get updateInstall => 'Installieren';
+
+  @override
+  String updateDownloading(int percent) {
+    return 'Lädt herunter … $percent %';
+  }
+
+  @override
+  String get updateInstalling => 'Wird installiert – die App startet gleich neu';
+
+  @override
+  String get updateFailed => 'Update fehlgeschlagen – tippen, um es noch einmal zu versuchen';
+
+  @override
   String get langDe => 'Deutsch';
 
   @override

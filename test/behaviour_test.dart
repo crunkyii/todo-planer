@@ -1,9 +1,14 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 
+import 'dart:convert';
 import 'dart:ui' show PointerDeviceKind, Tristate;
+
+import 'package:cryptography/cryptography.dart';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:todo_liste/data/local_db.dart';
@@ -12,6 +17,8 @@ import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/services/export.dart';
+import 'package:todo_liste/services/update_manifest.dart';
+import 'package:todo_liste/services/updater.dart';
 import 'package:todo_liste/screens/week_tab.dart';
 import 'package:todo_liste/theme/app_theme.dart';
 import 'package:todo_liste/theme/color_math.dart';
@@ -750,6 +757,85 @@ void main() {
       await _tap(tester, find.text('30').first);
       expect(app.settings.raster, 30);
       await finishApp(tester, app);
+    });
+
+    testWidgets('Updates: neue Version wird gemeldet und nach „Installieren“ gestartet', (tester) async {
+      final l = l10n('de');
+      final installer = utf8.encode('Installer');
+      final launched = <String>[];
+      final updater = (await tester.runAsync(() async {
+        final key = await Ed25519().newKeyPair();
+        final hash = await Sha256().hash(installer);
+        final sig = await Ed25519().sign(signedMessage('1.1.0', hash.bytes), keyPair: key);
+        final manifest = jsonEncode({
+          'version': '1.1.0',
+          'url': '${releaseDownloadBase}v1.1.0/todo-planer-1.1.0-setup.exe',
+          'signature': base64Encode(sig.bytes),
+        });
+        return Updater(
+          currentVersion: '1.0.0',
+          supported: true,
+          publicKey: base64Encode((await key.extractPublicKey()).bytes),
+          client: MockClient(
+            (req) async =>
+                req.url == latestManifestUrl ? http.Response(manifest, 200) : http.Response.bytes(installer, 200),
+          ),
+          launch: (path) async => launched.add(path),
+        );
+      }))!;
+      final app = await makeServices(updater: updater);
+      await tester.runAsync(updater.check);
+      await pumpApp(tester, app);
+      // Die Meldung kommt einmal beim Start …
+      expect(find.text(l.updateAvailable('1.1.0')), findsOneWidget);
+      await _tap(tester, find.bySemanticsLabel(l.settings));
+      await tester.scrollUntilVisible(find.text(l.updates), 300, scrollable: find.byType(Scrollable).first);
+      // … und in den Optionen steht sie mit dem Knopf zum Installieren.
+      expect(find.text(l.updateInstall), findsOneWidget);
+      await tester.runAsync(() async {
+        await tester.tap(find.text(l.updateInstall));
+        while (updater.busy && launched.isEmpty) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      });
+      await tester.pump();
+      expect(launched.single, endsWith('todo-planer-1.1.0-setup.exe'));
+      expect(find.text(l.updateInstalling), findsOneWidget);
+      expect(find.text(l.updateInstall), findsNothing);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Updates: Zeile zeigt die Version und fehlt, wo sich die App nicht selbst aktualisiert', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      for (final supported in [true, false]) {
+        final updater = Updater(
+          currentVersion: '1.0.0',
+          supported: supported,
+          client: MockClient((_) async => http.Response('', 404)),
+        );
+        final app = await makeServices(updater: updater);
+        await pumpApp(tester, app);
+        await _tap(tester, find.bySemanticsLabel(l.settings));
+        await tester.scrollUntilVisible(find.text(l.exportData), 300, scrollable: find.byType(Scrollable).first);
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
+        await tester.pumpAndSettle();
+        expect(find.text(l.updates), supported ? findsOneWidget : findsNothing);
+        if (supported) {
+          expect(find.text(l.updateVersion('1.0.0')), findsOneWidget);
+          // Antippen sucht; ohne Netz steht danach der Hinweis zum Wiederholen da.
+          await tester.runAsync(() async {
+            await tester.tap(find.text(l.updates));
+            while (updater.state != UpdateState.failed) {
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+            }
+          });
+          await tester.pump();
+          expect(find.text(l.updateFailed), findsOneWidget);
+        }
+        await finishApp(tester, app);
+      }
     });
   });
 

@@ -762,6 +762,43 @@
       }
     }
   },
+  "updates": "Updates",
+  "updateVersion": "Version {version}",
+  "@updateVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCurrent": "Version {version} – aktuell",
+  "@updateCurrent": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateChecking": "Suche nach Updates …",
+  "updateAvailable": "Version {version} ist verfügbar",
+  "@updateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateInstall": "Installieren",
+  "updateDownloading": "Lädt herunter … {percent} %",
+  "@updateDownloading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "updateInstalling": "Wird installiert – die App startet gleich neu",
+  "updateFailed": "Update fehlgeschlagen – tippen, um es noch einmal zu versuchen",
   "langDe": "Deutsch",
   "langEn": "English"
 }

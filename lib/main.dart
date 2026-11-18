@@ -1,5 +1,6 @@
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
@@ -12,6 +13,7 @@ import 'data/sync_service.dart';
 import 'screens/widget_config_screen.dart';
 import 'services/home_widgets.dart';
 import 'services/reminders.dart';
+import 'services/updater.dart';
 import 'services/widget_config.dart';
 
 Future<void> main() async {
@@ -19,11 +21,12 @@ Future<void> main() async {
   final store = Store(LocalDb());
   final reminders = Reminders();
   // Unabhängige Vorbereitungen gleichzeitig.
-  final (_, prefs, _, _) = await (
+  final (_, prefs, _, _, info) = await (
     initializeDateFormatting(),
     SharedPreferences.getInstance(),
     store.load(),
     reminders.init(appName: 'Todo-Liste'),
+    PackageInfo.fromPlatform(),
   ).wait;
   final settings = SettingsStore(prefs);
   final cloud = Cloud();
@@ -34,6 +37,7 @@ Future<void> main() async {
     cloud: cloud,
     sync: SyncService(store: store, settings: settings, cloud: cloud),
     reminders: reminders,
+    updater: Updater.forDevice(info.version),
   );
   await services.boot();
 

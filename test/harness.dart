@@ -15,6 +15,7 @@ import 'package:todo_liste/data/store.dart';
 import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/services/reminders.dart';
+import 'package:todo_liste/services/updater.dart';
 import 'package:todo_liste/util/dates.dart';
 
 /// Fester Zeitpunkt für alle Screen-Tests: Mittwoch, 18. November 2026, 10:30.
@@ -54,6 +55,7 @@ Future<AppServices> makeServices({
   bool keepPrefs = false,
   SyncService Function(Store, SettingsStore, Cloud)? sync,
   Cloud? cloud,
+  Updater? updater,
 }) async {
   // keepPrefs: „App neu gestartet“ – die gespeicherten Einstellungen bleiben, wie sie sind.
   if (!keepPrefs) {
@@ -76,6 +78,7 @@ Future<AppServices> makeServices({
     cloud: c,
     sync: sync?.call(store, settings, c) ?? SyncService(store: store, settings: settings, cloud: c),
     reminders: Reminders(),
+    updater: updater,
   );
 }
 
