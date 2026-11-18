@@ -1,0 +1,191 @@
+import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../theme/tokens.dart';
+
+/// Kurzes Haptik-Feedback (wie `buzz()` im Prototyp).
+void buzz() => HapticFeedback.selectionClick();
+
+/// „Gewichtiger“ Knopf: gibt beim Drücken elastisch nach, schwingt beim Loslassen
+/// federnd zurück (Überschwingen = Trägheit) und zeigt ein Fingerlicht.
+/// Respektiert „Animationen reduzieren“. Bedienbar mit Tastatur (Enter/Leertaste).
+class Pressable extends StatefulWidget {
+  const Pressable({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.semanticLabel,
+    this.selected,
+    this.toggled,
+    this.glow = true,
+    this.pressScale = 0.92,
+    this.radius = const BorderRadius.all(Radius.circular(999)),
+    this.focusRadius,
+    this.tooltip,
+    this.excludeChildSemantics = false,
+    this.onTapDown,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final ValueChanged<TapDownDetails>? onTapDown;
+  final String? semanticLabel;
+  final bool? selected;
+  final bool? toggled;
+  final bool glow;
+
+  /// 0.92 für Knöpfe, 0.97 für ganze Zeilen/Karten.
+  final double pressScale;
+  final BorderRadius radius;
+  final BorderRadius? focusRadius;
+  final String? tooltip;
+  final bool excludeChildSemantics;
+
+  @override
+  State<Pressable> createState() => _PressableState();
+}
+
+class _Glow {
+  _Glow(this.at, this.ctrl);
+  final Offset at;
+  final AnimationController ctrl;
+}
+
+class _PressableState extends State<Pressable> with TickerProviderStateMixin {
+  late final AnimationController _scale = AnimationController(vsync: this, value: 1, lowerBound: 0.8, upperBound: 1.1);
+  final List<_Glow> _glows = [];
+  bool _focus = false;
+
+  bool get _reduced => Motion.reduced(context);
+
+  @override
+  void dispose() {
+    _scale.dispose();
+    for (final g in _glows) {
+      g.ctrl.dispose();
+    }
+    super.dispose();
+  }
+
+  void _down(TapDownDetails d) {
+    widget.onTapDown?.call(d);
+    if (widget.onTap == null || _reduced) return;
+    _scale.animateTo(widget.pressScale, duration: Motion.press, curve: Curves.easeOut);
+    if (widget.glow) _addGlow(d.localPosition);
+  }
+
+  void _addGlow(Offset at) {
+    final c = AnimationController(vsync: this, duration: Motion.glow);
+    final g = _Glow(at, c);
+    setState(() => _glows.add(g));
+    c.forward().whenComplete(() {
+      if (!mounted) return;
+      setState(() => _glows.remove(g));
+      c.dispose();
+    });
+  }
+
+  void _release() {
+    if (_reduced) {
+      _scale.value = 1;
+      return;
+    }
+    // 0 % → 0.92, 40 % → 1.045, 70 % → 0.99, 100 % → 1 (Keyframes `release` aus dem CSS)
+    _scale
+        .animateTo(1.045, duration: Motion.releaseDur * 0.4, curve: Motion.release)
+        .then((_) => _scale.animateTo(0.99, duration: Motion.releaseDur * 0.3, curve: Curves.easeInOut))
+        .then((_) => _scale.animateTo(1, duration: Motion.releaseDur * 0.3, curve: Curves.easeOut));
+  }
+
+  void _activate() {
+    if (widget.onTap == null) return;
+    _release();
+    widget.onTap!();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tok = context.tok;
+    Widget child = AnimatedBuilder(
+      animation: _scale,
+      builder: (context, c) => Transform.scale(scale: _scale.value, child: c),
+      child: _glows.isEmpty
+          ? widget.child
+          : Stack(
+              clipBehavior: Clip.none,
+              children: [
+                widget.child,
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ClipRRect(
+                      borderRadius: widget.radius,
+                      child: CustomPaint(painter: _GlowPainter(_glows, tok.glowStrong)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+    if (_focus) {
+      child = DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          borderRadius: widget.focusRadius ?? widget.radius,
+          border: Border.all(color: tok.p, width: 2),
+        ),
+        child: child,
+      );
+    }
+    child = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: _down,
+      onTapUp: widget.onTap == null ? null : (_) => _release(),
+      onTapCancel: widget.onTap == null ? null : _release,
+      onTap: widget.onTap,
+      child: child,
+    );
+    child = FocusableActionDetector(
+      enabled: widget.onTap != null,
+      mouseCursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+      onShowFocusHighlight: (v) => setState(() => _focus = v),
+      actions: {ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) => _activate())},
+      child: child,
+    );
+    child = Semantics(
+      button: true,
+      enabled: widget.onTap != null,
+      label: widget.semanticLabel,
+      selected: widget.selected,
+      toggled: widget.toggled,
+      excludeSemantics: widget.excludeChildSemantics,
+      onTap: widget.onTap,
+      child: child,
+    );
+    if (widget.tooltip != null) child = Tooltip(message: widget.tooltip!, child: child);
+    return child;
+  }
+}
+
+class _GlowPainter extends CustomPainter {
+  _GlowPainter(this.glows, this.color) : super(repaint: Listenable.merge([for (final g in glows) g.ctrl]));
+  final List<_Glow> glows;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final g in glows) {
+      final t = Curves.easeOut.transform(g.ctrl.value);
+      final r = 90 * (0.25 + 1.25 * t);
+      final opacity = 1 - t;
+      final paint = Paint()
+        ..shader = RadialGradient(
+          colors: [color.withValues(alpha: color.a * opacity), color.withValues(alpha: 0)],
+          stops: const [0, 0.62],
+        ).createShader(Rect.fromCircle(center: g.at, radius: r));
+      canvas.drawCircle(g.at, r, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GlowPainter old) => true;
+}
