@@ -21,12 +21,12 @@ Future<void> main() async {
   final store = Store(LocalDb());
   final reminders = Reminders();
   // Unabhängige Vorbereitungen gleichzeitig.
-  final (_, prefs, _, _, info) = await (
+  final (_, prefs, _, _, updater) = await (
     initializeDateFormatting(),
     SharedPreferences.getInstance(),
     store.load(),
     reminders.init(appName: 'ToDo Planer'),
-    PackageInfo.fromPlatform(),
+    PackageInfo.fromPlatform().then((info) => Updater.forDevice(info.version)),
   ).wait;
   final settings = SettingsStore(prefs);
   final cloud = Cloud();
@@ -37,7 +37,7 @@ Future<void> main() async {
     cloud: cloud,
     sync: SyncService(store: store, settings: settings, cloud: cloud),
     reminders: reminders,
-    updater: Updater.forDevice(info.version),
+    updater: updater,
   );
   await services.boot();
 

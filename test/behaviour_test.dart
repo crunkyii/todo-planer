@@ -19,6 +19,7 @@ import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
 import 'package:todo_liste/services/export.dart';
 import 'package:todo_liste/services/update_manifest.dart';
+import 'package:todo_liste/services/update_platform.dart';
 import 'package:todo_liste/services/updater.dart';
 import 'package:todo_liste/screens/week_tab.dart';
 import 'package:todo_liste/theme/app_theme.dart';
@@ -802,7 +803,7 @@ void main() {
             (req) async =>
                 req.url == latestManifestUrl ? http.Response(manifest, 200) : http.Response.bytes(installer, 200),
           ),
-          launch: (path) async => launched.add(path),
+          platform: WindowsUpdate(launch: (path) async => launched.add(path)),
         );
       }))!;
       final app = await makeServices(updater: updater);

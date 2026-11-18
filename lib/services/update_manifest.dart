@@ -33,21 +33,23 @@ bool isNewer(String candidate, String current) {
 List<int> signedMessage(String version, List<int> sha256) =>
     utf8.encode('todo-planer-update\n$version\n${base64Encode(sha256)}\n');
 
-/// Inhalt von `latest.json`.
-class UpdateManifest {
-  const UpdateManifest({required this.version, required this.url, required this.signature});
+/// App-ID der veröffentlichten Android-App und SHA-256 ihres Signatur-Zertifikats (öffentlich, steht in
+/// jeder APK). Nur diese App aktualisiert sich selbst: Die Test-Kopie und selbst gebaute Apps sind anders
+/// signiert, Android würde die APK des Releases dort ohnehin ablehnen.
+const releaseAppId = 'at.todoliste.todo_liste';
+const releaseCertSha256 = 'e5d510e4f9f18a57185eaa0caf10fb3d1129274417ba07b564ba5bbdd914ffe2';
 
-  final String version;
+/// Eine Datei eines Releases: woher sie kommt und ihre Signatur.
+class UpdateFile {
+  const UpdateFile({required this.url, required this.signature});
+
   final Uri url;
   final List<int> signature;
 
-  /// Liest und prüft die Datei; wirft [FormatException], wenn etwas nicht passt.
-  factory UpdateManifest.parse(String body) {
-    final j = jsonDecode(body);
-    if (j is! Map) throw const FormatException('latest.json: kein Objekt');
-    final version = j['version'], url = j['url'], signature = j['signature'];
-    if (version is! String || parseVersion(version) == null) throw const FormatException('latest.json: Version');
-    if (url is! String) throw const FormatException('latest.json: Adresse');
+  /// Liest Adresse und Signatur aus [j]; [what] steht in der Fehlermeldung.
+  factory UpdateFile._parse(Map<dynamic, dynamic> j, String what) {
+    final url = j['url'], signature = j['signature'];
+    if (url is! String) throw FormatException('latest.json: Adresse ($what)');
     // Erst zerlegen, dann prüfen: `Uri.parse` löst „..“ und „%2e%2e“ schon auf, ein Vergleich am
     // Text würde das übersehen. Erlaubt ist nur die eigene Release-Seite über https.
     final uri = Uri.tryParse(url);
@@ -59,11 +61,37 @@ class UpdateManifest {
         uri.hasQuery ||
         uri.hasFragment ||
         !uri.path.startsWith(_releasePath)) {
-      throw const FormatException('latest.json: Adresse');
+      throw FormatException('latest.json: Adresse ($what)');
     }
-    if (signature is! String) throw const FormatException('latest.json: Signatur');
+    if (signature is! String) throw FormatException('latest.json: Signatur ($what)');
     final sig = base64Decode(signature);
-    if (sig.length != 64) throw const FormatException('latest.json: Signatur');
-    return UpdateManifest(version: version, url: uri, signature: sig);
+    if (sig.length != 64) throw FormatException('latest.json: Signatur ($what)');
+    return UpdateFile(url: uri, signature: sig);
+  }
+}
+
+/// Inhalt von `latest.json`. Oben stehen Version, Adresse und Signatur des Windows-Installers (so lesen
+/// es auch ältere Windows-Apps), unter `android` Adresse und Signatur der APK.
+class UpdateManifest {
+  const UpdateManifest({required this.version, required this.windows, this.android});
+
+  final String version;
+  final UpdateFile windows;
+
+  /// `null` bei Releases ohne APK (und bei `latest.json` aus der Zeit vor dem Android-Update).
+  final UpdateFile? android;
+
+  /// Liest und prüft die Datei; wirft [FormatException], wenn etwas nicht passt.
+  factory UpdateManifest.parse(String body) {
+    final j = jsonDecode(body);
+    if (j is! Map) throw const FormatException('latest.json: kein Objekt');
+    final version = j['version'], android = j['android'];
+    if (version is! String || parseVersion(version) == null) throw const FormatException('latest.json: Version');
+    if (android != null && android is! Map) throw const FormatException('latest.json: android');
+    return UpdateManifest(
+      version: version,
+      windows: UpdateFile._parse(j, 'Windows'),
+      android: android is Map ? UpdateFile._parse(android, 'Android') : null,
+    );
   }
 }

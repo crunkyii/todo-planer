@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:todo_liste/services/update_manifest.dart';
+import 'package:todo_liste/services/update_platform.dart';
 import 'package:todo_liste/services/updater.dart';
 
 const _manifest = 'https://example.test/latest.json';
@@ -46,8 +47,10 @@ Future<String> _manifestBody({String version = '1.1.0', String url = _installerU
     client: client,
     manifestUrl: Uri.parse(_manifest),
     publicKey: _publicKey,
-    tempDir: () => Directory.systemTemp.createTemp('updater-test-'),
-    launch: (path) async => launched.add(path),
+    platform: WindowsUpdate(
+      tempDir: () => Directory.systemTemp.createTemp('updater-test-'),
+      launch: (path) async => launched.add(path),
+    ),
   );
   return (updater: updater, launched: launched, requests: requests);
 }
@@ -224,7 +227,7 @@ void main() {
         supported: true,
         client: MockClient((_) async => http.Response('', 503)),
         publicKey: _publicKey,
-        launch: (path) async => t.launched.add(path),
+        platform: WindowsUpdate(launch: (path) async => t.launched.add(path)),
       )..found = t.updater.found;
       broken.state = UpdateState.available;
       await broken.install();

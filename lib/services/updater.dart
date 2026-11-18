@@ -8,66 +8,61 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'update_manifest.dart';
+import 'update_platform.dart';
 
 enum UpdateState { idle, checking, upToDate, available, downloading, installing, failed }
 
-/// Auto-Update für die installierte Windows-App: fragt `latest.json` am neuesten GitHub-Release ab,
-/// lädt den Installer, prüft seine Signatur und startet ihn. Ohne gültige Signatur wird nichts gestartet.
+/// Auto-Update für die installierte Windows-App und die veröffentlichte Android-App: fragt `latest.json`
+/// am neuesten GitHub-Release ab, lädt die Datei für dieses Gerät, prüft ihre Signatur und übergibt sie
+/// an [UpdatePlatform]. Ohne gültige Signatur wird nichts gestartet.
 class Updater extends ChangeNotifier {
   Updater({
     required this.currentVersion,
     required this.supported,
+    this._platform = const WindowsUpdate(),
     http.Client? client,
     Uri? manifestUrl,
     String publicKey = updatePublicKey,
-    Future<Directory> Function()? tempDir,
-    Future<void> Function(String installer)? launch,
   }) : _client = client ?? http.Client(),
        _manifestUrl = manifestUrl ?? latestManifestUrl,
-       _publicKey = SimplePublicKey(base64Decode(publicKey), type: KeyPairType.ed25519),
-       _tempDir = tempDir ?? (() => Directory.systemTemp.createTemp(_tempPrefix)),
-       _launch = launch ?? _runInstaller;
+       _publicKey = SimplePublicKey(base64Decode(publicKey), type: KeyPairType.ed25519);
 
-  /// Updater für dieses Gerät. Nur die mit dem Installer installierte Windows-App aktualisiert sich
-  /// selbst – daneben liegt dann `unins000.exe`. Entpackte ZIPs und Entwickler-Builds bleiben unberührt.
-  factory Updater.forDevice(String currentVersion) {
-    final exe = File(Platform.resolvedExecutable);
-    final installed =
-        Platform.isWindows && File('${exe.parent.path}${Platform.pathSeparator}unins000.exe').existsSync();
-    if (installed) _removeOldDownloads();
+  /// Updater für dieses Gerät. Selbst aktualisieren sich nur die mit dem Installer installierte
+  /// Windows-App und die veröffentlichte Android-App.
+  static Future<Updater> forDevice(String currentVersion) async {
+    if (Platform.isAndroid) return forAndroid(currentVersion, const AndroidUpdate());
+    final installed = WindowsUpdate.installed;
+    if (installed) WindowsUpdate.removeOldDownloads();
     return Updater(currentVersion: currentVersion, supported: installed);
   }
 
-  static const _tempPrefix = 'todo-planer-update-';
-
-  /// Räumt die Installer früherer Updates weg (sie liegen nach dem Neustart noch im Temp-Ordner).
-  static void _removeOldDownloads() {
+  /// Android: Die Test-Kopie (`….debug`) und selbst gebaute Apps bleiben unberührt.
+  static Future<Updater> forAndroid(String currentVersion, AndroidUpdate android) async {
+    var release = false;
     try {
-      for (final e in Directory.systemTemp.listSync()) {
-        if (e is Directory && e.uri.pathSegments.lastWhere((s) => s.isNotEmpty).startsWith(_tempPrefix)) {
-          e.deleteSync(recursive: true);
-        }
-      }
-    } on FileSystemException {
-      // Gesperrt oder schon weg – dann eben beim nächsten Start.
+      release = await android.isReleaseApp();
+      if (release) await android.removeOldDownloads();
+    } on Object catch (e) {
+      // Aufräumen gescheitert oder keine Antwort vom System – der Start der App hängt nicht daran.
+      debugPrint('Update-Vorbereitung fehlgeschlagen: ${e.runtimeType}');
     }
+    return Updater(currentVersion: currentVersion, supported: release, platform: android);
   }
 
-  /// Größer wird weder `latest.json` noch der Installer angenommen.
+  /// Größer wird weder `latest.json` noch die Update-Datei angenommen.
   static const maxManifestBytes = 64 * 1024;
   static const maxInstallerBytes = 300 * 1024 * 1024;
   static const _timeout = Duration(seconds: 20);
 
   final String currentVersion;
 
-  /// `false` = diese App aktualisiert sich nicht selbst (Android, Linux, entpacktes ZIP).
+  /// `false` = diese App aktualisiert sich nicht selbst (Linux, entpacktes ZIP, Test-Kopie am Handy).
   final bool supported;
 
+  final UpdatePlatform _platform;
   final http.Client _client;
   final Uri _manifestUrl;
   final SimplePublicKey _publicKey;
-  final Future<Directory> Function() _tempDir;
-  final Future<void> Function(String installer) _launch;
 
   UpdateState state = UpdateState.idle;
 
@@ -76,6 +71,9 @@ class Updater extends ChangeNotifier {
 
   /// Fortschritt des Downloads, 0–1.
   double progress = 0;
+
+  /// Bestätigt der Nutzer die Installation in einem Fenster des Systems (Android)?
+  bool get asksUser => _platform.asksUser;
 
   bool get busy => state == UpdateState.checking || state == UpdateState.downloading || state == UpdateState.installing;
 
@@ -94,9 +92,11 @@ class Updater extends ChangeNotifier {
     if (!supported || busy) return;
     _set(UpdateState.checking);
     try {
-      final body = await _download(_manifestUrl, maxManifestBytes);
-      final m = UpdateManifest.parse(utf8.decode(body));
-      if (isNewer(m.version, currentVersion)) {
+      final body = BytesBuilder(copy: false);
+      await _get(_manifestUrl, maxManifestBytes).forEach(body.add);
+      final m = UpdateManifest.parse(utf8.decode(body.takeBytes()));
+      // Ein Release ohne Datei für dieses Gerät ist hier kein Update.
+      if (isNewer(m.version, currentVersion) && _platform.fileOf(m) != null) {
         found = m;
         _set(UpdateState.available);
       } else {
@@ -109,29 +109,44 @@ class Updater extends ChangeNotifier {
     }
   }
 
-  /// Lädt die gefundene Version, prüft die Signatur und startet den Installer.
-  /// Der Installer beendet die App und startet danach die neue Version.
+  /// Lädt die gefundene Version, prüft die Signatur und startet die Installation. Unter Windows beendet
+  /// der Installer die App und startet die neue Version; unter Android bestätigt der Nutzer im Fenster
+  /// des Systems. Lehnt er ab oder bricht ab, steht das Update weiter bereit – ohne Fehlermeldung.
   Future<void> install() async {
     final m = found;
-    if (!supported || m == null || state != UpdateState.available) return;
+    final source = m == null ? null : _platform.fileOf(m);
+    if (!supported || m == null || source == null || state != UpdateState.available) return;
     progress = 0;
     _set(UpdateState.downloading);
+    File? file;
+    var launched = false;
     try {
-      final bytes = await _download(m.url, maxInstallerBytes, onProgress: _onProgress);
-      final hash = await Sha256().hash(bytes);
+      if (!await _platform.prepare()) return _set(UpdateState.available);
+      final dir = await _platform.downloadDir();
+      file = File('${dir.path}${Platform.pathSeparator}${_platform.fileName(m.version)}');
+      final hash = await _downloadTo(file, source.url);
       final ok = await Ed25519().verify(
-        signedMessage(m.version, hash.bytes),
-        signature: Signature(m.signature, publicKey: _publicKey),
+        signedMessage(m.version, hash),
+        signature: Signature(source.signature, publicKey: _publicKey),
       );
       if (!ok) throw const FormatException('Signatur passt nicht');
-      final dir = await _tempDir();
-      final file = File('${dir.path}${Platform.pathSeparator}todo-planer-${m.version}-setup.exe');
-      await file.writeAsBytes(bytes, flush: true);
       _set(UpdateState.installing);
-      await _launch(file.path);
+      launched = await _platform.launch(file);
+      if (!launched) _set(UpdateState.available);
     } on Object catch (e) {
       debugPrint('Update fehlgeschlagen: ${e.runtimeType}');
       _set(UpdateState.failed);
+    } finally {
+      // Nicht geprüft oder nicht installiert: Die Datei soll nicht liegen bleiben.
+      if (!launched && file != null) await _delete(file);
+    }
+  }
+
+  static Future<void> _delete(File file) async {
+    try {
+      if (file.existsSync()) await file.delete();
+    } on FileSystemException {
+      // Gesperrt – der nächste Start räumt auf.
     }
   }
 
@@ -142,8 +157,26 @@ class Updater extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  /// Lädt [url] in den Speicher und bricht ab, sobald mehr als [limit] Bytes kommen.
-  Future<Uint8List> _download(Uri url, int limit, {void Function(double)? onProgress}) async {
+  /// Lädt [url] Stück für Stück nach [file] und liefert die SHA-256-Prüfsumme dessen, was geschrieben
+  /// wurde. So liegt auch eine große APK nie ganz im Arbeitsspeicher.
+  Future<List<int>> _downloadTo(File file, Uri url) async {
+    final out = await file.open(mode: FileMode.write);
+    final sha = Sha256().newHashSink();
+    try {
+      await for (final chunk in _get(url, maxInstallerBytes, onProgress: _onProgress)) {
+        await out.writeFrom(chunk);
+        sha.add(chunk);
+      }
+      await out.flush();
+    } finally {
+      await out.close();
+    }
+    sha.close();
+    return (await sha.hash()).bytes;
+  }
+
+  /// Lädt [url] und bricht ab, sobald mehr als [limit] Bytes kommen oder länger nichts kommt.
+  Stream<List<int>> _get(Uri url, int limit, {void Function(double)? onProgress}) async* {
     final res = await _client.send(http.Request('GET', url)).timeout(_timeout);
     if (res.statusCode != 200) {
       unawaited(res.stream.drain<void>().catchError((_) {}));
@@ -151,20 +184,13 @@ class Updater extends ChangeNotifier {
     }
     final total = res.contentLength;
     if (total != null && total > limit) throw const HttpException('Datei zu groß');
-    final out = BytesBuilder(copy: false);
+    var got = 0;
     await for (final chunk in res.stream.timeout(_timeout)) {
-      out.add(chunk);
-      if (out.length > limit) throw const HttpException('Datei zu groß');
-      if (total != null && total > 0) onProgress?.call(out.length / total);
+      got += chunk.length;
+      if (got > limit) throw const HttpException('Datei zu groß');
+      if (total != null && total > 0) onProgress?.call(got / total);
+      yield chunk;
     }
-    return out.takeBytes();
-  }
-
-  /// Startet den Installer ohne Fragen (nur ein Fortschrittsfenster) und beendet die App,
-  /// damit ihre Dateien ersetzt werden können. Der Installer startet danach die neue Version.
-  static Future<void> _runInstaller(String installer) async {
-    await Process.start(installer, const ['/SILENT', '/NORESTART'], mode: ProcessStartMode.detached);
-    exit(0);
   }
 
   @override
