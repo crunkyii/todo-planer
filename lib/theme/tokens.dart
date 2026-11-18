@@ -2,26 +2,25 @@ import 'package:material_ui/material_ui.dart';
 
 import 'color_math.dart';
 
-/// Ein App-Theme: Hauptfarbe [primary] + Akzent [accent] für den Hintergrund-Verlauf.
+/// Ein App-Theme: die Hauptfarbe [primary], aus der alle anderen Farben berechnet werden.
 class AppThemeDef {
-  const AppThemeDef(this.id, this.primary, this.accent);
+  const AppThemeDef(this.id, this.primary);
   final String id;
   final Color primary;
-  final Color accent;
 }
 
 /// Die 10 Themes aus dem Prototyp (`THEMES`).
 const List<AppThemeDef> appThemes = [
-  AppThemeDef('himmel', Color(0xFF3D9BE9), Color(0xFF34C38F)),
-  AppThemeDef('ozean', Color(0xFF1E6FD9), Color(0xFF2EC4C9)),
-  AppThemeDef('mint', Color(0xFF22A776), Color(0xFF7BD3F0)),
-  AppThemeDef('wald', Color(0xFF3F8A4C), Color(0xFFC5D86D)),
-  AppThemeDef('sonne', Color(0xFFE9A21F), Color(0xFFF07A5F)),
-  AppThemeDef('abendrot', Color(0xFFE8664A), Color(0xFFF5B83D)),
-  AppThemeDef('beere', Color(0xFFC2457A), Color(0xFF8E7CF0)),
-  AppThemeDef('lavendel', Color(0xFF7C68E8), Color(0xFF3D9BE9)),
-  AppThemeDef('nord', Color(0xFF5E81AC), Color(0xFF88C0D0)),
-  AppThemeDef('graphit', Color(0xFF5B6470), Color(0xFF9AA5B1)),
+  AppThemeDef('himmel', Color(0xFF3D9BE9)),
+  AppThemeDef('ozean', Color(0xFF1E6FD9)),
+  AppThemeDef('mint', Color(0xFF22A776)),
+  AppThemeDef('wald', Color(0xFF3F8A4C)),
+  AppThemeDef('sonne', Color(0xFFE9A21F)),
+  AppThemeDef('abendrot', Color(0xFFE8664A)),
+  AppThemeDef('beere', Color(0xFFC2457A)),
+  AppThemeDef('lavendel', Color(0xFF7C68E8)),
+  AppThemeDef('nord', Color(0xFF5E81AC)),
+  AppThemeDef('graphit', Color(0xFF5B6470)),
 ];
 
 AppThemeDef themeOf(String id) => appThemes.firstWhere((t) => t.id == id, orElse: () => appThemes.first);
@@ -70,7 +69,6 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.glow,
     required this.glowStrong,
     required this.blob1,
-    required this.blob2,
     required this.cardShadow,
   });
 
@@ -105,7 +103,6 @@ class AppTokens extends ThemeExtension<AppTokens> {
         glow: alpha(h, 0.3),
         glowStrong: alpha(h, 0.35),
         blob1: alpha(h, 0.14),
-        blob2: alpha(th.accent, 0.1),
         cardShadow: const [],
       );
     }
@@ -137,7 +134,6 @@ class AppTokens extends ThemeExtension<AppTokens> {
       glow: alpha(h, 0.32),
       glowStrong: alpha(h, 0.22),
       blob1: alpha(h, 0.2),
-      blob2: alpha(th.accent, 0.18),
       cardShadow: const [
         BoxShadow(color: Color(0x0D142846), offset: Offset(0, 1), blurRadius: 2),
         BoxShadow(color: Color(0x0F142846), offset: Offset(0, 4), blurRadius: 14),
@@ -152,7 +148,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final Color err, errC, onErrC;
   final Color inv, onInv, invP;
   final Color card, glass, glassStrong, glassEdge;
-  final Color glow, glowStrong, blob1, blob2;
+  final Color glow, glowStrong, blob1;
   final List<BoxShadow> cardShadow;
 
   /// Abgeleitete Farben für eine Kategorie-/Gewohnheits-/Blockfarbe.

@@ -755,7 +755,8 @@ class _PopIn extends StatelessWidget {
   }
 }
 
-/// Weicher Farbverlauf im Hintergrund (radial-gradient blob1/blob2).
+/// Weicher Farbverlauf links oben im Hintergrund (radial-gradient blob1). Den zweiten Fleck
+/// rechts aus dem Prototyp gibt es bewusst nicht – er sah am Handy wie ein Displayfehler aus.
 class BlobBackground extends StatelessWidget {
   const BlobBackground({super.key, required this.child});
   final Widget child;
@@ -774,17 +775,7 @@ class BlobBackground extends StatelessWidget {
             stops: const [0, 0.7],
           ),
         ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(1, 0.2),
-              radius: 0.75,
-              colors: [tok.blob2, tok.blob2.withValues(alpha: 0)],
-              stops: const [0, 0.7],
-            ),
-          ),
-          child: child,
-        ),
+        child: child,
       ),
     );
   }

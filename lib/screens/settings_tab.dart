@@ -240,14 +240,7 @@ class _Themes extends StatelessWidget {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: _ThemePreview(
-                          primary: t.primary,
-                          accent: t.accent,
-                          bg: bg,
-                          card: card,
-                          dark: dk,
-                          edge: tok.lineSoft,
-                        ),
+                        child: _ThemePreview(primary: t.primary, bg: bg, card: card, edge: tok.lineSoft),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -269,16 +262,8 @@ class _Themes extends StatelessWidget {
 }
 
 class _ThemePreview extends StatelessWidget {
-  const _ThemePreview({
-    required this.primary,
-    required this.accent,
-    required this.bg,
-    required this.card,
-    required this.dark,
-    required this.edge,
-  });
-  final Color primary, accent, bg, card, edge;
-  final bool dark;
+  const _ThemePreview({required this.primary, required this.bg, required this.card, required this.edge});
+  final Color primary, bg, card, edge;
 
   @override
   Widget build(BuildContext context) {
@@ -314,43 +299,33 @@ class _ThemePreview extends StatelessWidget {
                 stops: const [0, 0.7],
               ),
             ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(1, 1),
-                  radius: 1.1,
-                  colors: [alpha(accent, dark ? 0.3 : 0.45), alpha(accent, 0)],
-                  stops: const [0, 0.7],
+            child: Stack(
+              children: [
+                Positioned(
+                  left: w * 0.12,
+                  top: h * 0.12,
+                  width: w * 0.42,
+                  height: h * 0.09,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(99)),
+                  ),
                 ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: w * 0.12,
-                    top: h * 0.12,
-                    width: w * 0.42,
-                    height: h * 0.09,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(99)),
+                row(0.30),
+                row(0.50),
+                Positioned(
+                  right: w * 0.12,
+                  bottom: h * 0.10,
+                  width: w * 0.26,
+                  height: w * 0.26,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: primary,
+                      shape: BoxShape.circle,
+                      boxShadow: context.tok.previewFabShadow,
                     ),
                   ),
-                  row(0.30),
-                  row(0.50),
-                  Positioned(
-                    right: w * 0.12,
-                    bottom: h * 0.10,
-                    width: w * 0.26,
-                    height: w * 0.26,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: primary,
-                        shape: BoxShape.circle,
-                        boxShadow: context.tok.previewFabShadow,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
