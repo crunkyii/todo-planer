@@ -914,6 +914,24 @@ abstract class AppLocalizations {
   /// **'Unteraufgabe entfernen'**
   String get removeSubtask;
 
+  /// No description provided for @notes.
+  ///
+  /// In de, this message translates to:
+  /// **'Notiz'**
+  String get notes;
+
+  /// No description provided for @notesHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Mehr zur Aufgabe …'**
+  String get notesHint;
+
+  /// No description provided for @schemaOutdated.
+  ///
+  /// In de, this message translates to:
+  /// **'Die Datenbank ist älter als die App: In Supabase die Datei schema.sql noch einmal ausführen.'**
+  String get schemaOutdated;
+
   /// No description provided for @dueOn.
   ///
   /// In de, this message translates to:

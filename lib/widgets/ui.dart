@@ -416,6 +416,7 @@ class AppInput extends StatelessWidget {
     this.height = 46,
     this.fontSize = Fs.input,
     this.filled = false,
+    this.multiline = false,
   });
 
   final TextEditingController controller;
@@ -437,6 +438,12 @@ class AppInput extends StatelessWidget {
   /// `true` = Fläche ohne Rahmen (.slim-input, Suche).
   final bool filled;
 
+  /// Mehrere Zeilen (Notiz): Enter macht eine neue Zeile, das Feld wächst bis [maxLinesMultiline]
+  /// mit und scrollt danach; [height] gilt dann als Mindesthöhe.
+  final bool multiline;
+
+  static const maxLinesMultiline = 8;
+
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
@@ -445,18 +452,22 @@ class AppInput extends StatelessWidget {
       borderSide: w == 0 ? BorderSide.none : BorderSide(color: c, width: w),
     );
     final r = filled ? (height >= 50 ? Sizes.rSlim : height / 2) : Sizes.rInput;
+    final plainText = !obscure && keyboardType == null;
+    final pad = multiline ? 10.0 : (height - fontSize * 1.3) / 2;
     return SizedBox(
-      height: height,
+      height: multiline ? null : height,
       child: TextField(
+        minLines: multiline ? 3 : 1,
+        maxLines: multiline ? maxLinesMultiline : 1,
         controller: controller,
         focusNode: focusNode,
         autofocus: autofocus,
         obscureText: obscure,
-        keyboardType: keyboardType,
+        keyboardType: multiline ? TextInputType.multiline : keyboardType,
         autofillHints: autofillHints,
         onSubmitted: onSubmitted,
         onChanged: onChanged,
-        textInputAction: textInputAction,
+        textInputAction: multiline ? TextInputAction.newline : textInputAction,
         // Tippen neben das Feld (anderer Knopf, freie Fläche, Scrollen): Fokus und Tastatur weg.
         // Standard am Handy wäre „bleibt offen“ – dann blieb der Cursor im Namensfeld stehen,
         // während man z. B. schon die Uhrzeit einstellte. Was zum Feld gehört (z. B. der Knopf
@@ -466,9 +477,9 @@ class AppInput extends StatelessWidget {
         maxLengthEnforcement: MaxLengthEnforcement.enforced,
         // Normale Textfelder (Titel, Namen): Wortvorschläge der Tastatur, Autokorrektur und
         // großer Satzanfang. Nicht bei Passwort, E-Mail, Adressen oder Schlüsseln.
-        autocorrect: !obscure && keyboardType == null,
-        enableSuggestions: !obscure && keyboardType == null,
-        textCapitalization: !obscure && keyboardType == null ? TextCapitalization.sentences : TextCapitalization.none,
+        autocorrect: plainText,
+        enableSuggestions: plainText,
+        textCapitalization: plainText ? TextCapitalization.sentences : TextCapitalization.none,
         style: TextStyle(fontSize: fontSize, color: tok.text),
         decoration: InputDecoration(
           counterText: '',
@@ -478,7 +489,7 @@ class AppInput extends StatelessWidget {
           filled: true,
           fillColor: filled ? tok.surf2 : tok.bg,
           isDense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: filled ? 16 : 12, vertical: (height - fontSize * 1.3) / 2),
+          contentPadding: EdgeInsets.symmetric(horizontal: filled ? 16 : 12, vertical: pad),
           enabledBorder: b(tok.line, filled ? 0 : 1, r),
           border: b(tok.line, filled ? 0 : 1, r),
           focusedBorder: b(tok.p, 2, r),

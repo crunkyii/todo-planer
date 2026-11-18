@@ -13,6 +13,9 @@ import '../../widgets/ui.dart';
 import '../ui_state.dart';
 import 'sheet_parts.dart';
 
+/// Höchstlänge der Notiz in sichtbaren Zeichen (der Server erlaubt das Zehnfache, siehe schema.sql).
+const maxNotesLength = 2000;
+
 /// Welches Kärtchen unter „Fällig am“ / „Uhrzeit“ aufgeklappt ist.
 enum _Picker { date, time }
 
@@ -73,6 +76,7 @@ class TaskSheet extends StatefulWidget {
 
 class _TaskSheetState extends State<TaskSheet> {
   late final TextEditingController _title;
+  late final TextEditingController _notes;
   late String _cat;
   late DateTime _date;
   int? _time;
@@ -84,6 +88,7 @@ class _TaskSheetState extends State<TaskSheet> {
   bool _catOpen = false;
   late bool _dateOpen;
   late bool _subsOpen;
+  late bool _notesOpen;
   _Picker? _picker;
   String? _error;
   bool _yearly = false;
@@ -101,6 +106,7 @@ class _TaskSheetState extends State<TaskSheet> {
     final t = widget.task;
     final cats = store.categories;
     _title = _TitleController(text: t?.title ?? '')..addListener(_titleChanged);
+    _notes = TextEditingController(text: t?.notes ?? '');
     _yearly = isYearly(_title.text);
     final f = widget.ui.filterIn(cats);
     _cat =
@@ -116,11 +122,13 @@ class _TaskSheetState extends State<TaskSheet> {
     _openedSubIds = {for (final s in _subs) s.id!};
     _dateOpen = widget.preset != null;
     _subsOpen = _subs.isNotEmpty;
+    _notesOpen = _notes.text.isNotEmpty;
   }
 
   @override
   void dispose() {
     _title.dispose();
+    _notes.dispose();
     for (final s in _subs) {
       s.ctrl.dispose();
       s.focus.dispose();
@@ -153,6 +161,7 @@ class _TaskSheetState extends State<TaskSheet> {
       for (final s in _subs)
         if (s.ctrl.text.trim().isNotEmpty) (id: s.id, title: s.ctrl.text.trim()),
     ];
+    final notes = _notes.text.trim();
     // Wurde die gewählte Kategorie inzwischen (z. B. auf einem anderen Gerät) gelöscht,
     // landet die Aufgabe in ihrer Nachfolgerin – nie mit leerer Kategorie.
     if (app.store.categories.isEmpty) app.ensureCategoriesNow(l);
@@ -160,6 +169,7 @@ class _TaskSheetState extends State<TaskSheet> {
     if (t == null) {
       app.store.addTask(
         title: title,
+        notes: notes,
         categoryId: cat,
         dueDate: _date,
         dueTime: _time,
@@ -177,6 +187,7 @@ class _TaskSheetState extends State<TaskSheet> {
         dueTime: _time,
         subs: subs,
         removedSubIds: _openedSubIds.difference(kept),
+        notes: notes,
       );
     }
     Navigator.pop(context);
@@ -379,6 +390,19 @@ class _TaskSheetState extends State<TaskSheet> {
               ],
             ),
           ),
+        if (_notesOpen)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: AppInput(
+              controller: _notes,
+              hint: l.notesHint,
+              semanticLabel: l.notes,
+              maxLength: maxNotesLength,
+              multiline: true,
+              fontSize: Fs.meta + 1.5,
+              autofocus: widget.task == null || _notes.text.isEmpty,
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.only(top: 10),
           child: Row(
@@ -435,6 +459,13 @@ class _TaskSheetState extends State<TaskSheet> {
                         setState(() => _subsOpen = !_subsOpen);
                         if (_subsOpen && _subs.isEmpty) _addSub();
                       },
+                    ),
+                    IconBtn(
+                      Ic.notes,
+                      size: 22,
+                      label: l.notes,
+                      pressed: _notesOpen,
+                      onTap: () => setState(() => _notesOpen = !_notesOpen),
                     ),
                     if (isEdit) IconBtn(Ic.trash, size: 22, label: l.deleteTask, onTap: _delete),
                   ],

@@ -39,6 +39,46 @@ void main() {
   });
 
   group('Aufgaben', () {
+    testWidgets('Notiz: Symbol öffnet das Feld, die Karte zeigt den Anfang, die Suche findet sie', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.newTask).last);
+      await tester.enterText(find.byType(TextField).first, 'Referat');
+      await _tap(tester, find.bySemanticsLabel(l.notes));
+      await tester.enterText(find.byType(TextField).last, 'Thema: Römer\nFolien bis Freitag');
+      await _tap(tester, find.bySemanticsLabel(l.add));
+
+      final t = app.store.tasks.single;
+      expect(t.notes, 'Thema: Römer\nFolien bis Freitag');
+      expect(find.text('Thema: Römer\nFolien bis Freitag'), findsOneWidget);
+
+      // Beim Bearbeiten ist das Feld gleich offen und enthält die Notiz.
+      await _tap(tester, find.text('Referat'));
+      expect(find.widgetWithText(TextField, 'Thema: Römer\nFolien bis Freitag'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).last, '');
+      await _tap(tester, find.bySemanticsLabel(l.save));
+      expect(app.store.tasks.single.notes, '');
+
+      app.store.updateTask(
+        app.store.tasks.single,
+        title: 'Referat',
+        categoryId: t.categoryId,
+        dueDate: t.dueDate,
+        dueTime: null,
+        subs: [],
+        notes: 'Römer',
+      );
+      await tester.pumpAndSettle();
+      await _tap(tester, find.bySemanticsLabel(l.moreOptions).first);
+      await _tap(tester, find.text(l.search));
+      await tester.enterText(find.byType(TextField).first, 'römer');
+      await tester.pumpAndSettle();
+      expect(find.text('Referat'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
     testWidgets('Nur Leerzeichen ist kein Titel; Sonderzeichen und Emoji bleiben erhalten', (tester) async {
       final l = l10n('de');
       final app = await makeServices();

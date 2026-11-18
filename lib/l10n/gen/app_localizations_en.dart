@@ -439,6 +439,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeSubtask => 'Remove subtask';
 
   @override
+  String get notes => 'Note';
+
+  @override
+  String get notesHint => 'More about this task …';
+
+  @override
+  String get schemaOutdated => 'The database is older than the app: run schema.sql in Supabase again.';
+
+  @override
   String get dueOn => 'Due on';
 
   @override

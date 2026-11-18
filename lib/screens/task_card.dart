@@ -195,6 +195,7 @@ class _TaskCardState extends State<TaskCard> {
                                   Text(l.progress(subDone, t.subs.length), style: metaStyle),
                                 ],
                               ),
+                            if (t.notes.isNotEmpty) AppIcon(Ic.notes, size: 14, color: tok.sub),
                             if (isYearly(t.title))
                               Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -211,6 +212,11 @@ class _TaskCardState extends State<TaskCard> {
                               ),
                           ],
                         ),
+                        if (t.notes.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          // Nur ein Vorgeschmack: die ersten zwei Zeilen; ganz zu lesen im Formular.
+                          Text(t.notes, maxLines: 2, overflow: TextOverflow.ellipsis, style: metaStyle),
+                        ],
                       ],
                     ),
                   ),
