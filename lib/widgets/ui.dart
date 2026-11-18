@@ -367,35 +367,48 @@ class AppField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tok = context.tok;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: tok.sub),
-          ),
-          const SizedBox(height: 6),
-          AppInput(
-            controller: controller,
-            hint: hint,
-            semanticLabel: label,
-            maxLength: maxLength,
-            obscure: obscure,
-            keyboardType: keyboardType,
-            autofillHints: autofillHints,
-            suffix: suffix,
-            autofocus: autofocus,
-            focusNode: focusNode,
-            onSubmitted: onSubmitted,
-            textInputAction: textInputAction,
-          ),
-        ],
+    return LabeledField(
+      label: label,
+      child: AppInput(
+        controller: controller,
+        hint: hint,
+        semanticLabel: label,
+        maxLength: maxLength,
+        obscure: obscure,
+        keyboardType: keyboardType,
+        autofillHints: autofillHints,
+        suffix: suffix,
+        autofocus: autofocus,
+        focusNode: focusNode,
+        onSubmitted: onSubmitted,
+        textInputAction: textInputAction,
       ),
     );
   }
+}
+
+/// Kleine Beschriftung über einem Eingabe-Element (.field) – für alles, was kein Textfeld ist
+/// (Farbauswahl, Wochentage …); Textfelder nehmen gleich [AppField].
+class LabeledField extends StatelessWidget {
+  const LabeledField({super.key, required this.label, required this.child});
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: context.tok.sub),
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
+    ),
+  );
 }
 
 /// Das reine Eingabefeld (.input): 46 hoch, Rahmen, beim Fokus 2 px in der Hauptfarbe.
