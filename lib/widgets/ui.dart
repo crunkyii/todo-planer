@@ -467,6 +467,10 @@ class AppInput extends StatelessWidget {
         maxLength: maxLength,
         maxLengthEnforcement: MaxLengthEnforcement.enforced,
         autocorrect: !obscure,
+        // Normale Textfelder (Titel, Namen): Wortvorschläge der Tastatur und großer Satzanfang.
+        // Nicht bei Passwort, E-Mail oder Adressen.
+        enableSuggestions: !obscure,
+        textCapitalization: obscure || keyboardType != null ? TextCapitalization.none : TextCapitalization.sentences,
         style: TextStyle(fontSize: fontSize, color: tok.text),
         decoration: InputDecoration(
           counterText: '',

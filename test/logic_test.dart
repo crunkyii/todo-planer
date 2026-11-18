@@ -177,7 +177,52 @@ void main() {
       final t = _task('Hausübung', DateTime(2026, 11, 19));
       expect(sectionOf(t, 0, now: now), Section.tomorrow);
       expect(sectionOf(t, 1, now: now), Section.today);
-      expect(sectionOf(t, 2, now: now), Section.overdue);
+      expect(sectionOf(t, 2, now: now), Section.today, reason: 'Vorlauf macht nie überfällig');
+    });
+
+    test('Überfällig erst nach der Abgabe: mit Uhrzeit danach, ohne Uhrzeit nach 23:59', () {
+      // Abgabe heute 23:00, Kategorie mit einem Tag Vorlauf („in der Liste ab gestern“)
+      final timed = _task('tvvvv', DateTime(2026, 11, 18), time: 23 * 60);
+      expect(isLate(timed, 1, now: now), isFalse);
+      expect(sectionOf(timed, 1, now: now), Section.today);
+      expect(sectionOf(timed, 1, now: DateTime(2026, 11, 18, 23)), Section.today, reason: 'genau zur Abgabezeit');
+      expect(sectionOf(timed, 1, now: DateTime(2026, 11, 18, 23, 0, 1)), Section.overdue);
+      // ohne Uhrzeit zählt der ganze Abgabetag
+      final allDay = _task('hhj', DateTime(2026, 11, 18));
+      expect(sectionOf(allDay, 3, now: DateTime(2026, 11, 18, 23, 59, 59)), Section.today);
+      expect(sectionOf(allDay, 3, now: DateTime(2026, 11, 19)), Section.overdue);
+      expect(isLate(_task('fertig', DateTime(2026, 11, 1), done: true), 0, now: now), isFalse);
+    });
+
+    test('Kategorie-Vorschlag: die zuletzt am häufigsten benutzte', () {
+      Task at(String cat, int minutesAgo) => Task(
+        id: newId(),
+        title: 't',
+        categoryId: cat,
+        dueDate: DateTime(2026, 11, 18),
+        dueTime: null,
+        done: minutesAgo.isEven,
+        doneAt: null,
+        createdAt: DateTime.utc(2026, 11, 18, 10).subtract(Duration(minutes: minutesAgo)),
+        updatedAt: nowUtc(),
+      );
+      const cats = ['hu', 'test', 'termin'];
+      expect(suggestCategory(const [], cats), 'hu', reason: 'ohne Aufgaben die erste Kategorie');
+      expect(suggestCategory(const [], const []), isNull);
+      // Termin 3×, Test 2× → Termin (erledigte zählen mit)
+      final some = [at('termin', 5), at('test', 4), at('termin', 3), at('test', 2), at('termin', 1)];
+      expect(suggestCategory(some, cats), 'termin');
+      // Gleichstand: die zuletzt benutzte
+      expect(suggestCategory([at('test', 9), at('termin', 8), at('termin', 2), at('test', 1)], cats), 'test');
+      // Passt sich an: früher 30× Hausübung, die letzten 20 aber meist Test
+      final changed = [
+        for (var i = 0; i < 30; i++) at('hu', 100 + i),
+        for (var i = 0; i < 12; i++) at('test', 20 + i),
+        for (var i = 0; i < 8; i++) at('hu', i),
+      ];
+      expect(suggestCategory(changed, cats), 'test');
+      // Aufgaben gelöschter Kategorien zählen nicht
+      expect(suggestCategory([at('weg', 1), at('weg', 2), at('termin', 3)], cats), 'termin');
     });
 
     test('Uhrzeit vorbei = überfällig, Woche bis Sonntag', () {

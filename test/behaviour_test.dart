@@ -597,6 +597,51 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Textfelder erlauben Wortvorschläge der Tastatur; Passwort, E-Mail und Schlüssel nicht', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      useFixedClock();
+      var app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.newTask).last);
+      final title = tester.widget<TextField>(find.byType(TextField).first);
+      expect(title.autocorrect, isTrue);
+      expect(title.enableSuggestions, isTrue);
+      expect(title.textCapitalization, TextCapitalization.sentences);
+      expect(title.keyboardType, TextInputType.text);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      await finishApp(tester, app);
+
+      app = await makeServices(syncMode: 'cloud', cloudConfig: true);
+      await pumpApp(tester, app);
+      final fields = tester.widgetList<TextField>(find.byType(TextField)).toList();
+      expect(fields[0].textCapitalization, TextCapitalization.none, reason: 'E-Mail');
+      expect(fields[1].obscureText, isTrue);
+      expect(fields[1].enableSuggestions, isFalse, reason: 'Passwort');
+      expect(fields[1].autocorrect, isFalse);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Neue Aufgabe schlägt die meistbenutzte Kategorie vor', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      final termin = app.store.categories.firstWhere((c) => c.name == l.catAppointment);
+      for (var i = 0; i < 12; i++) {
+        app.store.addTask(title: 'Termin $i', categoryId: termin.id, dueDate: today(), dueTime: null, subs: const []);
+      }
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.newTask).last);
+      expect(find.bySemanticsLabel(l.categoryLabel(termin.name)), findsWidgets);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      await finishApp(tester, app);
+    });
+
     testWidgets('Tippen neben ein Textfeld nimmt Fokus und Tastatur weg – in jedem Formular', (tester) async {
       final l = l10n('de');
       useFixedClock();

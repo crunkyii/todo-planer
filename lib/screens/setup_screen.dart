@@ -216,6 +216,7 @@ class _SetupScreenState extends State<SetupScreen> {
           label: l.publishableKey,
           controller: _key,
           hint: l.publishableKeyHint,
+          keyboardType: TextInputType.visiblePassword, // Schlüssel: keine Wortvorschläge
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _submit(),
         ),

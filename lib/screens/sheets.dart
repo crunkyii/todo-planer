@@ -7,6 +7,7 @@ import '../data/models.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
+import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlays.dart';
 import '../widgets/pickers.dart';
@@ -306,7 +307,8 @@ class _TaskSheetState extends State<_TaskSheet> {
         t?.categoryId ??
         (f != 'alle' && f != 'habits' && store.categories.any((c) => c.id == f)
             ? f
-            : (cats.isEmpty ? '' : cats.first.id));
+            // sonst die Kategorie, die man zuletzt am häufigsten benutzt hat
+            : (suggestCategory(store.tasks, [for (final c in cats) c.id]) ?? ''));
     _date = t?.dueDate ?? widget.preset ?? addDays(today(), store.catOf(_cat).offset);
     _time = t?.dueTime;
     _dateTouched = t != null || widget.preset != null;
