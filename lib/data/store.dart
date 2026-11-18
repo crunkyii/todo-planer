@@ -295,6 +295,7 @@ class Store extends ChangeNotifier {
 
   Task addTask({
     required String title,
+    String notes = '',
     required String categoryId,
     required DateTime dueDate,
     required int? dueTime,
@@ -304,6 +305,7 @@ class Store extends ChangeNotifier {
     final t = Task(
       id: newId(),
       title: title,
+      notes: notes,
       categoryId: categoryId,
       dueDate: sod(dueDate),
       dueTime: dueTime,
@@ -320,7 +322,7 @@ class Store extends ChangeNotifier {
 
   /// Speichert das Bearbeiten-Formular. [subs] sind die Unteraufgaben in der Reihenfolge des
   /// Formulars – mit `id`, wenn es sie schon gab, ohne für neue. [removedSubIds] sind die, die
-  /// im Formular entfernt wurden.
+  /// im Formular entfernt wurden. [notes] `null` = Notiz bleibt, wie sie ist.
   ///
   /// Abgeglichen wird nach ID, nicht nach Platz: Eine Unteraufgabe, die während des Bearbeitens
   /// am anderen Gerät dazukam, bleibt (hinten angehängt), und der Haken jeder Unteraufgabe
@@ -333,9 +335,11 @@ class Store extends ChangeNotifier {
     required int? dueTime,
     required List<({String? id, String title})> subs,
     Set<String> removedSubIds = const {},
+    String? notes,
   }) {
     t
       ..title = title
+      ..notes = notes ?? t.notes
       ..categoryId = categoryId
       ..dueDate = sod(dueDate)
       ..dueTime = dueTime;
@@ -412,6 +416,7 @@ class Store extends ChangeNotifier {
       final n = Task(
         id: newId(),
         title: t.title,
+        notes: t.notes,
         categoryId: t.categoryId,
         dueDate: next,
         dueTime: t.dueTime,

@@ -115,6 +115,11 @@ alter table public.habits      add  constraint habits_name_check      check (cha
 alter table public.week_blocks drop constraint if exists week_blocks_name_check;
 alter table public.week_blocks add  constraint week_blocks_name_check check (char_length(name) between 1 and 600);
 
+-- Spalten, die später dazugekommen sind (für schon angelegte Datenbanken):
+alter table public.tasks add column if not exists notes text not null default '';
+alter table public.tasks drop constraint if exists tasks_notes_check;
+alter table public.tasks add  constraint tasks_notes_check check (char_length(notes) <= 20000);
+
 -- 2) Sync-Regeln: neuester Stand gewinnt, synced_at setzt der Server ------------
 
 create or replace function public.sync_guard()

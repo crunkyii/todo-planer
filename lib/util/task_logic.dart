@@ -102,14 +102,14 @@ const filterAll = 'alle';
 const filterHabits = 'habits';
 
 /// Filtert nach Kategorie ([filterAll] oder eine ID), „Erledigte ausblenden“ und Suchtext
-/// (auch in Unteraufgaben).
+/// (auch in Notiz und Unteraufgaben).
 List<Task> filterTasks(Iterable<Task> tasks, {required String filter, required bool hideDone, String? search}) {
   final q = (search ?? '').trim().toLowerCase();
   return [
     for (final t in tasks)
       if ((filter == filterAll || t.categoryId == filter) &&
           !(hideDone && t.done) &&
-          (q.isEmpty || '${t.title} ${t.subs.map((s) => s.title).join(' ')}'.toLowerCase().contains(q)))
+          (q.isEmpty || '${t.title} ${t.notes} ${t.subs.map((s) => s.title).join(' ')}'.toLowerCase().contains(q)))
         t,
   ];
 }

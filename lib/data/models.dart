@@ -111,6 +111,7 @@ class Task {
   Task({
     required this.id,
     required this.title,
+    this.notes = '',
     required this.categoryId,
     required this.dueDate,
     required this.dueTime,
@@ -123,6 +124,9 @@ class Task {
 
   final String id;
   String title;
+
+  /// Längere Beschreibung („Notiz“); leer = keine.
+  String notes;
   String categoryId;
 
   /// Fälligkeitstag (lokales Datum, ohne Uhrzeit).
@@ -149,6 +153,7 @@ class Task {
   Map<String, Object?> toJson() => {
     'id': id,
     'title': title,
+    'notes': notes,
     'category_id': categoryId,
     'due_date': isoDate(dueDate),
     'due_time': dueTime == null ? null : hmString(dueTime!),
@@ -162,6 +167,7 @@ class Task {
   factory Task.fromJson(Map<String, Object?> j) => Task(
     id: j['id'] as String,
     title: j['title'] as String,
+    notes: j['notes'] as String? ?? '',
     categoryId: j['category_id'] as String,
     dueDate: parseIsoDate(j['due_date'] as String),
     dueTime: j['due_time'] == null ? null : parseHm(j['due_time'] as String),

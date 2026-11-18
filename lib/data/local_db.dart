@@ -44,6 +44,8 @@ const tasksTable = TableSpec(
   {
     'id': 'TEXT NOT NULL',
     'title': 'TEXT NOT NULL',
+    // Ohne NOT NULL: Zeilen von einem Server, der die Spalte noch nicht kennt, haben keinen Wert.
+    'notes': 'TEXT',
     'category_id': 'TEXT NOT NULL',
     'due_date': 'TEXT NOT NULL',
     'due_time': 'TEXT',
@@ -123,8 +125,10 @@ class LocalDb extends GeneratedDatabase {
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
 
+  /// Bei jeder Änderung an den Spalten um eins erhöhen und unten in `onUpgrade` nachziehen.
+  /// 2: `tasks.notes`.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -136,6 +140,9 @@ class LocalDb extends GeneratedDatabase {
           'PRIMARY KEY (${t.keys.map((k) => '"$k"').join(', ')}))',
         );
       }
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) await customStatement('ALTER TABLE "tasks" ADD COLUMN "notes" TEXT');
     },
   );
 
