@@ -109,7 +109,8 @@ class AppTokens extends ThemeExtension<AppTokens> {
         cardShadow: const [],
       );
     }
-    final p = ensure(h, white, 4.5), pc = mix(h, white, 0.76);
+    // 4,8 statt 4,5: Die Primärfarbe steht auch als Text auf dem leicht getönten Hintergrund.
+    final p = ensure(h, white, 4.8), pc = mix(h, white, 0.76);
     return AppTokens(
       dark: false,
       p: p,

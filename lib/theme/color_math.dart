@@ -42,8 +42,13 @@ double contrast(Color a, Color b) {
 }
 
 /// Verschiebt [fg] Richtung Schwarz/Weiß, bis der Kontrast zu [bg] reicht.
+///
+/// Abweichung vom Prototyp: Dort entscheidet eine feste Schwelle (Leuchtdichte 0,4), ob
+/// nach Schwarz oder Weiß geschoben wird. Bei mittelhellen Hintergründen (z. B. Primärfarbe
+/// von „Ozean“ im Dunkelmodus) reicht Weiß aber nie für den Kontrast – die Schrift blieb bei
+/// 2,7:1. Hier gewinnt die Richtung, die den höheren Kontrast erreichen kann.
 Color ensure(Color fg, Color bg, double ratio) {
-  final target = luminance(bg) > 0.4 ? black : white;
+  final target = contrast(black, bg) >= contrast(white, bg) ? black : white;
   var c = fg;
   for (var t = 0.0; t <= 1 && contrast(c, bg) < ratio; t += 0.05) {
     c = mix(fg, target, t);
