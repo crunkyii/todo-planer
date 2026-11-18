@@ -47,6 +47,7 @@ Future<void> _finish(WidgetTester tester, AppServices app) async {
   await tester.pump(const Duration(seconds: 5));
   await app.store.refreshPending();
   await app.store.db.close();
+  app.dispose(); // u. a. den Mitternachts-Timer beenden
 }
 
 void main() {

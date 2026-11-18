@@ -14,7 +14,7 @@
 create table if not exists public.categories (
   id          uuid        primary key,
   user_id     uuid        not null default auth.uid() references auth.users (id) on delete cascade,
-  name        text        not null check (char_length(name) between 1 and 30),
+  name        text        not null check (char_length(name) between 1 and 300),
   color       text        not null check (color ~ '^#[0-9A-Fa-f]{6}$'),
   offset_days smallint    not null default 0 check (offset_days between 0 and 30),
   position    integer     not null default 0,
@@ -26,7 +26,7 @@ create table if not exists public.categories (
 create table if not exists public.tasks (
   id          uuid        primary key,
   user_id     uuid        not null default auth.uid() references auth.users (id) on delete cascade,
-  title       text        not null check (char_length(title) between 1 and 200),
+  title       text        not null check (char_length(title) between 1 and 2000),
   category_id uuid        not null,
   due_date    date        not null,
   due_time    time,
@@ -42,7 +42,7 @@ create table if not exists public.subtasks (
   id          uuid        primary key,
   user_id     uuid        not null default auth.uid() references auth.users (id) on delete cascade,
   task_id     uuid        not null,
-  title       text        not null check (char_length(title) between 1 and 120),
+  title       text        not null check (char_length(title) between 1 and 1200),
   done        boolean     not null default false,
   position    integer     not null default 0,
   updated_at  timestamptz not null default now(),
@@ -53,7 +53,7 @@ create table if not exists public.subtasks (
 create table if not exists public.habits (
   id          uuid        primary key,
   user_id     uuid        not null default auth.uid() references auth.users (id) on delete cascade,
-  name        text        not null check (char_length(name) between 1 and 40),
+  name        text        not null check (char_length(name) between 1 and 400),
   color       text        not null check (color ~ '^#[0-9A-Fa-f]{6}$'),
   position    integer     not null default 0,
   created_at  timestamptz not null default now(),
@@ -75,7 +75,7 @@ create table if not exists public.habit_logs (
 create table if not exists public.week_blocks (
   id          uuid        primary key,
   user_id     uuid        not null default auth.uid() references auth.users (id) on delete cascade,
-  name        text        not null check (char_length(name) between 1 and 60),
+  name        text        not null check (char_length(name) between 1 and 600),
   color       text        not null check (color ~ '^#[0-9A-Fa-f]{6}$'),
   day         smallint    not null check (day between 0 and 6),
   start_min   smallint    not null check (start_min between 0 and 1439),
@@ -100,6 +100,20 @@ create table if not exists public.settings (
   updated_at  timestamptz not null default now(),
   synced_at   timestamptz not null default now()
 );
+
+-- Längen-Grenzen: Die App begrenzt auf sichtbare Zeichen (30, 200, …). Postgres zählt
+-- Codepunkte, und ein Emoji kann aus bis zu ~10 bestehen – daher hier das Zehnfache als
+-- reine Schutzgrenze. Auch für schon angelegte Datenbanken neu setzen:
+alter table public.categories  drop constraint if exists categories_name_check;
+alter table public.categories  add  constraint categories_name_check  check (char_length(name) between 1 and 300);
+alter table public.tasks       drop constraint if exists tasks_title_check;
+alter table public.tasks       add  constraint tasks_title_check       check (char_length(title) between 1 and 2000);
+alter table public.subtasks    drop constraint if exists subtasks_title_check;
+alter table public.subtasks    add  constraint subtasks_title_check    check (char_length(title) between 1 and 1200);
+alter table public.habits      drop constraint if exists habits_name_check;
+alter table public.habits      add  constraint habits_name_check      check (char_length(name) between 1 and 400);
+alter table public.week_blocks drop constraint if exists week_blocks_name_check;
+alter table public.week_blocks add  constraint week_blocks_name_check check (char_length(name) between 1 and 600);
 
 -- 2) Sync-Regeln: neuester Stand gewinnt, synced_at setzt der Server ------------
 

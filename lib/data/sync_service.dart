@@ -91,7 +91,10 @@ class SyncService extends ChangeNotifier {
     _channel = cloud.client
         .channel('todo-sync')
         .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', callback: (_) => schedule(pullOnly: true))
-        .subscribe();
+        // Nach jedem (Neu-)Verbinden des Kanals nachholen, was in der Zwischenzeit passiert ist.
+        .subscribe((status, _) {
+      if (status == RealtimeSubscribeStatus.subscribed) schedule(pullOnly: true);
+    });
     await sync();
   }
 
@@ -108,6 +111,21 @@ class SyncService extends ChangeNotifier {
     _debounce = Timer(Duration(milliseconds: pullOnly ? 600 : 400), () => sync());
   }
 
+  /// Wird nach jedem erfolgreichen Abruf vom Server aufgerufen.
+  void Function()? onPulled;
+
+  /// Zeilen, die der Server beim letzten Hochladen abgelehnt hat (bleiben in der Warteschlange).
+  int rejected = 0;
+
+  Future<void>? _running;
+
+  /// Wartet, bis ein gerade laufender Abgleich fertig ist (z. B. vor dem Abmelden).
+  Future<void> idle() async {
+    while (_running != null) {
+      await _running;
+    }
+  }
+
   /// Lädt die Warteschlange hoch und holt Neues vom Server.
   Future<void> sync({bool announce = false}) async {
     if (!_canSync || !online) return;
@@ -117,16 +135,21 @@ class SyncService extends ChangeNotifier {
     }
     syncing = true;
     notifyListeners();
+    final done = Completer<void>();
+    _running = done.future;
     try {
       await store.flush();
       await _push();
       await _pull();
       store.markSynced();
-      if (announce) _events.add(const AllSynced());
+      onPulled?.call();
+      if (announce && rejected == 0) _events.add(const AllSynced());
     } on Object catch (e) {
       debugPrint('Sync fehlgeschlagen: ${e.runtimeType}');
     } finally {
       syncing = false;
+      _running = null;
+      done.complete();
       notifyListeners();
     }
     if (_again) {
@@ -141,19 +164,37 @@ class SyncService extends ChangeNotifier {
 
   Future<void> _push() async {
     final db = cloud.client;
+    var bad = 0;
     for (final t in syncTables) {
       final rows = await store.db.dirtyRows(t);
       for (var i = 0; i < rows.length; i += 200) {
         final chunk = rows.sublist(i, i + 200 > rows.length ? rows.length : i + 200);
-        await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
+        var ok = chunk;
+        try {
+          await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
+        } on PostgrestException {
+          // Lehnt der Server ein Paket ab, Zeile für Zeile versuchen: Eine fehlerhafte Zeile
+          // darf nicht die ganze Warteschlange blockieren. Sie bleibt `dirty` und wird gezählt.
+          ok = [];
+          for (final r in chunk) {
+            try {
+              await db.from(t.name).upsert(_remote(t, r), onConflict: t.keys.join(','));
+              ok.add(r);
+            } on PostgrestException catch (e) {
+              bad++;
+              debugPrint('Zeile in ${t.name} abgelehnt: ${e.code}');
+            }
+          }
+        }
         // Ein Commit pro Paket statt einem pro Zeile.
         await store.db.transaction(() async {
-          for (final r in chunk) {
+          for (final r in ok) {
             await store.db.markClean(t, r);
           }
         });
       }
     }
+    rejected = bad;
     if (settings.dirty) {
       final at = settings.updatedAt;
       await db.from('settings').upsert(settings.toRow(), onConflict: 'user_id');
@@ -170,7 +211,10 @@ class SyncService extends ChangeNotifier {
       String? since = saved == null ? null : DateTime.parse(saved).subtract(_overlap).toUtc().toIso8601String();
       while (true) {
         var q = db.from(t.name).select();
-        if (since != null) q = q.gt('synced_at', since);
+        // `gte` statt `gt`: Ein Paket (max. 200 Zeilen) hat beim Server dasselbe `synced_at`.
+        // Fällt eine Seitengrenze mitten hinein, kommt der Rest so auf der nächsten Seite.
+        // Doppelt geladene Zeilen schaden nicht; da ein Paket < 500 Zeilen hat, geht es immer weiter.
+        if (since != null) q = q.gte('synced_at', since);
         final rows = (await q.order('synced_at', ascending: true).limit(500)).cast<Map<String, Object?>>();
         await store.applyRemote(t, rows);
         if (rows.isEmpty) break;

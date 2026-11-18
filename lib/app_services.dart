@@ -9,6 +9,7 @@ import 'data/store.dart';
 import 'data/sync_service.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'services/reminders.dart';
+import 'util/dates.dart';
 import 'util/fmt.dart';
 import 'widgets/snack.dart';
 
@@ -18,6 +19,37 @@ class AppServices extends ChangeNotifier {
     store.onLocalChange = _onLocalChange;
     store.addListener(_scheduleReminders);
     settings.addListener(_onSettingsChanged);
+    sync.onPulled = _afterPull;
+    _lifecycle = AppLifecycleListener(onResume: _onResume);
+    _scheduleMidnight();
+  }
+
+  late final AppLifecycleListener _lifecycle;
+  Timer? _midnight;
+
+  /// Zurück in der App: Neues vom Server holen und „heute“ neu berechnen.
+  void _onResume() {
+    if (signedIn) sync.schedule(pullOnly: true);
+    _dayChanged();
+  }
+
+  /// Um Mitternacht neu zeichnen, damit „Heute“, „Morgen“ und Gewohnheiten stimmen.
+  void _scheduleMidnight() {
+    _midnight?.cancel();
+    final now = DateTime.now();
+    final next = DateTime(now.year, now.month, now.day + 1, 0, 0, 1);
+    _midnight = Timer(next.difference(now), () {
+      _dayChanged();
+      _scheduleMidnight();
+    });
+  }
+
+  DateTime _shownDay = today();
+  void _dayChanged() {
+    final d = today();
+    if (d == _shownDay) return;
+    _shownDay = d;
+    store.touch();
   }
 
   final SettingsStore settings;
@@ -88,21 +120,22 @@ class AppServices extends ChangeNotifier {
       await settings.setOwner(owner);
     }
     // Nicht darauf warten, damit der Start bei langsamem Netz nicht hängt. Standard-
-    // Kategorien erst nach dem ersten Abgleich – sonst entstehen sie auf jedem Gerät doppelt.
+    // Kategorien erst nach dem ersten erfolgreichen Abruf (siehe [_afterPull]) – sonst
+    // entstehen sie auf jedem Gerät doppelt.
     _firstSyncDone = false;
-    unawaited(sync.attach().then(
-      (_) {
-        _firstSyncDone = true;
-        // Gleichnamige Kategorien (z. B. Standard-Kategorien von zwei Geräten) zusammenführen.
-        store.mergeDuplicateCategories();
-        _ensureDefaults();
-      },
-      onError: (Object e) => debugPrint('Abgleich nach dem Anmelden fehlgeschlagen: ${e.runtimeType}'),
-    ));
+    unawaited(sync.attach());
   }
 
-  /// Erst nach dem ersten Abgleich wissen wir, ob das Konto schon Kategorien hat.
+  /// Erst nach dem ersten Abruf wissen wir, ob das Konto schon Kategorien hat.
   bool _firstSyncDone = false;
+
+  void _afterPull() {
+    if (_firstSyncDone) return;
+    _firstSyncDone = true;
+    // Gleichnamige Kategorien (z. B. Standard-Kategorien von zwei Geräten) zusammenführen.
+    store.mergeDuplicateCategories();
+    _ensureDefaults();
+  }
 
   /// Die App braucht mindestens eine Kategorie. Beim allerersten Start werden die
   /// Standard-Kategorien in der gewählten Sprache angelegt (danach sind es eigene Einträge).
@@ -162,7 +195,9 @@ class AppServices extends ChangeNotifier {
 
   Future<void> signOut() async {
     snack.clear();
+    await sync.idle();
     await sync.sync();
+    await sync.idle();
     await sync.detach();
     await cloud.signOut();
     await _authChanged();
@@ -200,6 +235,8 @@ class AppServices extends ChangeNotifier {
   void dispose() {
     _authSub?.cancel();
     _reminderTimer?.cancel();
+    _midnight?.cancel();
+    _lifecycle.dispose();
     snack.dispose();
     super.dispose();
   }
