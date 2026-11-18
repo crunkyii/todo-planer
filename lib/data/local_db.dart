@@ -2,8 +2,14 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 /// Beschreibt eine Tabelle, die lokal und in Supabase gleich aufgebaut ist.
+///
+/// Neue Tabelle anlegen – an diesen Stellen eintragen:
+/// 1. hier eine `TableSpec` und in [syncTables] (Reihenfolge = Reihenfolge beim Hochladen),
+/// 2. ein Modell mit `toJson()`/`fromJson()` in `models.dart`,
+/// 3. im `Store`: eine eigene Map sowie `_put`, `_ingest` und `_existingUpdatedAt`,
+/// 4. in `supabase/schema.sql`: die Tabelle und ihr Name in der Schleife für Trigger, RLS und Realtime.
 class TableSpec {
-  const TableSpec(this.name, this.keys, this.columns);
+  const TableSpec(this.name, this.keys, this.columns, {this.bools = const {}});
 
   final String name;
 
@@ -12,6 +18,9 @@ class TableSpec {
 
   /// Alle Spalten mit SQLite-Typ, in derselben Reihenfolge wie `toJson()`.
   final Map<String, String> columns;
+
+  /// Spalten, die in Supabase `boolean` sind (lokal stehen sie als 0/1 in SQLite).
+  final Set<String> bools;
 }
 
 const categoriesTable = TableSpec(
@@ -26,6 +35,7 @@ const categoriesTable = TableSpec(
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
   },
+  bools: {'deleted'},
 );
 
 const tasksTable = TableSpec(
@@ -43,6 +53,7 @@ const tasksTable = TableSpec(
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
   },
+  bools: {'done', 'deleted'},
 );
 
 const subtasksTable = TableSpec(
@@ -57,6 +68,7 @@ const subtasksTable = TableSpec(
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
   },
+  bools: {'done', 'deleted'},
 );
 
 const habitsTable = TableSpec(
@@ -71,12 +83,14 @@ const habitsTable = TableSpec(
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
   },
+  bools: {'deleted'},
 );
 
 const habitLogsTable = TableSpec(
   'habit_logs',
   ['habit_id', 'day'],
   {'habit_id': 'TEXT NOT NULL', 'day': 'TEXT NOT NULL', 'done': 'INTEGER NOT NULL', 'updated_at': 'TEXT NOT NULL'},
+  bools: {'done'},
 );
 
 const blocksTable = TableSpec(
@@ -94,9 +108,11 @@ const blocksTable = TableSpec(
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
   },
+  bools: {'repeat', 'deleted'},
 );
 
-/// Reihenfolge ist wichtig für den Upload: Kategorien vor Aufgaben, Aufgaben vor Unteraufgaben …
+/// Alle Tabellen. Die Reihenfolge ist wichtig für den Upload: Kategorien vor Aufgaben,
+/// Aufgaben vor Unteraufgaben …
 const syncTables = [categoriesTable, habitsTable, tasksTable, subtasksTable, habitLogsTable, blocksTable];
 
 /// Lokale SQLite-Datenbank (über drift). Jede Zeile hat zusätzlich `dirty`:
@@ -113,7 +129,7 @@ class LocalDb extends GeneratedDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
-      for (final t in allTablesSpec) {
+      for (final t in syncTables) {
         final cols = t.columns.entries.map((e) => '"${e.key}" ${e.value}').join(', ');
         await customStatement(
           'CREATE TABLE "${t.name}" ($cols, "dirty" INTEGER NOT NULL DEFAULT 0, '
@@ -122,8 +138,6 @@ class LocalDb extends GeneratedDatabase {
       }
     },
   );
-
-  static const allTablesSpec = syncTables;
 
   static Object? _toSql(Object? v) => v is bool ? (v ? 1 : 0) : v;
 
@@ -165,14 +179,14 @@ class LocalDb extends GeneratedDatabase {
   }
 
   Future<void> markAllDirty() => transaction(() async {
-    for (final t in allTablesSpec) {
+    for (final t in syncTables) {
       await customStatement('UPDATE "${t.name}" SET dirty = 1');
     }
   });
 
   Future<int> pendingCount() async {
     var n = 0;
-    for (final t in allTablesSpec) {
+    for (final t in syncTables) {
       final r = await customSelect('SELECT COUNT(*) AS n FROM "${t.name}" WHERE dirty = 1').getSingle();
       n += r.read<int>('n');
     }
@@ -181,7 +195,7 @@ class LocalDb extends GeneratedDatabase {
 
   /// Löscht alle lokalen Daten (z. B. wenn sich ein anderes Konto anmeldet).
   Future<void> wipe() => transaction(() async {
-    for (final t in allTablesSpec) {
+    for (final t in syncTables) {
       await customStatement('DELETE FROM "${t.name}"');
     }
   });

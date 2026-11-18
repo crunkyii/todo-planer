@@ -16,7 +16,7 @@ void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   late Store store;
   final l = l10n('de');
-  final f = Fmt(l, 'de');
+  final f = Fmt(l);
 
   setUpAll(() async {
     await initializeDateFormatting();

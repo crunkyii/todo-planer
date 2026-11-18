@@ -1,4 +1,4 @@
-// Datums-Hilfen aus dem Prototyp (sod, addDays, monday, iso …). Alles in lokaler Zeit.
+// Datums-Hilfen (sod, addDays, monday, isoDate …). Alles in lokaler Zeit.
 
 String pad2(int n) => n.toString().padLeft(2, '0');
 

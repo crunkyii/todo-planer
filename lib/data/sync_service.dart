@@ -41,7 +41,10 @@ class SyncService extends ChangeNotifier {
   final _events = StreamController<SyncEvent>.broadcast();
   Stream<SyncEvent> get events => _events.stream;
 
+  /// Hat das Gerät gerade Netz? (Ob der Server erreichbar ist, zeigt erst der Abgleich.)
   bool online = true;
+
+  /// Läuft gerade ein Abgleich?
   bool syncing = false;
 
   /// Nur wenn `true` (App-Bildschirm mit Konto) werden Toasts gezeigt.
@@ -52,8 +55,14 @@ class SyncService extends ChangeNotifier {
   Timer? _debounce;
   bool _again = false;
 
-  static const _boolCols = {'done', 'deleted', 'repeat', 'remind'};
   static const _overlap = Duration(seconds: 5);
+
+  /// So viele Zeilen gehen in einem Paket hoch …
+  static const _pushChunk = 200;
+
+  /// … und so viele kommen je Seite herunter. Muss größer als [_pushChunk] sein: Ein Paket
+  /// bekommt am Server einen gemeinsamen `synced_at`, und der Abruf blättert nach `synced_at`.
+  static const _pullPage = 500;
 
   bool get _canSync => settings.syncMode == SyncMode.cloud && cloud.ready && cloud.user != null;
 
@@ -90,10 +99,10 @@ class SyncService extends ChangeNotifier {
     await _channel?.unsubscribe();
     _channel = cloud.client
         .channel('todo-sync')
-        .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', callback: (_) => schedule(pullOnly: true))
+        .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', callback: (_) => schedule(remote: true))
         // Nach jedem (Neu-)Verbinden des Kanals nachholen, was in der Zwischenzeit passiert ist.
         .subscribe((status, _) {
-          if (status == RealtimeSubscribeStatus.subscribed) schedule(pullOnly: true);
+          if (status == RealtimeSubscribeStatus.subscribed) schedule(remote: true);
         });
     await sync();
   }
@@ -105,10 +114,12 @@ class SyncService extends ChangeNotifier {
     if (ch != null && cloud.ready) await cloud.client.removeChannel(ch);
   }
 
-  /// Nach einer lokalen Änderung: kurz warten (mehrere Änderungen bündeln), dann hochladen.
-  void schedule({bool pullOnly = false}) {
+  /// Plant einen Abgleich: kurz warten, damit mehrere Änderungen in einen Durchgang fallen.
+  /// [remote] = der Anstoß kam vom Server oder vom Zurückkommen in die App (etwas länger warten,
+  /// weil solche Meldungen oft im Bündel eintreffen). Abgeglichen wird immer in beide Richtungen.
+  void schedule({bool remote = false}) {
     _debounce?.cancel();
-    _debounce = Timer(Duration(milliseconds: pullOnly ? 600 : 400), () => sync());
+    _debounce = Timer(Duration(milliseconds: remote ? 600 : 400), () => sync());
   }
 
   /// Wird nach jedem erfolgreichen Abruf vom Server aufgerufen.
@@ -159,16 +170,16 @@ class SyncService extends ChangeNotifier {
   }
 
   Map<String, Object?> _remote(TableSpec t, Map<String, Object?> row) => {
-    for (final k in t.columns.keys) k: _boolCols.contains(k) ? row[k] == 1 || row[k] == true : row[k],
+    for (final k in t.columns.keys) k: t.bools.contains(k) ? row[k] == 1 || row[k] == true : row[k],
   };
 
   Future<void> _push() async {
     final db = cloud.client;
     var bad = 0;
     for (final t in syncTables) {
-      final rows = await store.db.dirtyRows(t);
-      for (var i = 0; i < rows.length; i += 200) {
-        final chunk = rows.sublist(i, i + 200 > rows.length ? rows.length : i + 200);
+      final rows = await store.dirtyRows(t);
+      for (var i = 0; i < rows.length; i += _pushChunk) {
+        final chunk = rows.sublist(i, i + _pushChunk > rows.length ? rows.length : i + _pushChunk);
         var ok = chunk;
         try {
           await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
@@ -186,12 +197,7 @@ class SyncService extends ChangeNotifier {
             }
           }
         }
-        // Ein Commit pro Paket statt einem pro Zeile.
-        await store.db.transaction(() async {
-          for (final r in ok) {
-            await store.db.markClean(t, r);
-          }
-        });
+        await store.markClean(t, ok);
       }
     }
     rejected = bad;
@@ -211,16 +217,17 @@ class SyncService extends ChangeNotifier {
       String? since = saved == null ? null : DateTime.parse(saved).subtract(_overlap).toUtc().toIso8601String();
       while (true) {
         var q = db.from(t.name).select();
-        // `gte` statt `gt`: Ein Paket (max. 200 Zeilen) hat beim Server dasselbe `synced_at`.
-        // Fällt eine Seitengrenze mitten hinein, kommt der Rest so auf der nächsten Seite.
-        // Doppelt geladene Zeilen schaden nicht; da ein Paket < 500 Zeilen hat, geht es immer weiter.
+        // `gte` statt `gt`: Ein Paket (höchstens [_pushChunk] Zeilen) hat beim Server dasselbe
+        // `synced_at`. Fällt eine Seitengrenze mitten hinein, kommt der Rest so auf der nächsten
+        // Seite. Doppelt geladene Zeilen schaden nicht; weil ein Paket kleiner als eine Seite
+        // ist, geht es immer weiter.
         if (since != null) q = q.gte('synced_at', since);
-        final rows = (await q.order('synced_at', ascending: true).limit(500)).cast<Map<String, Object?>>();
+        final rows = (await q.order('synced_at', ascending: true).limit(_pullPage)).cast<Map<String, Object?>>();
         await store.applyRemote(t, rows);
         if (rows.isEmpty) break;
         since = rows.last['synced_at'] as String;
         await settings.setCursor(t.name, since);
-        if (rows.length < 500) break;
+        if (rows.length < _pullPage) break;
       }
     }
     final s = await db.from('settings').select().maybeSingle();

@@ -227,7 +227,7 @@ void main() {
     testWidgets('Wischen über dem Wochenplan blättert die Woche, in der Tagesansicht den Tag', (tester) async {
       useFixedClock(); // Mittwoch 18.11.2026, KW 47
       final l = l10n('de');
-      final f = Fmt(l, 'de');
+      final f = Fmt(l);
       final app = await makeServices();
       seedDemo(app.store, l);
       await pumpApp(tester, app);

@@ -23,26 +23,16 @@ enum WidgetShape {
 /// Eine Kategorie, wie sie in der Zusammenfassung für die Widgets steht.
 typedef WidgetCategory = ({String id, String name, String color});
 
-/// Grundfarben der Widgets – dieselben wie in `android/app/src/main/res/values(-night)/widget_colors.xml`.
+/// Grundfarben der Widgets für die Vorschau im Einstellungsfenster – dieselben wie in
+/// `android/app/src/main/res/values(-night)/widget_colors.xml` (dort zeichnet Android damit).
 class WidgetPalette {
-  const WidgetPalette({required this.bg, required this.text, required this.sub, required this.overdue});
+  const WidgetPalette({required this.bg, required this.text, required this.sub});
   final Color bg;
   final Color text;
   final Color sub;
-  final Color overdue;
 
-  static const light = WidgetPalette(
-    bg: Color(0xFFF7FAFD),
-    text: Color(0xFF1A1F25),
-    sub: Color(0xFF5B6672),
-    overdue: Color(0xFFC62828),
-  );
-  static const dark = WidgetPalette(
-    bg: Color(0xFF1B2026),
-    text: Color(0xFFE8EDF2),
-    sub: Color(0xFFA3AEBA),
-    overdue: Color(0xFFFF8A80),
-  );
+  static const light = WidgetPalette(bg: Color(0xFFF7FAFD), text: Color(0xFF1A1F25), sub: Color(0xFF5B6672));
+  static const dark = WidgetPalette(bg: Color(0xFF1B2026), text: Color(0xFFE8EDF2), sub: Color(0xFFA3AEBA));
   static WidgetPalette of({required bool dark}) => dark ? WidgetPalette.dark : WidgetPalette.light;
 }
 
@@ -131,7 +121,9 @@ class WidgetConfigChannel {
     final m = await _channel.invokeMapMethod<String, Object?>('init') ?? const {};
     Map<String, dynamic> saved = const {};
     try {
-      if (m['config'] case final String raw) saved = jsonDecode(raw) as Map<String, dynamic>;
+      if (m['config'] case final String raw) {
+        if (jsonDecode(raw) case final Map<String, dynamic> json) saved = json;
+      }
     } on FormatException {
       // Kaputte Einstellungen: mit dem Standard anfangen.
     }

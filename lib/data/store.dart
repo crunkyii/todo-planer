@@ -18,6 +18,7 @@ typedef DefaultCategory = ({String name, String color, int offset});
 class Store extends ChangeNotifier {
   Store(this.db);
 
+  /// Die lokale Datenbank. Nur der Store schreibt hinein – alle anderen gehen über seine Methoden.
   final LocalDb db;
 
   final Map<String, TaskCategory> _cats = {};
@@ -33,10 +34,12 @@ class Store extends ChangeNotifier {
 
   /// Aufgaben mit Änderungen, die noch nicht hochgeladen sind (Wolken-Symbol offline).
   final Set<String> pendingTaskIds = {};
-  int pending = 0;
-  bool loaded = false;
 
-  /// Wird nach jeder lokalen Änderung aufgerufen (Sync anstoßen, Erinnerungen planen).
+  /// Wie viele Zeilen (aller Tabellen) noch auf den Upload warten.
+  int pending = 0;
+
+  /// Wird nach jeder lokalen Änderung aufgerufen – `AppServices` stößt damit den Sync an.
+  /// (Erinnerungen und Widgets hängen als normale Zuhörer am Store.)
   VoidCallback? onLocalChange;
 
   // ---------- Lesen ----------
@@ -51,20 +54,30 @@ class Store extends ChangeNotifier {
 
   List<WeekBlock> get blocks => _blocks.values.where((b) => !b.deleted).toList();
 
+  /// Die Kategorie einer Aufgabe. Gibt es sie nicht mehr (gelöscht, noch nicht abgeglichen),
+  /// springt die erste vorhandene ein – und ganz ohne Kategorien ein namenloser Platzhalter,
+  /// damit die Oberfläche nie ohne Farbe und Vorlauf dasteht.
   TaskCategory catOf(String id) {
     final c = _cats[id];
     if (c != null && !c.deleted) return c;
     final list = categories;
     return list.isNotEmpty
         ? list.first
-        : (c ?? TaskCategory(id: id, name: '', color: '#3D9BE9', offset: 0, position: 0, updatedAt: nowUtc()));
+        : (c ?? TaskCategory(id: id, name: '', color: _placeholderColor, offset: 0, position: 0, updatedAt: nowUtc()));
   }
 
+  /// Farbe des Platzhalters in [catOf] (das Himmelblau der ersten Standard-Kategorie).
+  static const _placeholderColor = '#3D9BE9';
+
+  // Der aktuelle Stand eines Eintrags – `null`, wenn er (auch durch den Abgleich) gelöscht wurde.
+  // Ein Sheet, das länger offen ist, holt sich damit vor dem Speichern das frische Objekt:
+  // Der Abgleich ersetzt Objekte im Speicher, ein altes würde neuere Änderungen überschreiben.
   Task? taskById(String id) => _tasks[id]?.deleted == false ? _tasks[id] : null;
   Habit? habitById(String id) => _habits[id]?.deleted == false ? _habits[id] : null;
   WeekBlock? blockById(String id) => _blocks[id]?.deleted == false ? _blocks[id] : null;
+  TaskCategory? categoryById(String id) => _cats[id]?.deleted == false ? _cats[id] : null;
 
-  bool habitDone(String habitId, String day) => _logs['$habitId|$day']?.done ?? false;
+  bool habitDone(String habitId, String day) => _logs[HabitLog.keyOf(habitId, day)]?.done ?? false;
 
   /// Alle Tage (`JJJJ-MM-TT`, aufsteigend), an denen die Gewohnheit erledigt wurde.
   List<String> habitDoneDays(String habitId) => [
@@ -81,38 +94,47 @@ class Store extends ChangeNotifier {
 
   // ---------- Laden ----------
 
+  /// Liest alles aus der lokalen Datenbank in den Speicher (beim Start der App).
   Future<void> load() async {
     _clearMemory();
-    for (final r in await db.all(categoriesTable)) {
-      final c = TaskCategory.fromJson(r);
-      _cats[c.id] = c;
-    }
-    for (final r in await db.all(tasksTable)) {
-      final t = Task.fromJson(r);
-      _tasks[t.id] = t;
-      if (r['dirty'] == 1) pendingTaskIds.add(t.id);
-    }
-    for (final r in await db.all(subtasksTable)) {
-      final s = Subtask.fromJson(r);
-      _subs[s.id] = s;
-      if (r['dirty'] == 1) pendingTaskIds.add(s.taskId);
-    }
-    for (final r in await db.all(habitsTable)) {
-      final h = Habit.fromJson(r);
-      _habits[h.id] = h;
-    }
-    for (final r in await db.all(habitLogsTable)) {
-      final l = HabitLog.fromJson(r);
-      _logs[l.key] = l;
-    }
-    for (final r in await db.all(blocksTable)) {
-      final b = WeekBlock.fromJson(r);
-      _blocks[b.id] = b;
+    for (final t in syncTables) {
+      for (final r in await db.all(t)) {
+        _ingest(t, r);
+        if (r['dirty'] != 1) continue;
+        // Wolken-Symbol: Aufgaben, deren eigene Zeile oder eine Unteraufgabe noch wartet.
+        if (t == tasksTable) pendingTaskIds.add(r['id'] as String);
+        if (t == subtasksTable) pendingTaskIds.add(r['task_id'] as String);
+      }
     }
     _attachSubs();
     pending = await db.pendingCount();
-    loaded = true;
     notifyListeners();
+  }
+
+  /// Legt eine Zeile – aus der lokalen Datenbank oder vom Server – als Modell im Speicher ab.
+  void _ingest(TableSpec t, Map<String, Object?> row) {
+    switch (t.name) {
+      case 'categories':
+        final c = TaskCategory.fromJson(row);
+        _cats[c.id] = c;
+      case 'tasks':
+        final x = Task.fromJson(row);
+        _tasks[x.id] = x;
+      case 'subtasks':
+        final s = Subtask.fromJson(row);
+        _subs[s.id] = s;
+      case 'habits':
+        final h = Habit.fromJson(row);
+        _habits[h.id] = h;
+      case 'habit_logs':
+        final l = HabitLog.fromJson(row);
+        _logs[l.key] = l;
+      case 'week_blocks':
+        final b = WeekBlock.fromJson(row);
+        _blocks[b.id] = b;
+      default:
+        throw ArgumentError.value(t.name, 'table');
+    }
   }
 
   void _clearMemory() {
@@ -150,7 +172,6 @@ class Store extends ChangeNotifier {
     var pos = 0;
     for (final d in defaults) {
       _put(
-        categoriesTable,
         TaskCategory(id: newId(), name: d.name, color: d.color, offset: d.offset, position: pos++, updatedAt: nowUtc()),
       );
     }
@@ -168,34 +189,44 @@ class Store extends ChangeNotifier {
     }
   }
 
-  void _put(TableSpec t, Object model) {
-    late final Map<String, Object?> json;
+  /// Speichert ein Modell: im Speicher, in der lokalen Datenbank und – über `dirty` – in der
+  /// Warteschlange für den Upload. Setzt `updatedAt`, weil beim Abgleich der neueste Stand gewinnt.
+  void _put(Object model) {
+    final now = nowUtc();
+    final TableSpec t;
+    final Map<String, Object?> json;
     switch (model) {
       case TaskCategory c:
-        c.updatedAt = nowUtc();
+        c.updatedAt = now;
         _cats[c.id] = c;
+        t = categoriesTable;
         json = c.toJson();
       case Task x:
-        x.updatedAt = nowUtc();
+        x.updatedAt = now;
         _tasks[x.id] = x;
         pendingTaskIds.add(x.id);
+        t = tasksTable;
         json = x.toJson();
       case Subtask s:
-        s.updatedAt = nowUtc();
+        s.updatedAt = now;
         _subs[s.id] = s;
         pendingTaskIds.add(s.taskId);
+        t = subtasksTable;
         json = s.toJson();
       case Habit h:
-        h.updatedAt = nowUtc();
+        h.updatedAt = now;
         _habits[h.id] = h;
+        t = habitsTable;
         json = h.toJson();
       case HabitLog l:
-        l.updatedAt = nowUtc();
+        l.updatedAt = now;
         _logs[l.key] = l;
+        t = habitLogsTable;
         json = l.toJson();
       case WeekBlock b:
-        b.updatedAt = nowUtc();
+        b.updatedAt = now;
         _blocks[b.id] = b;
+        t = blocksTable;
         json = b.toJson();
       default:
         throw ArgumentError(model);
@@ -226,9 +257,30 @@ class Store extends ChangeNotifier {
 
   /// Nach erfolgreichem Upload: Wolken-Symbol entfernen.
   void markSynced() {
-    pendingTaskIds.clear();
-    notifyListeners();
+    if (pendingTaskIds.isNotEmpty) {
+      pendingTaskIds.clear();
+      notifyListeners();
+    }
     unawaited(refreshPending());
+  }
+
+  // ---------- Sync-Warteschlange (nur für den SyncService) ----------
+
+  /// Zeilen von [t], die noch nicht hochgeladen sind.
+  Future<List<Map<String, Object?>>> dirtyRows(TableSpec t) => db.dirtyRows(t);
+
+  /// Nimmt hochgeladene Zeilen aus der Warteschlange – ein Commit für alle. Eine Zeile, die
+  /// sich inzwischen wieder geändert hat, bleibt drin.
+  Future<void> markClean(TableSpec t, List<Map<String, Object?>> rows) => db.transaction(() async {
+    for (final r in rows) {
+      await db.markClean(t, r);
+    }
+  });
+
+  /// Stellt alles noch einmal in die Warteschlange (lokale Daten ziehen in ein neues Konto um).
+  Future<void> markAllDirty() async {
+    await db.markAllDirty();
+    await refreshPending();
   }
 
   // Aufgaben
@@ -252,7 +304,7 @@ class Store extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
     );
-    _put(tasksTable, t);
+    _put(t);
     _writeSubs(t.id, const [], subs);
     _changed();
     return t;
@@ -271,7 +323,7 @@ class Store extends ChangeNotifier {
       ..categoryId = categoryId
       ..dueDate = sod(dueDate)
       ..dueTime = dueTime;
-    _put(tasksTable, t);
+    _put(t);
     _writeSubs(t.id, List.of(t.subs), subs);
     _changed();
   }
@@ -284,7 +336,6 @@ class Store extends ChangeNotifier {
         final s = old[i];
         if (s.title != next[i].title || s.done != next[i].done || s.position != i) {
           _put(
-            subtasksTable,
             s
               ..title = next[i].title
               ..done = next[i].done
@@ -293,7 +344,6 @@ class Store extends ChangeNotifier {
         }
       } else {
         _put(
-          subtasksTable,
           Subtask(
             id: newId(),
             taskId: taskId,
@@ -306,14 +356,14 @@ class Store extends ChangeNotifier {
       }
     }
     for (var i = next.length; i < old.length; i++) {
-      _put(subtasksTable, old[i]..deleted = true);
+      _put(old[i]..deleted = true);
     }
   }
 
   void toggleTask(Task t) {
     t.done = !t.done;
     t.doneAt = t.done ? nowUtc() : null;
-    _put(tasksTable, t);
+    _put(t);
     if (isYearly(t.title)) _yearlyFollowUp(t);
     _changed();
   }
@@ -354,7 +404,7 @@ class Store extends ChangeNotifier {
         createdAt: now,
         updatedAt: now,
       );
-      _put(tasksTable, n);
+      _put(n);
       _writeSubs(n.id, const [], [for (final s in t.subs) (title: s.title, done: false)]);
       _yearlyCopies[t.id] = n.id;
     }
@@ -362,24 +412,24 @@ class Store extends ChangeNotifier {
 
   void toggleSub(Subtask s) {
     s.done = !s.done;
-    _put(subtasksTable, s);
+    _put(s);
     _changed();
   }
 
   /// Löscht die Aufgabe samt Unteraufgaben und gibt zurück, wie es rückgängig geht.
   /// Wiederhergestellt werden nur die Unteraufgaben, die *dieser* Aufruf gelöscht hat –
   /// nicht solche, die schon vorher (z. B. im Bearbeiten-Sheet) entfernt wurden.
-  void Function() _deleteTask(Task t) {
+  Undo _deleteTask(Task t) {
     final subs = _subs.values.where((s) => s.taskId == t.id && !s.deleted).toList();
     for (final s in subs) {
-      _put(subtasksTable, s..deleted = true);
+      _put(s..deleted = true);
     }
-    _put(tasksTable, t..deleted = true);
+    _put(t..deleted = true);
     return () {
       for (final s in subs) {
-        _put(subtasksTable, s..deleted = false);
+        _put(s..deleted = false);
       }
-      _put(tasksTable, t..deleted = false);
+      _put(t..deleted = false);
     };
   }
 
@@ -413,16 +463,12 @@ class Store extends ChangeNotifier {
 
   void addCategory({required String name, required String color, required int offset}) {
     final pos = _cats.values.fold<int>(-1, (m, c) => c.position > m ? c.position : m) + 1;
-    _put(
-      categoriesTable,
-      TaskCategory(id: newId(), name: name, color: color, offset: offset, position: pos, updatedAt: nowUtc()),
-    );
+    _put(TaskCategory(id: newId(), name: name, color: color, offset: offset, position: pos, updatedAt: nowUtc()));
     _changed();
   }
 
   void updateCategory(TaskCategory c, {required String name, required String color, required int offset}) {
     _put(
-      categoriesTable,
       c
         ..name = name
         ..color = color
@@ -434,20 +480,20 @@ class Store extends ChangeNotifier {
   /// Löscht eine Kategorie; ihre Aufgaben wandern in die erste verbleibende.
   ({TaskCategory target, int moved, Undo undo})? deleteCategory(TaskCategory c) {
     if (categories.length < 2) return null;
-    _put(categoriesTable, c..deleted = true);
+    _put(c..deleted = true);
     final target = categories.first;
     final moved = tasks.where((t) => t.categoryId == c.id).toList();
     for (final t in moved) {
-      _put(tasksTable, t..categoryId = target.id);
+      _put(t..categoryId = target.id);
     }
     _changed();
     return (
       target: target,
       moved: moved.length,
       undo: () {
-        _put(categoriesTable, c..deleted = false);
+        _put(c..deleted = false);
         for (final t in moved) {
-          _put(tasksTable, t..categoryId = c.id);
+          _put(t..categoryId = c.id);
         }
         _changed();
       },
@@ -468,9 +514,9 @@ class Store extends ChangeNotifier {
       final keep = group.first;
       for (final dup in group.skip(1)) {
         for (final t in _tasks.values.where((t) => t.categoryId == dup.id).toList()) {
-          _put(tasksTable, t..categoryId = keep.id);
+          _put(t..categoryId = keep.id);
         }
-        _put(categoriesTable, dup..deleted = true);
+        _put(dup..deleted = true);
         changed = true;
       }
     }
@@ -484,13 +530,12 @@ class Store extends ChangeNotifier {
   void addHabit({required String name, required String color}) {
     final pos = _habits.values.fold<int>(-1, (m, h) => h.position > m ? h.position : m) + 1;
     final now = nowUtc();
-    _put(habitsTable, Habit(id: newId(), name: name, color: color, position: pos, createdAt: now, updatedAt: now));
+    _put(Habit(id: newId(), name: name, color: color, position: pos, createdAt: now, updatedAt: now));
     _changed();
   }
 
   void updateHabit(Habit h, {required String name, required String color}) {
     _put(
-      habitsTable,
       h
         ..name = name
         ..color = color,
@@ -499,17 +544,18 @@ class Store extends ChangeNotifier {
   }
 
   Undo deleteHabit(Habit h) {
-    _put(habitsTable, h..deleted = true);
+    _put(h..deleted = true);
     _changed();
     return () {
-      _put(habitsTable, h..deleted = false);
+      _put(h..deleted = false);
       _changed();
     };
   }
 
   void _setLog(String habitId, String day, bool done) {
-    final l = _logs['$habitId|$day'] ?? HabitLog(habitId: habitId, day: day, done: false, updatedAt: nowUtc());
-    _put(habitLogsTable, l..done = done);
+    final l =
+        _logs[HabitLog.keyOf(habitId, day)] ?? HabitLog(habitId: habitId, day: day, done: false, updatedAt: nowUtc());
+    _put(l..done = done);
   }
 
   /// Hakt einen Tag einer Gewohnheit ab oder öffnet ihn wieder. Gibt den neuen Zustand zurück.
@@ -547,7 +593,6 @@ class Store extends ChangeNotifier {
   }) {
     for (final d in days) {
       _put(
-        blocksTable,
         WeekBlock(
           id: newId(),
           name: name,
@@ -576,7 +621,6 @@ class Store extends ChangeNotifier {
     required DateTime weekStart,
   }) {
     _put(
-      blocksTable,
       b
         ..name = name
         ..color = color
@@ -590,10 +634,10 @@ class Store extends ChangeNotifier {
   }
 
   Undo deleteBlock(WeekBlock b) {
-    _put(blocksTable, b..deleted = true);
+    _put(b..deleted = true);
     _changed();
     return () {
-      _put(blocksTable, b..deleted = false);
+      _put(b..deleted = false);
       _changed();
     };
   }
@@ -618,26 +662,7 @@ class Store extends ChangeNotifier {
       if (existing != null && !updated.isAfter(existing)) continue;
       final row = {for (final k in t.columns.keys) k: r[k]};
       accepted.add(row);
-      switch (t.name) {
-        case 'categories':
-          final c = TaskCategory.fromJson(row);
-          _cats[c.id] = c;
-        case 'tasks':
-          final x = Task.fromJson(row);
-          _tasks[x.id] = x;
-        case 'subtasks':
-          final s = Subtask.fromJson(row);
-          _subs[s.id] = s;
-        case 'habits':
-          final h = Habit.fromJson(row);
-          _habits[h.id] = h;
-        case 'habit_logs':
-          final l = HabitLog.fromJson(row);
-          _logs[l.key] = l;
-        case 'week_blocks':
-          final b = WeekBlock.fromJson(row);
-          _blocks[b.id] = b;
-      }
+      _ingest(t, row);
     }
     if (accepted.isEmpty) return;
     await db.putAll(t, accepted, dirty: false);
@@ -650,7 +675,7 @@ class Store extends ChangeNotifier {
     'tasks' => _tasks[r['id']]?.updatedAt,
     'subtasks' => _subs[r['id']]?.updatedAt,
     'habits' => _habits[r['id']]?.updatedAt,
-    'habit_logs' => _logs['${r['habit_id']}|${(r['day'] as String).substring(0, 10)}']?.updatedAt,
+    'habit_logs' => _logs[HabitLog.keyOf(r['habit_id'] as String, (r['day'] as String).substring(0, 10))]?.updatedAt,
     'week_blocks' => _blocks[r['id']]?.updatedAt,
     _ => null,
   };

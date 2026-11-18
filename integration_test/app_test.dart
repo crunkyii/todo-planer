@@ -107,7 +107,7 @@ void main() {
     // „Hausaufgabe“ ist am nächsten Tag fällig: diesen Tag antippen, dann steht sie unter dem Kalender.
     final due = app.store.tasks.firstWhere((t) => t.title == 'Wegwischen').dueDate;
     expect(dayDiff(due, today()), 1, reason: 'Standard-Kategorie mit „fällig in 1 Tag“');
-    await _tap(tester, find.bySemanticsLabel(Fmt(l, 'de').dayMonth(due)).first);
+    await _tap(tester, find.bySemanticsLabel(Fmt(l).dayMonth(due)).first);
     expect(find.text('Wegwischen'), findsOneWidget);
 
     // Woche: Block anlegen, Tagesansicht und zurück

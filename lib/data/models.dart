@@ -119,8 +119,7 @@ class Task {
     required this.createdAt,
     required this.updatedAt,
     this.deleted = false,
-    List<Subtask>? subs,
-  }) : subs = subs ?? [];
+  });
 
   final String id;
   String title;
@@ -138,7 +137,7 @@ class Task {
   bool deleted;
 
   /// Nicht gelöschte Unteraufgaben, sortiert. Wird vom Store gepflegt.
-  List<Subtask> subs;
+  List<Subtask> subs = [];
 
   bool get hasTime => dueTime != null;
 
@@ -225,7 +224,10 @@ class HabitLog {
   bool done;
   DateTime updatedAt;
 
-  String get key => '$habitId|$day';
+  /// Schlüssel eines Eintrags im Speicher: Gewohnheit und Tag.
+  static String keyOf(String habitId, String day) => '$habitId|$day';
+
+  String get key => keyOf(habitId, day);
 
   Map<String, Object?> toJson() => {'habit_id': habitId, 'day': day, 'done': done, 'updated_at': _ts(updatedAt)};
 

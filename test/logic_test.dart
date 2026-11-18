@@ -111,7 +111,7 @@ void main() {
     final d = DateTime(2026, 11, 20);
 
     test('Deutsch', () {
-      final f = Fmt(lookupAppLocalizations(const Locale('de')), 'de');
+      final f = Fmt(lookupAppLocalizations(const Locale('de')));
       expect(f.dayMonth(d), '20. November');
       expect(f.dayNum(d), '20.');
       expect(f.wd(0), 'Mo');
@@ -121,7 +121,7 @@ void main() {
     });
 
     test('Englisch', () {
-      final f = Fmt(lookupAppLocalizations(const Locale('en')), 'en');
+      final f = Fmt(lookupAppLocalizations(const Locale('en')));
       expect(f.dayMonth(d), 'November 20');
       expect(f.dayNum(d), '20');
       expect([f.wd(0), f.wd(1), f.wd(6)], ['Mo', 'Tu', 'Su']); // zwei Buchstaben wie im Prototyp
@@ -130,7 +130,7 @@ void main() {
 
     test('Monatskürzel wie im Prototyp (Deutsch mit Punkt, Englisch ohne)', () {
       List<String> all(String lang) => [
-        for (var m = 1; m <= 12; m++) Fmt(lookupAppLocalizations(Locale(lang)), lang).monShort(DateTime(2026, m, 5)),
+        for (var m = 1; m <= 12; m++) Fmt(lookupAppLocalizations(Locale(lang))).monShort(DateTime(2026, m, 5)),
       ];
       expect(all('de'), [
         'Jän.',
@@ -147,7 +147,7 @@ void main() {
         'Dez.',
       ]);
       expect(all('en'), ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']);
-      final de = Fmt(lookupAppLocalizations(const Locale('de')), 'de');
+      final de = Fmt(lookupAppLocalizations(const Locale('de')));
       expect(de.weekRange(DateTime(2026, 11, 16)), '16.–22. Nov.');
       expect(de.weekRange(DateTime(2026, 12, 28)), '28. Dez. – 3. Jän.');
     });
@@ -183,7 +183,7 @@ void main() {
     test('Überfällig erst nach der Abgabe: mit Uhrzeit danach, ohne Uhrzeit nach 23:59', () {
       // Abgabe heute 23:00, Kategorie mit einem Tag Vorlauf („in der Liste ab gestern“)
       final timed = _task('tvvvv', DateTime(2026, 11, 18), time: 23 * 60);
-      expect(isLate(timed, 1, now: now), isFalse);
+      expect(isLate(timed, now: now), isFalse);
       expect(sectionOf(timed, 1, now: now), Section.today);
       expect(sectionOf(timed, 1, now: DateTime(2026, 11, 18, 23)), Section.today, reason: 'genau zur Abgabezeit');
       expect(sectionOf(timed, 1, now: DateTime(2026, 11, 18, 23, 0, 1)), Section.overdue);
@@ -191,7 +191,7 @@ void main() {
       final allDay = _task('hhj', DateTime(2026, 11, 18));
       expect(sectionOf(allDay, 3, now: DateTime(2026, 11, 18, 23, 59, 59)), Section.today);
       expect(sectionOf(allDay, 3, now: DateTime(2026, 11, 19)), Section.overdue);
-      expect(isLate(_task('fertig', DateTime(2026, 11, 1), done: true), 0, now: now), isFalse);
+      expect(isLate(_task('fertig', DateTime(2026, 11, 1), done: true), now: now), isFalse);
     });
 
     test('Kategorie-Vorschlag: die zuletzt am häufigsten benutzte', () {
@@ -242,8 +242,8 @@ void main() {
       );
       // Genau zur Uhrzeit ist die Aufgabe noch nicht überfällig, eine Sekunde später schon
       final abends = tasks[2];
-      expect(isLate(abends, 0, now: DateTime(2026, 11, 18, 23)), isFalse);
-      expect(isLate(abends, 0, now: DateTime(2026, 11, 18, 23, 0, 1)), isTrue);
+      expect(isLate(abends, now: DateTime(2026, 11, 18, 23)), isFalse);
+      expect(isLate(abends, now: DateTime(2026, 11, 18, 23, 0, 1)), isTrue);
       expect(nextListChange(tasks, DateTime(2026, 11, 18, 23, 0, 1)), midnight);
     });
 

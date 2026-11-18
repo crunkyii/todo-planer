@@ -141,7 +141,7 @@ int applyWidgetHabitToggles(Store store, String? json) {
 ///   `wd` Wochentage Mo–So; `mon` Monate kurz (Jän.–Dez.); `en` für das Datumsformat
 /// - `accent` / `accentDark`: Primärfarbe des gewählten Themes
 Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {required String themeId}) {
-  final f = Fmt(l, l.localeName);
+  final f = Fmt(l);
   int offset(Task t) => store.catOf(t.categoryId).offset;
   // Gleiche Reihenfolge wie die Aufgabenliste der App.
   final open = store.tasks.where((t) => !t.done).toList()..sort((a, b) => byDo(a, b, offset));
@@ -149,6 +149,7 @@ Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {requi
   final recent = [for (var i = 0; i < 14; i++) isoDate(addDays(t0, -i))];
   final th = themeOf(themeId);
   return {
+    // Version des Formats – noch liest sie niemand; sie ist für spätere Änderungen da.
     'v': 1,
     'en': f.en,
     'accent': toHex(AppTokens.build(th, dark: false).p),

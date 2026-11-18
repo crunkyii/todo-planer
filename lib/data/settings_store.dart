@@ -11,7 +11,7 @@ enum SyncMode { none, local, cloud }
 /// Darstellung: hell, dunkel oder wie das System.
 enum AppMode { light, dark, system }
 
-/// Supabase-Zugang, der in der Einrichtung eingegeben wurde (ersetzt `lib/config.dart`).
+/// Supabase-Zugang, der in der Einrichtung eingegeben wurde: Project URL und Publishable Key.
 class CloudConfig {
   const CloudConfig(this.url, this.key);
   final String url;
@@ -29,6 +29,14 @@ class SettingsStore extends ChangeNotifier {
   }
 
   final SharedPreferences _prefs;
+
+  /// Erlaubte Werte – dieselben Grenzen prüft die Datenbank (`supabase/schema.sql`, Tabelle `settings`).
+  static const rasterChoices = [5, 15, 30];
+  static const dayStartMin = 4, dayStartMax = 10;
+  static const dayEndMin = 16, dayEndMax = 24;
+
+  /// Zwischen „Tag beginnt“ und „Tag endet“ liegen mindestens so viele Stunden.
+  static const minDayHours = 6;
 
   static const _kSettings = 'settings.v1';
   static const _kSync = 'sync.v1';
@@ -86,21 +94,24 @@ class SettingsStore extends ChangeNotifier {
   }
 
   void _apply(Map<String, Object?> s) {
-    lang = s['lang'] == 'en' ? 'en' : (s['lang'] == 'de' ? 'de' : lang);
+    if (s['lang'] case final String v when v == 'de' || v == 'en') lang = v;
     theme = (s['theme'] as String?) ?? theme;
     mode = AppMode.values.asNameMap()[s['mode']] ?? mode;
     raster = _clampRaster((s['raster'] as num?)?.toInt() ?? raster);
-    dayStart = ((s['day_start'] as num?)?.toInt() ?? dayStart).clamp(4, 10);
-    dayEnd = ((s['day_end'] as num?)?.toInt() ?? dayEnd).clamp(16, 24);
-    remind = s['remind'] is bool
-        ? s['remind'] as bool
-        : (s['remind'] == 1 ? true : (s['remind'] == 0 ? false : remind));
+    dayStart = ((s['day_start'] as num?)?.toInt() ?? dayStart).clamp(dayStartMin, dayStartMax);
+    dayEnd = ((s['day_end'] as num?)?.toInt() ?? dayEnd).clamp(dayEndMin, dayEndMax);
+    remind = switch (s['remind']) {
+      final bool b => b,
+      1 => true,
+      0 => false,
+      _ => remind,
+    };
     final u = s['updated_at'] as String?;
     if (u != null) updatedAt = DateTime.parse(u).toUtc();
     if (s['dirty'] is bool) dirty = s['dirty'] as bool;
   }
 
-  static int _clampRaster(int r) => const [5, 15, 30].contains(r) ? r : 15;
+  static int _clampRaster(int r) => rasterChoices.contains(r) ? r : 15;
 
   /// Einstellungen als Zeile der Tabelle `settings`.
   Map<String, Object?> toRow() => {
@@ -125,8 +136,7 @@ class SettingsStore extends ChangeNotifier {
   void update(void Function(SettingsStore s) change) {
     change(this);
     raster = _clampRaster(raster);
-    // Mindestens 6 Stunden zwischen „Tag beginnt“ und „Tag endet“ (wie im Prototyp)
-    if (dayEnd - dayStart < 6) dayEnd = (dayStart + 6).clamp(16, 24);
+    if (dayEnd - dayStart < minDayHours) dayEnd = (dayStart + minDayHours).clamp(dayEndMin, dayEndMax);
     updatedAt = nowUtc();
     dirty = true;
     _saveSettings();

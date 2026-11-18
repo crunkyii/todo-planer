@@ -7,7 +7,7 @@ import 'dates.dart';
 /// Datums- und Zahlenformate in der gewählten Sprache (intl).
 /// Deutsch nutzt österreichische Monatsnamen („Jänner“) wie im Prototyp.
 class Fmt {
-  Fmt(this.l, String lang) : en = lang == 'en', _loc = lang == 'en' ? 'en' : 'de_AT';
+  Fmt(this.l) : en = l.localeName == 'en', _loc = l.localeName == 'en' ? 'en' : 'de_AT';
 
   final AppLocalizations l;
   final bool en;
@@ -15,10 +15,8 @@ class Fmt {
 
   static Fmt of(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Fmt(l, l.localeName);
+    return Fmt(l);
   }
-
-  String get locale => _loc;
 
   static final _monday = DateTime(2024, 1, 1);
 
@@ -29,7 +27,6 @@ class Fmt {
   }
 
   String wdLong(int i) => DateFormat.EEEE(_loc).format(addDays(_monday, i));
-  String month(DateTime d) => DateFormat.MMMM(_loc).format(d);
   String monthYear(DateTime d) => DateFormat.yMMMM(_loc).format(d);
 
   /// „Nov.“, „Juli“, „Jän.“ / „Nov“ – dieselbe Form wie in [dayMon]. Ein einzelnes `MMM`

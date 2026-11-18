@@ -48,11 +48,10 @@ enum Section { overdue, today, tomorrow, week, later, done }
 /// „Erledigen am“ = Fälligkeit minus Vorlauf der Kategorie (Hausübung: Vortag).
 DateTime doDate(Task t, int offset) => addDays(sod(t.dueDate), -offset);
 
-/// Überfällig erst, wenn die Abgabe vorbei ist: nach der Uhrzeit – ohne Uhrzeit gilt der
-/// ganze Abgabetag (bis 23:59). Der Vorlauf der Kategorie macht eine Aufgabe nie überfällig,
-/// er holt sie nur früher in die Liste.
 /// Wann sich die Liste das nächste Mal von selbst ändert: um Mitternacht (neuer Tag) oder
 /// vorher, sobald die Uhrzeit einer offenen Aufgabe vorbei ist (ab dann ist sie überfällig).
+///
+/// Dieselbe Rechnung macht das Android-Widget für sich: `WidgetData.nextChangeMillis` (Kotlin).
 DateTime nextListChange(Iterable<Task> tasks, DateTime now) {
   var next = addDays(sod(now), 1);
   for (final t in tasks) {
@@ -61,17 +60,24 @@ DateTime nextListChange(Iterable<Task> tasks, DateTime now) {
   return next;
 }
 
-bool isLate(Task t, int offset, {DateTime? now}) {
+/// Überfällig erst, wenn die Abgabe vorbei ist: nach der Uhrzeit – ohne Uhrzeit gilt der
+/// ganze Abgabetag (bis 23:59). Der Vorlauf der Kategorie macht eine Aufgabe nie überfällig,
+/// er holt sie nur früher in die Liste.
+///
+/// Dieselbe Regel steht für die Android-Widgets in `WidgetData.isLate` (Kotlin) – beide
+/// Stellen gemeinsam ändern.
+bool isLate(Task t, {DateTime? now}) {
   if (t.done) return false;
   final n = now ?? clock();
   final deadline = t.hasTime ? t.due : addDays(sod(t.dueDate), 1);
   return t.hasTime ? deadline.isBefore(n) : !deadline.isAfter(n);
 }
 
+/// In welchem Abschnitt der Liste die Aufgabe steht. [offset] = Vorlauf ihrer Kategorie in Tagen.
 Section sectionOf(Task t, int offset, {DateTime? now}) {
   if (t.done) return Section.done;
   final n = now ?? clock();
-  if (isLate(t, offset, now: n)) return Section.overdue;
+  if (isLate(t, now: n)) return Section.overdue;
   final d = dayDiff(doDate(t, offset), n);
   // Erledigen-Tag heute oder schon vorbei, Abgabe aber noch offen: gehört zu „Heute“.
   if (d <= 0) return Section.today;

@@ -42,7 +42,7 @@ class AppServices extends ChangeNotifier {
 
   /// Zurück in der App: Neues vom Server holen und „heute“ neu berechnen.
   void _onResume() {
-    if (signedIn) sync.schedule(pullOnly: true);
+    if (signedIn) sync.schedule(remote: true);
     // War die App im Hintergrund, kann der Zeitpunkt inzwischen vorbei sein.
     if (!clock().isBefore(_nextChange)) _listChanged();
   }
@@ -225,7 +225,7 @@ class AppServices extends ChangeNotifier {
       final l = _l;
       if (l == null) return;
       unawaited(homeWidgets.push(store, l, themeId: settings.theme));
-      final f = Fmt(l, l.localeName);
+      final f = Fmt(l);
       final items = upcomingReminders(
         store.tasks,
         (t) => l.dayWithTime(store.catOf(t.categoryId).name, f.time(t.dueTime!)),

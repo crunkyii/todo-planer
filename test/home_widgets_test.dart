@@ -53,7 +53,7 @@ void main() {
       // Monate für das Datum neben „Heute“ (das Widget rechnet den Tag selbst)
       expect(again['mon'], hasLength(12));
       expect((again['mon'] as List)[10], lang == 'en' ? 'Nov' : 'Nov.');
-      expect(Fmt(l, lang).widgetDate(DateTime(2026, 11, 18)), lang == 'en' ? 'NOV 18' : '18. NOV.');
+      expect(Fmt(l).widgetDate(DateTime(2026, 11, 18)), lang == 'en' ? 'NOV 18' : '18. NOV.');
       expect(again['en'], lang == 'en');
       expect(again['wd'], hasLength(7));
       expect(again['accent'], isNot(again['accentDark']));
