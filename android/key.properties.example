@@ -1,0 +1,6 @@
+# Vorlage: nach android/key.properties kopieren und ausfüllen (siehe README).
+# android/key.properties und der Keystore selbst dürfen NIE ins Git-Repo.
+storePassword=DEIN-KEYSTORE-PASSWORT
+keyPassword=DEIN-KEYSTORE-PASSWORT
+keyAlias=upload
+storeFile=C:/Users/DEIN-NAME/keystores/todo_liste-release.jks
