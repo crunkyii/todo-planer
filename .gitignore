@@ -54,4 +54,5 @@ key.properties
 *.keystore
 
 
+# Nur lokal: der Klick-Prototyp
 /design/
