@@ -10,6 +10,7 @@ import '../util/dates.dart';
 import '../util/fmt.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
+import '../widgets/swipe.dart';
 import '../widgets/ui.dart';
 import 'sheets.dart';
 import 'ui_state.dart';
@@ -105,7 +106,12 @@ class _WeekTabState extends State<WeekTab> {
         return Column(
           children: [
             _WeekHead(ui: ui, one: one),
-            Expanded(child: ClipRect(child: body)),
+            // Wischen links/rechts: nächste/vorige Woche (in der Tagesansicht: Tag)
+            Expanded(
+              child: ClipRect(
+                child: SwipeStep(onMove: ui.weekStep, child: body),
+              ),
+            ),
           ],
         );
       },

@@ -8,9 +8,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/screens/shell.dart';
+import 'package:todo_liste/screens/week_tab.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/theme/tokens.dart';
 import 'package:todo_liste/util/dates.dart';
+import 'package:todo_liste/util/fmt.dart';
 import 'package:todo_liste/widgets/overlays.dart';
 import 'package:todo_liste/widgets/pickers.dart';
 import 'package:todo_liste/widgets/ui.dart';
@@ -217,6 +219,45 @@ void main() {
       await tester.drag(grid, const Offset(0, -60));
       await tester.pumpAndSettle();
       expect(find.text('November 2026'), findsOneWidget);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Wischen über dem Wochenplan blättert die Woche, in der Tagesansicht den Tag', (tester) async {
+      useFixedClock(); // Mittwoch 18.11.2026, KW 47
+      final l = l10n('de');
+      final f = Fmt(l, 'de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      expect(find.text(l.weekNumber(47)), findsOneWidget);
+      final plan = find.byType(WeekTab);
+      Future<void> swipe(Offset by) async {
+        await tester.dragFrom(tester.getCenter(plan), by);
+        await tester.pumpAndSettle();
+      }
+
+      await swipe(const Offset(-150, 0)); // nach links = nächste Woche
+      expect(find.text(l.weekNumber(48)), findsOneWidget);
+      await swipe(const Offset(150, 0));
+      await swipe(const Offset(150, 0)); // nach rechts = vorige Woche
+      expect(find.text(l.weekNumber(46)), findsOneWidget);
+      await swipe(const Offset(-20, 0)); // zu kurz: nichts passiert
+      expect(find.text(l.weekNumber(46)), findsOneWidget);
+      await swipe(const Offset(0, -120)); // senkrecht scrollt nur das Raster
+      expect(find.text(l.weekNumber(46)), findsOneWidget);
+      expect(find.text(l.newBlock), findsNothing, reason: 'Wischen legt keinen Block an');
+      await swipe(const Offset(-150, 0));
+      expect(find.text(l.weekNumber(47)), findsOneWidget);
+
+      // Tagesansicht: Wischen wechselt den Tag, auch über die Wochengrenze
+      await _tap(tester, find.bySemanticsLabel(l.showDay(f.wdLong(6)))); // Sonntag
+      expect(find.text(f.day(DateTime(2026, 11, 22))), findsOneWidget);
+      await swipe(const Offset(-150, 0));
+      expect(find.text(f.day(DateTime(2026, 11, 23))), findsOneWidget);
+      expect(find.textContaining(l.weekNumber(48)), findsOneWidget);
+      await swipe(const Offset(150, 0));
+      expect(find.text(f.day(DateTime(2026, 11, 22))), findsOneWidget);
       await finishApp(tester, app);
     });
 
