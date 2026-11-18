@@ -25,7 +25,7 @@ Future<void> main() async {
     initializeDateFormatting(),
     SharedPreferences.getInstance(),
     store.load(),
-    reminders.init(appName: 'Todo-Liste'),
+    reminders.init(appName: 'ToDo Planer'),
     PackageInfo.fromPlatform(),
   ).wait;
   final settings = SettingsStore(prefs);

@@ -6,5 +6,5 @@
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Die Debug-Version heißt anders, damit man sie am Handy von der echten App unterscheidet. -->
-    <application android:label="Todo-Liste Test" tools:replace="android:label" />
+    <application android:label="ToDo Planer Test" tools:replace="android:label" />
 </manifest>

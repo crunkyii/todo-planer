@@ -95,7 +95,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In de, this message translates to:
-  /// **'Todo-Liste'**
+  /// **'ToDo Planer'**
   String get appTitle;
 
   /// No description provided for @cancel.

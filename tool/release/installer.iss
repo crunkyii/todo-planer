@@ -1,4 +1,4 @@
-; Windows-Installer für den Todo-Planer (Inno Setup 6).
+; Windows-Installer für den ToDo Planer (Inno Setup 6).
 ;
 ; Installiert nur für den angemeldeten Benutzer nach %LOCALAPPDATA%\Programs – ohne Admin-Rechte
 ; und ohne UAC-Abfrage. Gebaut wird er über tool/release/build-windows.ps1:
@@ -15,8 +15,8 @@
   #define OutputDir "..\..\build\dist"
 #endif
 
-#define AppName "Todo-Planer"
-#define AppExe "todo_liste.exe"
+#define AppName "ToDo Planer"
+#define AppExe "todo_planer.exe"
 
 [Setup]
 ; Diese Kennung nie ändern – daran erkennt Windows, dass ein Update dieselbe App ist.
@@ -69,3 +69,7 @@ Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags
 ; Vor einem Update die Dateien der alten Version entfernen, die es in der neuen nicht mehr gibt
 ; (nur Programmdateien – die Aufgaben liegen nicht im Programmordner).
 Type: filesandordirs; Name: "{app}\data"
+; Bis Version 1.1.0 hieß die App „Todo-Planer“ und das Programm todo_liste.exe.
+Type: files; Name: "{app}\todo_liste.exe"
+Type: files; Name: "{autoprograms}\Todo-Planer.lnk"
+Type: files; Name: "{autodesktop}\Todo-Planer.lnk"

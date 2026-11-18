@@ -1,10 +1,10 @@
 name: todo_liste
-description: "Todo-Liste mit Gewohnheiten, Kalender und Wochenplan – offline-first mit optionalem Supabase-Sync."
+description: "ToDo Planer: Todo-Liste mit Gewohnheiten, Kalender und Wochenplan – offline-first mit optionalem Supabase-Sync."
 # Eine App, kein Paket: wird nie auf pub.dev veröffentlicht.
 publish_to: 'none'
 
 # Versionsname + Buildnummer (Android: versionName + versionCode).
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: ^3.14.0

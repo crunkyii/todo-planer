@@ -79,7 +79,7 @@ Die APK liegt in `build/app/outputs/flutter-apk/app-release.apk`. Ohne `key.prop
 flutter build apk --debug
 ```
 
-Die Debug-Version hat eine eigene App-ID (`….debug`) und heißt am Handy „Todo-Liste Test“. Sie lässt sich neben der echten App installieren und hat eigene, leere Daten – zum Ausprobieren, ohne die eigenen Aufgaben anzufassen.
+Die Debug-Version hat eine eigene App-ID (`….debug`) und heißt am Handy „ToDo Planer Test“. Sie lässt sich neben der echten App installieren und hat eigene, leere Daten – zum Ausprobieren, ohne die eigenen Aufgaben anzufassen.
 
 ---
 

@@ -77,7 +77,7 @@ void main() {
 
   test('Text: Überschriften und Angaben', () {
     final txt = exportTxt(buildExport(store, l, f));
-    expect(txt, startsWith('Todo-Liste\r\nStand: 18.11.2026\r\n'));
+    expect(txt, startsWith('ToDo Planer\r\nStand: 18.11.2026\r\n'));
     expect(txt, contains('AUFGABEN (3)'));
     expect(txt, contains("- Max Mustermann's Geburtstag\r\n  Kategorie: Termin | Abgabe: 03.12.2026 | Uhrzeit: 08:00"));
     expect(txt, contains('GEWOHNHEITEN (1)'));

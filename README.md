@@ -1,4 +1,4 @@
-# Todo-Planer
+# ToDo Planer
 
 Aufgaben, Gewohnheiten, Kalender und Wochenplan in einer App – für Android, Windows und Linux, gebaut mit Flutter. Funktioniert ohne Konto und ohne Internet; wer will, gleicht Handy und PC über eine eigene Datenbank ab.
 

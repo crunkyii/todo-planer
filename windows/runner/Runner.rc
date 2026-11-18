@@ -90,11 +90,13 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "at.todoliste" "\0"
-            VALUE "FileDescription", "todo_liste" "\0"
+            VALUE "FileDescription", "ToDo Planer" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "todo_liste" "\0"
+            VALUE "InternalName", "todo_planer" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 at.todoliste. All rights reserved." "\0"
-            VALUE "OriginalFilename", "todo_liste.exe" "\0"
+            VALUE "OriginalFilename", "todo_planer.exe" "\0"
+            // CompanyName und ProductName bestimmen den Ordner der Einstellungen unter %APPDATA% -
+            // nicht aendern, sonst findet die App ihre gespeicherten Daten nicht mehr.
             VALUE "ProductName", "todo_liste" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
