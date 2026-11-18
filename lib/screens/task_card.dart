@@ -159,7 +159,14 @@ class _TaskCardState extends State<TaskCard> {
                   onTap: () => Sheets(context, widget.ui).task(t),
                   pressScale: 0.985,
                   radius: BorderRadius.circular(Sizes.rCard),
-                  semanticLabel: '${t.title}, ${c.name}, $when${isYearly(t.title) ? ', ${l.yearly}' : ''}',
+                  // Die Kinder sind ausgeschlossen – deshalb steht auch die ganze Notiz im Label.
+                  semanticLabel: [
+                    t.title,
+                    c.name,
+                    when,
+                    if (isYearly(t.title)) l.yearly,
+                    if (t.notes.isNotEmpty) '${l.notes}: ${t.notes}',
+                  ].join(', '),
                   excludeChildSemantics: true,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(0, 10, 12, 10),

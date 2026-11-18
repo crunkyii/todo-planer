@@ -52,6 +52,11 @@ void main() {
       final t = app.store.tasks.single;
       expect(t.notes, 'Thema: Römer\nFolien bis Freitag');
       expect(find.text('Thema: Römer\nFolien bis Freitag'), findsOneWidget);
+      // Der Screenreader liest die Notiz mit vor.
+      expect(
+        find.bySemanticsLabel(RegExp('^Referat, .*, ${l.notes}: Thema: Römer\nFolien bis Freitag\$')),
+        findsOneWidget,
+      );
 
       // Beim Bearbeiten ist das Feld gleich offen und enthält die Notiz.
       await _tap(tester, find.text('Referat'));
