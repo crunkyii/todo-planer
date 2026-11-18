@@ -614,52 +614,81 @@ class ErrorBox extends StatelessWidget {
 }
 
 /// Einstellungs-Zeile (.set-row): Titel (+ Untertitel) links, Bedienelement rechts.
+///
+/// Breite Elemente rechts (Auswahl, Knopf) rutschen bei wenig Platz unter den Text. Kleine
+/// bleiben immer rechts, nur der Text bricht um: [chevron] (Pfeil „weiter“) und [inline].
 class SetRow extends StatelessWidget {
-  const SetRow({super.key, required this.title, this.subtitle, this.trailing, this.onTap, this.leading});
+  const SetRow({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.leading,
+    this.chevron = false,
+    this.inline = false,
+  });
   final String title;
   final String? subtitle;
   final Widget? trailing;
   final Widget? leading;
   final VoidCallback? onTap;
 
+  /// Zeigt rechts den Pfeil „weiter“ (statt [trailing]).
+  final bool chevron;
+
+  /// [trailing] ist klein (Schalter, Symbol) und bleibt immer rechts.
+  final bool inline;
+
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
+    final end = chevron ? AppIcon(Ic.right, color: tok.sub) : trailing;
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title, style: TextStyle(fontSize: 16, color: tok.text)),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(subtitle!, style: TextStyle(fontSize: 13, color: tok.sub)),
+          ),
+      ],
+    );
+    final start = [
+      if (leading != null) ...[leading!, const SizedBox(width: 16)],
+    ];
     final row = Container(
       constraints: const BoxConstraints(minHeight: 52),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Wrap(
-        crossAxisAlignment: WrapCrossAlignment.center,
-        alignment: WrapAlignment.spaceBetween,
-        runSpacing: 8,
-        spacing: 16,
-        children: [
-          ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 120),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+      child: chevron || inline
+          ? Row(
               children: [
-                if (leading != null) ...[leading!, const SizedBox(width: 16)],
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ...start,
+                Expanded(child: text),
+                if (end != null) ...[const SizedBox(width: 16), end],
+              ],
+            )
+          : Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.spaceBetween,
+              runSpacing: 8,
+              spacing: 16,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 120),
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(title, style: TextStyle(fontSize: 16, color: tok.text)),
-                      if (subtitle != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(subtitle!, style: TextStyle(fontSize: 13, color: tok.sub)),
-                        ),
+                      ...start,
+                      Flexible(child: text),
                     ],
                   ),
                 ),
+                ?end,
               ],
             ),
-          ),
-          ?trailing,
-        ],
-      ),
     );
     if (onTap == null) return row;
     return Pressable(

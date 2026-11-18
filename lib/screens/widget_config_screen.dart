@@ -157,6 +157,7 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
                   CapsHeading(l.widgetBackground),
                   SetRow(
                     title: l.widgetShowBackground,
+                    inline: true,
                     trailing: AppSwitch(
                       value: _cfg.background,
                       label: l.widgetShowBackground,

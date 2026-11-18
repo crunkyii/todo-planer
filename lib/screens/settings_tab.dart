@@ -41,7 +41,6 @@ class SettingsTab extends StatelessWidget {
       builder: (context, _) {
         final s = app.settings;
         final l = context.l;
-        final tok = context.tok;
         final cloud = s.syncMode == SyncMode.cloud;
         return Column(
           children: [
@@ -69,7 +68,7 @@ class SettingsTab extends StatelessWidget {
                   SetRow(
                     title: l.categories,
                     subtitle: l.categoriesCount(app.store.categories.length),
-                    trailing: AppIcon(Ic.right, color: tok.sub),
+                    chevron: true,
                     onTap: () => ui.set((x) {
                       x.enterDir = 1;
                       x.cats = true;
@@ -77,6 +76,7 @@ class SettingsTab extends StatelessWidget {
                   ),
                   SetRow(
                     title: l.reminders,
+                    inline: true,
                     trailing: AppSwitch(
                       value: s.remind,
                       label: l.reminders,
@@ -118,7 +118,7 @@ class SettingsTab extends StatelessWidget {
                   SetRow(
                     title: l.exportData,
                     subtitle: l.exportSub,
-                    trailing: AppIcon(Ic.right, color: tok.sub),
+                    chevron: true,
                     onTap: () => Sheets(context, ui).export(),
                   ),
                 ],
@@ -156,11 +156,7 @@ class SettingsTab extends StatelessWidget {
           ),
         ),
       ),
-      SetRow(
-        title: l.connectOtherDb,
-        trailing: AppIcon(Ic.right, color: tok.sub),
-        onTap: app.openSetup,
-      ),
+      SetRow(title: l.connectOtherDb, chevron: true, onTap: app.openSetup),
       SetRow(
         title: app.user?.email ?? '',
         trailing: AppButton(label: l.signOut, icon: Ic.logout, kind: BtnKind.tonal, onTap: app.signOut),
@@ -175,14 +171,10 @@ class SettingsTab extends StatelessWidget {
       SetRow(
         title: l.setupLocalTitle,
         subtitle: l.noSyncOtherDevices,
+        inline: true,
         trailing: AppIcon(Ic.phone, size: 22, color: tok.sub),
       ),
-      SetRow(
-        title: l.connectToDb,
-        subtitle: l.connectToDbSub,
-        trailing: AppIcon(Ic.right, color: tok.sub),
-        onTap: app.openSetup,
-      ),
+      SetRow(title: l.connectToDb, subtitle: l.connectToDbSub, chevron: true, onTap: app.openSetup),
     ];
   }
 }
@@ -442,7 +434,7 @@ class CategoriesPage extends StatelessWidget {
                       title: c.name,
                       subtitle: f.categoryInfo(c.offset, store.openCount(c.id), c.listFrom),
                       leading: Dot(tok.item(c.color).c, size: 14),
-                      trailing: AppIcon(Ic.right, color: tok.sub),
+                      chevron: true,
                       onTap: () => Sheets(context, ui).category(c),
                     ),
                 ],

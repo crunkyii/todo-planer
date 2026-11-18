@@ -2,7 +2,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app_services.dart';
 import '../../services/export.dart';
-import '../../theme/tokens.dart';
 import '../../util/fmt.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/ui.dart';
@@ -44,13 +43,8 @@ class _ExportSheetState extends State<ExportSheet> {
   @override
   Widget build(BuildContext context) {
     final l = context.l;
-    final tok = context.tok;
-    Widget row(ExportFormat f, String sub) => SetRow(
-      title: f.ext.toUpperCase(),
-      subtitle: sub,
-      trailing: AppIcon(Ic.right, color: tok.sub),
-      onTap: () => _export(f),
-    );
+    Widget row(ExportFormat f, String sub) =>
+        SetRow(title: f.ext.toUpperCase(), subtitle: sub, chevron: true, onTap: () => _export(f));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,

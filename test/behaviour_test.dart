@@ -19,6 +19,7 @@ import 'package:todo_liste/theme/tokens.dart';
 import 'package:todo_liste/util/dates.dart';
 import 'package:todo_liste/util/fmt.dart';
 import 'package:todo_liste/util/task_logic.dart';
+import 'package:todo_liste/widgets/app_icon.dart';
 import 'package:todo_liste/widgets/overlays.dart';
 import 'package:todo_liste/widgets/pickers.dart';
 import 'package:todo_liste/widgets/ui.dart';
@@ -82,6 +83,25 @@ void main() {
       await _tap(tester, find.text('Termin').first);
       expect(find.text(l.save), findsOneWidget);
       expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Kategorien: Pfeil bleibt rechts neben dem Text, auch wenn der Untertitel umbricht', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      app.store.addCategory(name: 'Geburtstage', color: '#AABBCC', offset: 0, listFrom: ListFrom.week);
+      await pumpApp(tester, app, size: const Size(340, 760));
+      await _tap(tester, find.bySemanticsLabel(l.settings).last);
+      await _tap(tester, find.textContaining(l.categories).first);
+      final title = tester.getRect(find.text('Geburtstage'));
+      final subtitle = tester.getRect(find.textContaining(l.listFromWeek));
+      final arrow = tester.getRect(
+        find.descendant(of: find.bySemanticsLabel(RegExp('^Geburtstage, ')), matching: find.byType(AppIcon)),
+      );
+      expect(subtitle.height, greaterThan(20), reason: 'Untertitel soll hier umbrechen');
+      expect(arrow.left, greaterThan(subtitle.right));
+      expect(arrow.top, lessThan(subtitle.bottom));
+      expect(arrow.top, greaterThan(title.top - 1));
       await finishApp(tester, app);
     });
 
