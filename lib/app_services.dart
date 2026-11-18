@@ -42,7 +42,7 @@ class AppServices extends ChangeNotifier {
   /// Um Mitternacht neu zeichnen, damit „Heute“, „Morgen“ und Gewohnheiten stimmen.
   void _scheduleMidnight() {
     _midnight?.cancel();
-    final now = DateTime.now();
+    final now = clock();
     final next = DateTime(now.year, now.month, now.day + 1, 0, 0, 1);
     _midnight = Timer(next.difference(now), () {
       _dayChanged();

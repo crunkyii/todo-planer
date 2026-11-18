@@ -111,7 +111,11 @@ class FakeSupabase {
 /// [Cloud] ohne echtes Supabase: angemeldeter Test-User, Anfragen gehen an [FakeSupabase].
 class FakeCloud extends Cloud {
   FakeCloud(String url)
-    : _client = SupabaseClient(url, 'sb_publishable_test_key_123', authOptions: const AuthClientOptions(autoRefreshToken: false));
+    : _client = SupabaseClient(
+        url,
+        'sb_publishable_test_key_123',
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+      );
 
   final SupabaseClient _client;
   bool signedIn = true;

@@ -34,7 +34,7 @@ class Sheets {
   void newBlock({int? day, int? start}) {
     final l = context.l;
     final s = context.app.settings;
-    final d = day ?? (ui.weekDay ?? (sameDay(ui.weekStart, monday(DateTime.now())) ? wdIndex(DateTime.now()) : 0));
+    final d = day ?? (ui.weekDay ?? (sameDay(ui.weekStart, monday(clock())) ? wdIndex(clock()) : 0));
     // Spätestes „Bis“ ist der letzte Raster-Schritt vor Mitternacht; „Von“ muss mindestens
     // einen Schritt davor liegen, sonst wäre der Block leer.
     final last = 24 * 60 - s.raster;

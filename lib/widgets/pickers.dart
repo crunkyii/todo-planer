@@ -347,7 +347,7 @@ class DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
-    final isToday = sameDay(day, DateTime.now());
+    final isToday = sameDay(day, clock());
     final numColor = selected ? tok.onP : (isToday ? tok.p : tok.text);
     final cellBody = SizedBox(
       height: height,

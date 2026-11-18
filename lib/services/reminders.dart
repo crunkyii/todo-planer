@@ -7,6 +7,7 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../data/models.dart';
+import '../util/dates.dart';
 
 /// Eine geplante Erinnerung (Aufgabe mit Uhrzeit, noch offen, in der Zukunft).
 class Reminder {
@@ -19,7 +20,7 @@ class Reminder {
 
 /// Wählt die nächsten offenen Aufgaben mit Uhrzeit aus (höchstens [limit]).
 List<Reminder> upcomingReminders(Iterable<Task> tasks, String Function(Task) body, {DateTime? now, int limit = 40}) {
-  final n = now ?? DateTime.now();
+  final n = now ?? clock();
   final list = tasks.where((t) => !t.done && !t.deleted && t.hasTime && t.due.isAfter(n)).toList()
     ..sort((a, b) => a.due.compareTo(b.due));
   return [

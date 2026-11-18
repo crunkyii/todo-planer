@@ -5,7 +5,11 @@ String pad2(int n) => n.toString().padLeft(2, '0');
 /// Tagesbeginn (Mitternacht) von [d].
 DateTime sod(DateTime d) => DateTime(d.year, d.month, d.day);
 
-DateTime today() => sod(DateTime.now());
+/// Die aktuelle Zeit. Tests können [clock] ersetzen, damit „heute“ ein fester Tag ist
+/// (z. B. für Golden-Bilder); die App selbst ändert das nie.
+DateTime Function() clock = DateTime.now;
+
+DateTime today() => sod(clock());
 
 /// Addiert Kalendertage (sommerzeit-sicher, weil über Jahr/Monat/Tag gerechnet).
 DateTime addDays(DateTime d, int n) => DateTime(d.year, d.month, d.day + n, d.hour, d.minute);

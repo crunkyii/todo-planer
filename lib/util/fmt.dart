@@ -44,7 +44,7 @@ class Fmt {
 
   /// Heute / Morgen / Gestern, sonst „Mo 24.11.“ bzw. „Mo 11/24“.
   String day(DateTime d) {
-    final diff = dayDiff(d, DateTime.now());
+    final diff = dayDiff(d, clock());
     if (diff == 0) return l.today;
     if (diff == 1) return l.tomorrow;
     if (diff == -1) return l.yesterday;
@@ -57,7 +57,7 @@ class Fmt {
 
   /// Beschriftung im Datums-Knopf des Sheets.
   String dateLabel(DateTime d) {
-    final diff = dayDiff(d, DateTime.now());
+    final diff = dayDiff(d, clock());
     if (diff >= -1 && diff <= 1) return day(d);
     return l.weekdayWithDate(wd(wdIndex(d)), dayMon(d));
   }

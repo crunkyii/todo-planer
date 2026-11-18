@@ -24,9 +24,9 @@ class UiState extends ChangeNotifier {
   /// `null` = Suche zu.
   String? search;
 
-  DateTime calMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime calMonth = DateTime(clock().year, clock().month);
   DateTime calSel = today();
-  DateTime weekStart = monday(DateTime.now());
+  DateTime weekStart = monday(clock());
 
   /// Tagesansicht im Wochenplan (0–6) oder `null` = ganze Woche.
   int? weekDay;
@@ -63,7 +63,7 @@ class UiState extends ChangeNotifier {
     zoomIn = null;
     final wd = weekDay;
     if (wd == null) {
-      weekStart = dir == 0 ? monday(DateTime.now()) : addDays(weekStart, 7 * dir);
+      weekStart = dir == 0 ? monday(clock()) : addDays(weekStart, 7 * dir);
     } else {
       final d = dir == 0 ? today() : addDays(weekStart, wd + dir);
       weekStart = monday(d);

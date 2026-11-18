@@ -198,7 +198,7 @@ class _DayHeads extends StatelessWidget {
               child: Builder(
                 builder: (context) {
                   final d = addDays(ui.weekStart, i);
-                  final isToday = sameDay(d, DateTime.now());
+                  final isToday = sameDay(d, clock());
                   final num = Container(
                     width: 28,
                     height: 28,
@@ -334,7 +334,7 @@ class _DayColumn extends StatelessWidget {
     final blocks = app.store.blocksFor(day, ui.weekStart);
     final lay = layoutLanes(blocks);
     final d = addDays(ui.weekStart, day);
-    final now = DateTime.now();
+    final now = clock();
     final nm = now.hour * 60 + now.minute;
     final showNow = sameDay(d, now) && nm >= startMin && nm <= s.dayEnd * 60;
 

@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../app_services.dart';
 import '../data/models.dart';
 import '../theme/tokens.dart';
+import '../util/dates.dart';
 import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlays.dart';
@@ -302,7 +303,7 @@ class _TaskList extends StatelessWidget {
           Section.later: l.later,
           Section.done: l.done,
         };
-        final now = DateTime.now();
+        final now = clock();
         for (final s in Section.values) {
           var items = list.where((t) => sectionOf(t, off(t), now: now) == s).toList();
           if (items.isEmpty) continue;

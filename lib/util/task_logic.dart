@@ -10,13 +10,13 @@ DateTime doDate(Task t, int offset) => addDays(sod(t.dueDate), -offset);
 /// Überfällig: Erledigen-Tag vorbei oder Uhrzeit heute schon vorbei.
 bool isLate(Task t, int offset, {DateTime? now}) {
   if (t.done) return false;
-  final n = now ?? DateTime.now();
+  final n = now ?? clock();
   return doDate(t, offset).isBefore(sod(n)) || (t.hasTime && t.due.isBefore(n));
 }
 
 Section sectionOf(Task t, int offset, {DateTime? now}) {
   if (t.done) return Section.done;
-  final n = now ?? DateTime.now();
+  final n = now ?? clock();
   if (isLate(t, offset, now: n)) return Section.overdue;
   final d = dayDiff(doDate(t, offset), n);
   if (d == 0) return Section.today;
