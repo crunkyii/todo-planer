@@ -115,6 +115,12 @@ class SettingsTab extends StatelessWidget {
                   ),
                   CapsHeading(l.storage),
                   if (cloud) ..._cloudRows(context, app) else ..._localRows(context, app),
+                  SetRow(
+                    title: l.exportData,
+                    subtitle: l.exportSub,
+                    trailing: AppIcon(Ic.right, color: tok.sub),
+                    onTap: () => Sheets(context, ui).export(),
+                  ),
                 ],
               ),
             ),
