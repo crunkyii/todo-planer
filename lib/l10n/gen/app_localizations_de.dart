@@ -321,9 +321,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errTaskTitle => 'Bitte gib ein, was zu tun ist.';
 
   @override
-  String get errPickDate => 'Bitte wähle ein Datum.';
-
-  @override
   String get nothingDue => 'Nichts fällig.';
 
   @override
@@ -981,9 +978,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get notifChannelDesc => 'Erinnert an Aufgaben mit Uhrzeit';
-
-  @override
-  String get notifOpen => 'Öffnen';
 
   @override
   String get yearly => 'Jährlich';

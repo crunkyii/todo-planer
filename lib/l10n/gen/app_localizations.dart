@@ -686,12 +686,6 @@ abstract class AppLocalizations {
   /// **'Bitte gib ein, was zu tun ist.'**
   String get errTaskTitle;
 
-  /// No description provided for @errPickDate.
-  ///
-  /// In de, this message translates to:
-  /// **'Bitte wähle ein Datum.'**
-  String get errPickDate;
-
   /// No description provided for @nothingDue.
   ///
   /// In de, this message translates to:
@@ -1795,12 +1789,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Erinnert an Aufgaben mit Uhrzeit'**
   String get notifChannelDesc;
-
-  /// No description provided for @notifOpen.
-  ///
-  /// In de, this message translates to:
-  /// **'Öffnen'**
-  String get notifOpen;
 
   /// No description provided for @yearly.
   ///

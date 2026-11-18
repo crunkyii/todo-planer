@@ -319,9 +319,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errTaskTitle => 'Please enter what needs to be done.';
 
   @override
-  String get errPickDate => 'Please pick a date.';
-
-  @override
   String get nothingDue => 'Nothing due.';
 
   @override
@@ -978,9 +975,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifChannelDesc => 'Reminds you of tasks with a time';
-
-  @override
-  String get notifOpen => 'Open';
 
   @override
   String get yearly => 'Yearly';
