@@ -13,6 +13,9 @@ import '../../widgets/ui.dart';
 import '../ui_state.dart';
 import 'sheet_parts.dart';
 
+/// Welches Kärtchen unter „Fällig am“ / „Uhrzeit“ aufgeklappt ist.
+enum _Picker { date, time }
+
 /// Eine Zeile im Abschnitt „Unteraufgaben“. [id] ist gesetzt, wenn es die Unteraufgabe schon gibt.
 class _SubEdit {
   _SubEdit(String text, {this.id}) : ctrl = TextEditingController(text: text), focus = FocusNode();
@@ -78,7 +81,7 @@ class _TaskSheetState extends State<TaskSheet> {
   bool _catOpen = false;
   late bool _dateOpen;
   late bool _subsOpen;
-  String? _dt; // 'cal' | 'time'
+  _Picker? _picker;
   String? _error;
   bool _yearly = false;
 
@@ -120,6 +123,8 @@ class _TaskSheetState extends State<TaskSheet> {
     }
     super.dispose();
   }
+
+  void _togglePicker(_Picker p) => setState(() => _picker = _picker == p ? null : p);
 
   void _addSub() {
     final s = _SubEdit('');
@@ -203,7 +208,7 @@ class _TaskSheetState extends State<TaskSheet> {
           padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
           child: Text(
             infoText,
-            style: TextStyle(fontSize: 12.5, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()]),
+            style: TextStyle(fontSize: 12.5, color: tok.sub, fontFeatures: Fs.tabular),
           ),
         ),
         if (_yearly)
@@ -260,8 +265,8 @@ class _TaskSheetState extends State<TaskSheet> {
                         icon: Ic.calendar,
                         label: l.dueOn,
                         value: f.dateLabel(_date),
-                        open: _dt == 'cal',
-                        onTap: () => setState(() => _dt = _dt == 'cal' ? null : 'cal'),
+                        open: _picker == _Picker.date,
+                        onTap: () => _togglePicker(_Picker.date),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -270,13 +275,13 @@ class _TaskSheetState extends State<TaskSheet> {
                         icon: Ic.clock,
                         label: l.time,
                         value: _time == null ? l.none : f.time(_time!),
-                        open: _dt == 'time',
-                        onTap: () => setState(() => _dt = _dt == 'time' ? null : 'time'),
+                        open: _picker == _Picker.time,
+                        onTap: () => _togglePicker(_Picker.time),
                       ),
                     ),
                   ],
                 ),
-                if (_dt == 'cal')
+                if (_picker == _Picker.date)
                   PopCard(
                     child: MiniCalendar(
                       selected: _date,
@@ -286,7 +291,7 @@ class _TaskSheetState extends State<TaskSheet> {
                       }),
                     ),
                   ),
-                if (_dt == 'time')
+                if (_picker == _Picker.time)
                   PopCard(
                     child: TimeWheel(
                       value: _time,
@@ -370,7 +375,9 @@ class _TaskSheetState extends State<TaskSheet> {
                         excludeChildSemantics: true,
                         child: Container(
                           height: 36,
-                          constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width <= 360 ? 112 : 150),
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.sizeOf(context).width <= Sizes.narrowWidth ? 112 : 150,
+                          ),
                           padding: const EdgeInsets.fromLTRB(10, 0, 12, 0),
                           margin: const EdgeInsets.only(right: 4),
                           decoration: BoxDecoration(color: cc.ct, borderRadius: BorderRadius.circular(18)),

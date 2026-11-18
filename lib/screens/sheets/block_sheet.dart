@@ -13,18 +13,23 @@ import '../../widgets/ui.dart';
 import '../ui_state.dart';
 import 'sheet_parts.dart';
 
+/// Welches Zeit-Rad aufgeklappt ist.
+enum _Edge { from, to }
+
 /// Neuer Block im Wochenplan oder Block bearbeiten: Name, Farbe, Tage, Von/Bis, jede Woche.
 class BlockSheet extends StatefulWidget {
   const BlockSheet({
     super.key,
     required this.block,
-    required this.days,
+    required this.day,
     required this.start,
     required this.end,
     required this.ui,
   });
   final WeekBlock? block;
-  final List<int> days;
+
+  /// Vorgewählter Wochentag (0 = Montag); beim Anlegen lassen sich weitere dazunehmen.
+  final int day;
   final int start;
   final int end;
   final UiState ui;
@@ -36,11 +41,11 @@ class BlockSheet extends StatefulWidget {
 class _BlockSheetState extends State<BlockSheet> {
   late final TextEditingController _name = TextEditingController(text: widget.block?.name ?? '');
   late String _color = widget.block?.color ?? ColorPreset.skyBlue.hex;
-  late final Set<int> _days = {...widget.days};
+  late final Set<int> _days = {widget.day};
   late int _start = widget.start;
   late int _end = widget.end;
   late bool _repeat = widget.block?.repeat ?? true;
-  String? _open; // 'von' | 'bis'
+  _Edge? _open;
   String? _error;
 
   @override
@@ -60,6 +65,8 @@ class _BlockSheetState extends State<BlockSheet> {
     // … und „Bis“ rutscht mit, wenn „Von“ darüber hinaus geschoben wird.
     if (_end <= _start) _end = math.min(_start + 60, _lastEnd);
   });
+
+  void _toggleWheel(_Edge e) => setState(() => _open = _open == e ? null : e);
 
   void _save() {
     final l = context.l;
@@ -199,8 +206,8 @@ class _BlockSheetState extends State<BlockSheet> {
                       icon: Ic.clock,
                       label: l.from,
                       value: f.time(_start),
-                      open: _open == 'von',
-                      onTap: () => setState(() => _open = _open == 'von' ? null : 'von'),
+                      open: _open == _Edge.from,
+                      onTap: () => _toggleWheel(_Edge.from),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -209,17 +216,17 @@ class _BlockSheetState extends State<BlockSheet> {
                       icon: Ic.clock,
                       label: l.to,
                       value: f.time(_end),
-                      open: _open == 'bis',
-                      onTap: () => setState(() => _open = _open == 'bis' ? null : 'bis'),
+                      open: _open == _Edge.to,
+                      onTap: () => _toggleWheel(_Edge.to),
                     ),
                   ),
                 ],
               ),
-              if (_open == 'von')
+              if (_open == _Edge.from)
                 PopCard(
                   child: TimeWheel(key: const ValueKey('von'), value: _start, step: _raster, onChanged: _setStart),
                 ),
-              if (_open == 'bis')
+              if (_open == _Edge.to)
                 PopCard(
                   child: TimeWheel(
                     key: const ValueKey('bis'),

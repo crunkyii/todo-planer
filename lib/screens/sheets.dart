@@ -43,7 +43,7 @@ class Sheets {
     showAppSheet<void>(
       context,
       label: l.newBlock,
-      builder: (_) => BlockSheet(block: null, days: [d], start: from, end: to, ui: ui),
+      builder: (_) => BlockSheet(block: null, day: d, start: from, end: to, ui: ui),
     );
   }
 
@@ -51,7 +51,7 @@ class Sheets {
     showAppSheet<void>(
       context,
       label: context.l.editBlock,
-      builder: (_) => BlockSheet(block: b, days: [b.day], start: b.start, end: b.end, ui: ui),
+      builder: (_) => BlockSheet(block: b, day: b.day, start: b.start, end: b.end, ui: ui),
     );
   }
 
