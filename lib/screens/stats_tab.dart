@@ -511,13 +511,15 @@ class _StackedBar extends StatelessWidget {
     return SizedBox(
       height: height,
       child: Column(
+        // stretch: Ein ColoredBox ohne Kind wäre sonst 0 breit – die Balken wären unsichtbar.
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         verticalDirection: VerticalDirection.up,
         children: [
           for (var j = 0; j < segments.length; j++) ...[
             if (j > 0 && gap > 0) SizedBox(height: gap),
             Expanded(
               flex: segments[j].count,
-              child: ColoredBox(color: segments[j].color),
+              child: ColoredBox(key: const ValueKey('bar-segment'), color: segments[j].color),
             ),
           ],
         ],
@@ -706,34 +708,38 @@ class _Habits extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(Sizes.rHabitDay),
                                         border: d == 0 ? Border.all(color: hc.c, width: 2) : null,
                                       ),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            f.wd(wdIndex(day)),
-                                            style: TextStyle(
-                                              fontSize: 11.5,
-                                              fontWeight: FontWeight.w500,
-                                              color: on ? hc.cs : hc.ci,
+                                      // Feste Knopfhöhe: die Schrift wächst hier nur begrenzt mit.
+                                      child: MediaQuery.withClampedTextScaling(
+                                        maxScaleFactor: 1.15,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              f.wd(wdIndex(day)),
+                                              style: TextStyle(
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w500,
+                                                color: on ? hc.cs : hc.ci,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 1),
-                                          SizedBox(
-                                            height: 18,
-                                            child: on
-                                                ? AppIcon(Ic.check, size: 16, stroke: 2.6, color: hc.cs)
-                                                : Text(
-                                                    '${day.day}',
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      height: 18 / 14,
-                                                      fontWeight: FontWeight.w500,
-                                                      color: hc.ci,
-                                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                            const SizedBox(height: 1),
+                                            SizedBox(
+                                              height: 18,
+                                              child: on
+                                                  ? AppIcon(Ic.check, size: 16, stroke: 2.6, color: hc.cs)
+                                                  : Text(
+                                                      '${day.day}',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        height: 18 / 14,
+                                                        fontWeight: FontWeight.w500,
+                                                        color: hc.ci,
+                                                        fontFeatures: const [FontFeature.tabularFigures()],
+                                                      ),
                                                     ),
-                                                  ),
-                                          ),
-                                        ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   );
