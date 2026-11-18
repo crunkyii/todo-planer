@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       err = l.errPassword;
     } else if (_register && pw.length < 6) {
       err = l.errPasswordShort;
-    } else if (utf8.encode(pw).length > maxPasswordBytes) {
+    } else if (_register && utf8.encode(pw).length > maxPasswordBytes) {
       err = l.errPasswordLong;
     }
     setState(() => _error = err);

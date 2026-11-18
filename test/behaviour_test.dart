@@ -535,13 +535,18 @@ void main() {
         await tester.enterText(fields.at(0), 'ich@beispiel.at');
         await _tap(tester, find.text(l.signIn).last);
         expect(find.text(l.errPassword), findsOneWidget);
-        // 72 Zeichen gehen durch die Prüfung, 73 nicht (kein Netz nötig: Abbruch vor dem Senden)
+        // Zu langes Passwort: nur beim Registrieren gemeldet (höchstens 72 Zeichen), nicht beim Anmelden
         await tester.enterText(fields.at(1), 'a' * 73);
         await _tap(tester, find.text(l.signIn).last);
+        expect(find.text(l.errPasswordLong), findsNothing);
+        await _tap(tester, find.text(l.signUp));
+        await tester.enterText(fields.at(0), 'ich@beispiel.at');
+        await tester.enterText(fields.at(1), 'a' * 73);
+        await _tap(tester, find.text(l.signUp));
         expect(find.text(l.errPasswordLong), findsOneWidget);
         expect(l.errPasswordLong, contains('72'));
         await tester.enterText(fields.at(1), 'ä' * 37); // 74 Bytes
-        await _tap(tester, find.text(l.signIn).last);
+        await _tap(tester, find.text(l.signUp));
         expect(find.text(l.errPasswordLong), findsOneWidget);
         await finishApp(tester, app);
       }
