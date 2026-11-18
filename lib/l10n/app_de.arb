@@ -134,6 +134,25 @@
   "nothingDue": "Nichts fällig.",
   "widgetUpcoming": "Demnächst",
   "widgetNoHabits": "Noch keine Gewohnheiten.",
+  "widgetSettings": "Widget einstellen",
+  "widgetBackground": "Hintergrund",
+  "widgetShowBackground": "Hintergrund anzeigen",
+  "widgetShape": "Form",
+  "widgetShapeRound": "Rund",
+  "widgetShapeSoft": "Weich",
+  "widgetShapeSquare": "Eckig",
+  "widgetBgColor": "Hintergrundfarbe",
+  "widgetTransparency": "Transparenz: {percent} %",
+  "@widgetTransparency": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetColorApp": "Wie App-Design",
+  "widgetPreview": "Vorschau",
+  "widgetHint": "Halte das Widget am Startbildschirm gedrückt und tippe auf „Einstellungen“, um es später zu ändern.",
   "nothingFound": "Nichts gefunden.",
   "noTasks": "Keine Aufgaben.",
   "searchTasks": "Aufgaben durchsuchen",

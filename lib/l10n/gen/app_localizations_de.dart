@@ -333,6 +333,45 @@ class AppLocalizationsDe extends AppLocalizations {
   String get widgetNoHabits => 'Noch keine Gewohnheiten.';
 
   @override
+  String get widgetSettings => 'Widget einstellen';
+
+  @override
+  String get widgetBackground => 'Hintergrund';
+
+  @override
+  String get widgetShowBackground => 'Hintergrund anzeigen';
+
+  @override
+  String get widgetShape => 'Form';
+
+  @override
+  String get widgetShapeRound => 'Rund';
+
+  @override
+  String get widgetShapeSoft => 'Weich';
+
+  @override
+  String get widgetShapeSquare => 'Eckig';
+
+  @override
+  String get widgetBgColor => 'Hintergrundfarbe';
+
+  @override
+  String widgetTransparency(int percent) {
+    return 'Transparenz: $percent %';
+  }
+
+  @override
+  String get widgetColorApp => 'Wie App-Design';
+
+  @override
+  String get widgetPreview => 'Vorschau';
+
+  @override
+  String get widgetHint =>
+      'Halte das Widget am Startbildschirm gedrückt und tippe auf „Einstellungen“, um es später zu ändern.';
+
+  @override
   String get nothingFound => 'Nichts gefunden.';
 
   @override

@@ -500,14 +500,17 @@ String presetName(AppLocalizations l, ColorPreset p) => switch (p) {
 
 class ColorChoice extends StatelessWidget {
   const ColorChoice({super.key, required this.value, required this.onChanged});
-  final String value;
+
+  /// Gewählte Farbe; null = keine gewählt (z. B. „wie App-Design“ beim Widget).
+  final String? value;
   final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
     final l = AppLocalizations.of(context);
-    final isPreset = ColorPreset.values.any((p) => p.hex.toLowerCase() == value.toLowerCase());
+    final value = this.value?.toLowerCase();
+    final custom = value != null && !ColorPreset.values.any((p) => p.hex.toLowerCase() == value);
     BoxDecoration ring(bool on, {Color? color, Gradient? gradient}) => BoxDecoration(
       shape: BoxShape.circle,
       color: color,
@@ -523,21 +526,21 @@ class ColorChoice extends StatelessWidget {
           Pressable(
             onTap: () => onChanged(p.hex),
             semanticLabel: presetName(l, p),
-            selected: p.hex.toLowerCase() == value.toLowerCase(),
+            selected: p.hex.toLowerCase() == value,
             glow: false,
             child: Container(
               width: 38,
               height: 38,
-              decoration: ring(p.hex.toLowerCase() == value.toLowerCase(), color: parseHex(p.hex)),
+              decoration: ring(p.hex.toLowerCase() == value, color: parseHex(p.hex)),
             ),
           ),
         Pressable(
           onTap: () async {
-            final c = await showColorDialog(context, value);
+            final c = await showColorDialog(context, value ?? ColorPreset.values.first.hex);
             if (c != null) onChanged(c);
           },
           semanticLabel: l.chooseCustomColor,
-          selected: !isPreset,
+          selected: custom,
           tooltip: l.customColor,
           glow: false,
           child: Container(
@@ -545,7 +548,7 @@ class ColorChoice extends StatelessWidget {
             height: 38,
             alignment: Alignment.center,
             decoration: ring(
-              !isPreset,
+              custom,
               gradient: const SweepGradient(
                 colors: [
                   Color(0xFFFF3B30),
@@ -566,7 +569,7 @@ class ColorChoice extends StatelessWidget {
               height: 20,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isPreset ? tok.surf : parseHex(value),
+                color: custom ? parseHex(value) : tok.surf,
                 border: Border.all(color: tok.surf, width: 2),
               ),
             ),

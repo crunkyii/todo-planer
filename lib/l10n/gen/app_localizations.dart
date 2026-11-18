@@ -710,6 +710,78 @@ abstract class AppLocalizations {
   /// **'Noch keine Gewohnheiten.'**
   String get widgetNoHabits;
 
+  /// No description provided for @widgetSettings.
+  ///
+  /// In de, this message translates to:
+  /// **'Widget einstellen'**
+  String get widgetSettings;
+
+  /// No description provided for @widgetBackground.
+  ///
+  /// In de, this message translates to:
+  /// **'Hintergrund'**
+  String get widgetBackground;
+
+  /// No description provided for @widgetShowBackground.
+  ///
+  /// In de, this message translates to:
+  /// **'Hintergrund anzeigen'**
+  String get widgetShowBackground;
+
+  /// No description provided for @widgetShape.
+  ///
+  /// In de, this message translates to:
+  /// **'Form'**
+  String get widgetShape;
+
+  /// No description provided for @widgetShapeRound.
+  ///
+  /// In de, this message translates to:
+  /// **'Rund'**
+  String get widgetShapeRound;
+
+  /// No description provided for @widgetShapeSoft.
+  ///
+  /// In de, this message translates to:
+  /// **'Weich'**
+  String get widgetShapeSoft;
+
+  /// No description provided for @widgetShapeSquare.
+  ///
+  /// In de, this message translates to:
+  /// **'Eckig'**
+  String get widgetShapeSquare;
+
+  /// No description provided for @widgetBgColor.
+  ///
+  /// In de, this message translates to:
+  /// **'Hintergrundfarbe'**
+  String get widgetBgColor;
+
+  /// No description provided for @widgetTransparency.
+  ///
+  /// In de, this message translates to:
+  /// **'Transparenz: {percent} %'**
+  String widgetTransparency(int percent);
+
+  /// No description provided for @widgetColorApp.
+  ///
+  /// In de, this message translates to:
+  /// **'Wie App-Design'**
+  String get widgetColorApp;
+
+  /// No description provided for @widgetPreview.
+  ///
+  /// In de, this message translates to:
+  /// **'Vorschau'**
+  String get widgetPreview;
+
+  /// No description provided for @widgetHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Halte das Widget am Startbildschirm gedrückt und tippe auf „Einstellungen“, um es später zu ändern.'**
+  String get widgetHint;
+
   /// No description provided for @nothingFound.
   ///
   /// In de, this message translates to:

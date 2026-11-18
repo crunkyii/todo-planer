@@ -81,7 +81,9 @@ class HomeWidgets {
 /// Alles, was die Widgets brauchen – ohne Datum von „heute“: Das rechnet das Widget selbst,
 /// damit es auch nach Mitternacht stimmt, wenn die App nicht läuft.
 ///
-/// - `tasks`: offene Aufgaben, nach Fälligkeit sortiert (`t` Titel, `d` Tag, `m` Minuten oder null, `c` Farbe)
+/// - `tasks`: offene Aufgaben, nach Fälligkeit sortiert (`t` Titel, `d` Tag, `m` Minuten oder null, `c` Farbe,
+///   `k` Kategorie)
+/// - `cats`: Kategorien (`id`, `n` Name, `c` Farbe) – jedes Widget kann auf einzelne davon eingestellt werden
 /// - `habits`: Gewohnheiten (`n` Name, `c` Farbe, `days` erledigte Tage der letzten 14 Tage)
 /// - `labels`: Texte in der Sprache der App; `wd` Wochentage Mo–So; `en` für das Datumsformat
 /// - `accent` / `accentDark`: Primärfarbe des gewählten Themes
@@ -108,9 +110,18 @@ Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {requi
       'newTask': l.newTask,
     },
     'wd': [for (var i = 0; i < 7; i++) f.wd(i)],
+    'cats': [
+      for (final c in store.categories) {'id': c.id, 'n': c.name, 'c': c.color},
+    ],
     'tasks': [
       for (final t in open.take(HomeWidgets.maxTasks))
-        {'t': t.title, 'd': isoDate(t.dueDate), 'm': t.dueTime, 'c': store.catOf(t.categoryId).color},
+        {
+          't': t.title,
+          'd': isoDate(t.dueDate),
+          'm': t.dueTime,
+          'c': store.catOf(t.categoryId).color,
+          'k': t.categoryId,
+        },
     ],
     'habits': [
       for (final h in store.habits)
