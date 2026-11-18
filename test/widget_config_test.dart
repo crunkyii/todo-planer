@@ -268,6 +268,8 @@ void main() {
     });
 
     testWidgets('Bild der Einstellungsseite', (tester) async {
+      // Die Vorschau zeigt das heutige Datum – ohne feste Uhr passt das Bild nur am Tag der Aufnahme.
+      useFixedClock();
       await open(
         tester,
         initial: WidgetConfig(cats: {'hu', 'test'}, transparency: 30, color: ColorPreset.lavender.hex),
