@@ -26,11 +26,15 @@ class _ExportSheetState extends State<ExportSheet> {
     setState(() => _busy = true);
     try {
       final f = Fmt.of(context);
-      final bytes = await exportBytes(buildExport(app.store, l, f), format, english: f.en);
+      // Ältere erledigte Aufgaben liegen nur online: für den Export alle holen. Klappt das
+      // nicht (offline), steht im Export und in der Meldung, wie viele fehlen.
+      await app.sync.loadAllOlderDone();
+      final data = buildExport(app.store, l, f);
+      final bytes = await exportBytes(data, format, english: f.en);
       final saved = await saveExportFile(exportFileName(format), bytes, format.mime);
       if (!saved) return; // abgebrochen: Auswahl bleibt offen
       if (mounted) nav.pop();
-      app.snack.show(l.exportSaved, icon: Ic.check);
+      app.snack.show(data.note ?? l.exportSaved, icon: data.note == null ? Ic.check : Ic.alert);
     } on Object catch (e) {
       // Auch Programmfehler (z. B. aus der PDF-Bibliothek) melden statt still zu scheitern.
       debugPrint('Export fehlgeschlagen: ${e.runtimeType}');

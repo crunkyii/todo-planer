@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:todo_liste/data/local_db.dart';
+import 'package:todo_liste/data/models.dart';
 import 'package:todo_liste/data/store.dart';
 import 'package:todo_liste/services/export.dart';
 import 'package:todo_liste/util/dates.dart';
@@ -140,5 +141,33 @@ void main() {
 
   test('PDF-Schrift: Umlaute bleiben, Emojis und Sonderzeichen werden ersetzt', () {
     expect(pdfSafe('Jänner „Größe“ – 5 € 🎂'), 'Jänner "Größe" - 5 EUR ?');
+  });
+
+  test('Ältere erledigte: offline steht ein Hinweis im Export, nachgeladen stehen sie drin', () async {
+    final at = nowUtc().subtract(const Duration(days: 10));
+    final old = Task(
+      id: newId(),
+      title: 'Lange her',
+      categoryId: store.categories.first.id,
+      dueDate: DateTime(2026, 11, 2),
+      dueTime: null,
+      done: true,
+      doneAt: at,
+      createdAt: at,
+      updatedAt: at,
+    );
+    await store.applyRemote(tasksTable, [old.toJson()]); // liegt nur online: am Gerät bleibt der Zähler
+    final offline = buildExport(store, l, f);
+    expect(offline.note, l.exportOlderMissing(1));
+    expect(exportTxt(offline), startsWith('ToDo Planer\r\nStand: 18.11.2026\r\n${offline.note}\r\n'));
+    expect(exportCsv(offline), startsWith('${offline.note}\r\n\r\nAufgaben\r\n'));
+    expect(exportTxt(offline), isNot(contains('Lange her')));
+    expect(ascii.decode((await exportBytes(offline, ExportFormat.pdf)).sublist(0, 5)), '%PDF-');
+
+    store.addOlder([old.id], [old.toJson()], const []); // wie vom Server nachgeladen
+    final online = buildExport(store, l, f);
+    expect(online.note, isNull);
+    expect(online.tables.first.rows.map((r) => r.first), contains('Lange her'));
+    expect(exportTxt(online), contains('AUFGABEN (4)'));
   });
 }

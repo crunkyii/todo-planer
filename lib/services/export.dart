@@ -39,8 +39,11 @@ class ExportTable {
 
 /// Alles, was exportiert wird – in der Sprache der App, unabhängig vom Dateiformat.
 class ExportData {
-  const ExportData({required this.title, required this.stamp, required this.tables});
+  const ExportData({required this.title, required this.stamp, required this.tables, this.note});
   final String title;
+
+  /// Hinweis unter dem Stand – z. B. dass ältere erledigte Aufgaben fehlen (offline).
+  final String? note;
 
   /// „Stand: 18.11.2026“
   final String stamp;
@@ -49,15 +52,20 @@ class ExportData {
 
 /// Sammelt alle Daten der App für den Export: Aufgaben (offene zuerst, nach Abgabe),
 /// Gewohnheiten, Wochenplan und Kategorien.
+///
+/// Ältere erledigte Aufgaben liegen im Modus „Auf allen Geräten“ nur online: Der Aufrufer
+/// lädt sie vorher nach. Was dabei fehlt (offline), steht als Hinweis im Export.
 ExportData buildExport(Store store, AppLocalizations l, Fmt f) {
   String yesNo(bool v) => v ? l.yes : l.no;
 
-  final tasks = store.tasks..sort((a, b) => doneLast(a, b) ?? a.due.compareTo(b.due));
+  final missing = store.olderWaiting();
+  final tasks = store.tasksWithOlder..sort((a, b) => doneLast(a, b) ?? a.due.compareTo(b.due));
   final blocks = store.blocks..sort((a, b) => a.day != b.day ? a.day.compareTo(b.day) : a.start.compareTo(b.start));
 
   return ExportData(
     title: l.appTitle,
     stamp: l.exportStamp(f.fullDate(today())),
+    note: missing > 0 ? l.exportOlderMissing(missing) : null,
     tables: [
       ExportTable(
         l.navTasks,
@@ -131,6 +139,7 @@ String exportTxt(ExportData data) {
   final out = StringBuffer()
     ..writeln(data.title)
     ..writeln(data.stamp);
+  if (data.note != null) out.writeln(data.note);
   for (final t in data.tables) {
     final heading = '${t.title.toUpperCase()} (${t.rows.length})';
     out
@@ -158,7 +167,7 @@ String exportCsv(ExportData data, {String sep = ';'}) {
     return RegExp('[;,"\\r\\n]').hasMatch(s) ? '"${s.replaceAll('"', '""')}"' : s;
   }
 
-  final lines = <String>[];
+  final lines = <String>[if (data.note != null) cell(data.note!)];
   for (final t in data.tables) {
     if (lines.isNotEmpty) lines.add('');
     lines
@@ -233,6 +242,7 @@ Future<Uint8List> exportPdf(ExportData data) {
         ),
         pw.SizedBox(height: 2),
         pw.Text(pdfSafe(data.stamp), style: const pw.TextStyle(fontSize: 10, color: soft)),
+        if (data.note != null) pw.Text(pdfSafe(data.note!), style: const pw.TextStyle(fontSize: 10, color: soft)),
         for (final t in data.tables) ...[
           pw.SizedBox(height: 18),
           pw.Text(
