@@ -28,6 +28,18 @@ class Store extends ChangeNotifier {
   final Map<String, HabitLog> _logs = {};
   final Map<String, WeekBlock> _blocks = {};
 
+  /// Merkzettel der erledigten Aufgaben, die nur noch online liegen (ID → Tag, Kategorie).
+  final Map<String, ArchivedDone> _archived = {};
+
+  /// Ältere erledigte Aufgaben, die gerade vom Server nachgeladen sind – nur im Speicher.
+  /// Wird eine davon angefasst (wieder geöffnet, bearbeitet, gelöscht), zieht sie mit
+  /// [_adopt] zurück in die lokale Datenbank.
+  final Map<String, Task> _older = {};
+
+  /// Merkzettel, zu denen der Server beim Nachladen keine alte erledigte Aufgabe (mehr)
+  /// geliefert hat – der nächste Abruf stellt sie richtig; bis dahin nicht noch einmal fragen.
+  final Set<String> _olderMissing = {};
+
   /// Jährliche Aufgabe → die Aufgabe fürs nächste Jahr, die beim Abhaken in dieser Sitzung
   /// entstanden ist. Nur diese nimmt „wieder öffnen“ zurück, nie eine selbst angelegte.
   final Map<String, String> _yearlyCopies = {};
@@ -48,6 +60,29 @@ class Store extends ChangeNotifier {
       _cats.values.where((c) => !c.deleted).toList()..sort((a, b) => a.position.compareTo(b.position));
 
   List<Task> get tasks => _tasks.values.where((t) => !t.deleted).toList();
+
+  /// Wie [tasks], dazu die nachgeladenen älteren erledigten (Aufgabenliste, Kalender, Export).
+  List<Task> get tasksWithOlder => [...tasks, ..._older.values];
+
+  bool _waiting(ArchivedDone a, String? categoryId, String? dueDay) =>
+      a.due != null &&
+      (categoryId == null || a.cat == categoryId) &&
+      (dueDay == null || a.due == dueDay) &&
+      !_tasks.containsKey(a.id) &&
+      !_older.containsKey(a.id) &&
+      !_olderMissing.contains(a.id);
+
+  /// Wie viele ältere erledigte Aufgaben nur online liegen und noch nicht nachgeladen sind –
+  /// auf Wunsch nur die einer Kategorie oder eines Abgabetags (`JJJJ-MM-TT`).
+  int olderWaiting({String? categoryId, String? dueDay}) =>
+      _archived.values.where((a) => _waiting(a, categoryId, dueDay)).length;
+
+  /// Die IDs der nächsten Seite zum Nachladen: zuletzt abgehakte zuerst.
+  List<String> olderIdsToLoad({String? categoryId, String? dueDay, required int limit}) {
+    final list = _archived.values.where((a) => _waiting(a, categoryId, dueDay)).toList()
+      ..sort((a, b) => b.day.compareTo(a.day));
+    return [for (final a in list.take(limit)) a.id];
+  }
 
   List<Habit> get habits => _habits.values.where((h) => !h.deleted).toList()
     ..sort((a, b) => a.position != b.position ? a.position.compareTo(b.position) : a.createdAt.compareTo(b.createdAt));
@@ -80,7 +115,7 @@ class Store extends ChangeNotifier {
   // Der aktuelle Stand eines Eintrags – `null`, wenn er (auch durch den Abgleich) gelöscht wurde.
   // Ein Sheet, das länger offen ist, holt sich damit vor dem Speichern das frische Objekt:
   // Der Abgleich ersetzt Objekte im Speicher, ein altes würde neuere Änderungen überschreiben.
-  Task? taskById(String id) => _tasks[id]?.deleted == false ? _tasks[id] : null;
+  Task? taskById(String id) => _tasks[id]?.deleted == false ? _tasks[id] : _older[id];
   Habit? habitById(String id) => _habits[id]?.deleted == false ? _habits[id] : null;
   WeekBlock? blockById(String id) => _blocks[id]?.deleted == false ? _blocks[id] : null;
   TaskCategory? categoryById(String id) => _cats[id]?.deleted == false ? _cats[id] : null;
@@ -94,10 +129,14 @@ class Store extends ChangeNotifier {
   ]..sort();
 
   /// Erledigt-Einträge für die Statistik: auch gelöschte erledigte Aufgaben zählen,
-  /// damit „Erledigte löschen“ die Statistik nicht leert.
+  /// damit „Erledigte löschen“ die Statistik nicht leert. Aufgaben, die nur noch online
+  /// liegen, kommen aus den Merkzetteln – so stimmt die Statistik auch offline. Was am Gerät
+  /// liegt, zählt nur von dort (nie doppelt).
   List<({String day, String cat})> doneEntries() => [
     for (final t in _tasks.values)
       if (t.done && t.doneAt != null) (day: isoDate(t.doneAt!.toLocal()), cat: t.categoryId),
+    for (final a in _archived.values)
+      if (!_tasks.containsKey(a.id)) (day: a.day, cat: a.cat),
   ];
 
   // ---------- Laden ----------
@@ -113,6 +152,9 @@ class Store extends ChangeNotifier {
         if (t == tasksTable) pendingTaskIds.add(r['id'] as String);
         if (t == subtasksTable) pendingTaskIds.add(r['task_id'] as String);
       }
+    }
+    for (final a in await db.archived()) {
+      _archived[a.id] = a;
     }
     _attachSubs();
     pending = await db.pendingCount();
@@ -152,6 +194,9 @@ class Store extends ChangeNotifier {
     _habits.clear();
     _logs.clear();
     _blocks.clear();
+    _archived.clear();
+    _older.clear();
+    _olderMissing.clear();
     pendingTaskIds.clear();
   }
 
@@ -210,12 +255,14 @@ class Store extends ChangeNotifier {
         t = categoriesTable;
         json = c.toJson();
       case Task x:
+        _adopt(x.id);
         x.updatedAt = now;
         _tasks[x.id] = x;
         pendingTaskIds.add(x.id);
         t = tasksTable;
         json = x.toJson();
       case Subtask s:
+        _adopt(s.taskId);
         s.updatedAt = now;
         _subs[s.id] = s;
         pendingTaskIds.add(s.taskId);
@@ -239,9 +286,33 @@ class Store extends ChangeNotifier {
       default:
         throw ArgumentError(model);
     }
+    _track(db.put(t, json, dirty: true));
+  }
+
+  /// Merkt sich einen lokalen Schreibvorgang, damit [flush] auf ihn wartet.
+  void _track(Future<void> write) {
     late final Future<void> f;
-    f = db.put(t, json, dirty: true).whenComplete(() => _writes.remove(f));
+    f = write.whenComplete(() => _writes.remove(f));
     _writes.add(f);
+  }
+
+  /// Eine nachgeladene ältere Aufgabe wird angefasst: Sie zieht samt Unteraufgaben zurück in
+  /// die lokale Datenbank und wird ab jetzt wieder ganz normal gespeichert und abgeglichen.
+  void _adopt(String taskId) {
+    final t = _older.remove(taskId);
+    if (t == null) return;
+    _tasks[t.id] = t;
+    _track(db.put(tasksTable, t.toJson(), dirty: false));
+    for (final s in t.subs) {
+      _subs[s.id] = s;
+      _track(db.put(subtasksTable, s.toJson(), dirty: false));
+    }
+    _unarchive(t.id);
+  }
+
+  /// Die Aufgabe liegt wieder am Gerät: Ihr Merkzettel fällt weg, sonst zählte sie doppelt.
+  void _unarchive(String id) {
+    if (_archived.remove(id) != null) _track(db.removeArchived(id));
   }
 
   /// Alle Ansichten neu zeichnen, ohne etwas zu ändern (z. B. neuer Tag um Mitternacht).
@@ -441,6 +512,7 @@ class Store extends ChangeNotifier {
   /// Wiederhergestellt werden nur die Unteraufgaben, die *dieser* Aufruf gelöscht hat –
   /// nicht solche, die schon vorher (z. B. im Bearbeiten-Sheet) entfernt wurden.
   Undo _deleteTask(Task t) {
+    _adopt(t.id);
     final subs = _subs.values.where((s) => s.taskId == t.id && !s.deleted).toList();
     for (final s in subs) {
       _put(s..deleted = true);
@@ -463,9 +535,10 @@ class Store extends ChangeNotifier {
     };
   }
 
-  /// Löscht alle erledigten Aufgaben. Gibt `null` zurück, wenn es keine gibt.
+  /// Löscht alle erledigten Aufgaben – auch die nachgeladenen älteren. Ältere, die noch nicht
+  /// nachgeladen sind, bleiben online liegen. Gibt `null` zurück, wenn es keine gibt.
   ({int count, Undo undo})? clearDone() {
-    final removed = tasks.where((t) => t.done).toList();
+    final removed = tasksWithOlder.where((t) => t.done).toList();
     if (removed.isEmpty) return null;
     final restores = [for (final t in removed) _deleteTask(t)];
     _changed();
@@ -697,18 +770,113 @@ class Store extends ChangeNotifier {
 
   /// Übernimmt Zeilen vom Server. Der neueste `updated_at` gewinnt; lokale
   /// Änderungen, die neuer sind, bleiben und werden später hochgeladen.
+  ///
+  /// Ältere erledigte Aufgaben (siehe [doneKeepLocal]), die nicht am Gerät liegen, werden
+  /// gar nicht erst gespeichert – es bleibt nur ihr Merkzettel für die Statistik. So füllt
+  /// das erste Anmelden auf einem neuen Gerät die Statistik, ohne alles herunterzuladen, und
+  /// eine ausgelagerte Aufgabe kommt beim nächsten Abruf nicht zurück. Hat ein anderes Gerät
+  /// sie verändert (z. B. wieder geöffnet), ist sie nicht mehr „alt erledigt“ und kommt
+  /// normal an.
   Future<void> applyRemote(TableSpec t, List<Map<String, Object?>> rows) async {
     if (rows.isEmpty) return;
+    final now = nowUtc();
     final accepted = <Map<String, Object?>>[];
+    final notes = <ArchivedDone>[];
+    var olderChanged = false;
     for (final r in rows) {
+      if (t.name == 'tasks' && !_tasks.containsKey(r['id'])) {
+        final x = Task.fromJson(r);
+        final loaded = _older.remove(x.id);
+        olderChanged = olderChanged || loaded != null;
+        if (x.isOldDone(now)) {
+          final a = x.archived;
+          if (_archived[x.id] != a) {
+            _archived[x.id] = a;
+            notes.add(a);
+            olderChanged = true;
+          }
+          // Gerade nachgeladen und angezeigt: den neuen Stand zeigen.
+          if (loaded != null && !x.deleted) _older[x.id] = x..subs = loaded.subs;
+          continue;
+        }
+      }
+      // Unteraufgaben einer ausgelagerten Aufgabe bleiben ebenfalls online.
+      if (t.name == 'subtasks' && _archived.containsKey(r['task_id']) && !_tasks.containsKey(r['task_id'])) continue;
       if (!isNews(t, r)) continue;
       final row = {for (final k in t.columns.keys) k: r[k]};
       accepted.add(row);
       _ingest(t, row);
+      if (t.name == 'tasks') _unarchive(row['id'] as String);
     }
-    if (accepted.isEmpty) return;
-    await db.putAll(t, accepted, dirty: false);
+    if (notes.isNotEmpty) await db.putArchived(notes);
+    if (accepted.isNotEmpty) await db.putAll(t, accepted, dirty: false);
+    if (accepted.isEmpty && !olderChanged) return;
     _attachSubs();
+    notifyListeners();
+  }
+
+  /// Aufgaben aus [rows], die bisher nur online lagen und jetzt verändert zurückkommen. Ihre
+  /// Unteraufgaben holt der Abgleich eigens dazu: Die haben sich nicht geändert und kämen
+  /// über den normalen Abruf nicht noch einmal.
+  List<String> returningFromArchive(List<Map<String, Object?>> rows) {
+    final now = nowUtc();
+    return [
+      for (final r in rows)
+        if (_archived.containsKey(r['id']) && !_tasks.containsKey(r['id']) && !Task.fromJson(r).isOldDone(now))
+          r['id'] as String,
+    ];
+  }
+
+  // ---------- Ältere erledigte Aufgaben: nur online ----------
+
+  /// Nimmt erledigte Aufgaben vom Gerät, die vor mehr als [doneKeepLocal] abgehakt wurden
+  /// und schon hochgeladen sind (samt Unteraufgaben). Nur der `SyncService` ruft das auf,
+  /// also nur im Modus „Auf allen Geräten“ mit Konto. Das ist kein Löschen – in Supabase
+  /// ändert sich nichts. Was noch in der Warteschlange steht, bleibt am Gerät.
+  /// Gibt zurück, wie viele Aufgaben ausgelagert wurden.
+  Future<int> archiveOldDone() async {
+    await flush();
+    final waiting = await db.dirtyTaskIds();
+    // Während der Abfrage hat sich etwas geändert: beim nächsten Abgleich wieder versuchen.
+    if (_writes.isNotEmpty) return 0;
+    final now = nowUtc();
+    final gone = [
+      for (final t in _tasks.values)
+        if (t.isOldDone(now) && !waiting.contains(t.id)) t,
+    ];
+    if (gone.isEmpty) return 0;
+    final ids = {for (final t in gone) t.id};
+    final notes = [for (final t in gone) t.archived];
+    _tasks.removeWhere((id, _) => ids.contains(id));
+    _subs.removeWhere((_, s) => ids.contains(s.taskId));
+    for (final (i, t) in gone.indexed) {
+      _archived[t.id] = notes[i];
+      // Bis zum Ende der Sitzung bleibt sie zu sehen – es soll nichts unter der Hand verschwinden.
+      if (!t.deleted) _older[t.id] = t;
+    }
+    _track(db.moveToArchive(notes));
+    notifyListeners();
+    await flush();
+    return gone.length;
+  }
+
+  /// Legt nachgeladene ältere erledigte Aufgaben im Speicher ab (nicht in der lokalen
+  /// Datenbank). [requested] sind die angefragten IDs: Was der Server dazu nicht (mehr) als
+  /// alte erledigte Aufgabe liefert, wird in dieser Sitzung nicht noch einmal angefragt.
+  void addOlder(List<String> requested, List<Map<String, Object?>> tasks, List<Map<String, Object?>> subs) {
+    final now = nowUtc();
+    final subsOf = <String, List<Subtask>>{};
+    for (final r in subs) {
+      final s = Subtask.fromJson(r);
+      if (!s.deleted) (subsOf[s.taskId] ??= []).add(s);
+    }
+    for (final r in tasks) {
+      final x = Task.fromJson(r);
+      if (x.deleted || !x.isOldDone(now) || _tasks.containsKey(x.id) || !_archived.containsKey(x.id)) continue;
+      x.subs = (subsOf[x.id] ?? [])..sort((a, b) => a.position.compareTo(b.position));
+      _older[x.id] = x;
+    }
+    _olderMissing.addAll(requested.where((id) => !_older.containsKey(id) && !_tasks.containsKey(id)));
     notifyListeners();
   }
 

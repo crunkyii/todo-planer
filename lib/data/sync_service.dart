@@ -173,6 +173,8 @@ class SyncService extends ChangeNotifier {
       await store.flush();
       await _push();
       await _pull();
+      // Erst jetzt ist alles oben: ältere erledigte Aufgaben liegen ab hier nur noch online.
+      await store.archiveOldDone();
       store.markSynced();
       onPulled?.call();
       if (announce && rejected == 0) _events.add(const AllSynced());
@@ -249,7 +251,12 @@ class SyncService extends ChangeNotifier {
         // ist, geht es immer weiter.
         if (since != null) q = q.gte('synced_at', since);
         final rows = (await q.order('synced_at', ascending: true).limit(_pullPage)).cast<Map<String, Object?>>();
+        // Kommt eine ausgelagerte Aufgabe verändert zurück, zuerst ihre Unteraufgaben holen –
+        // scheitert das, wird die Seite beim nächsten Abgleich noch einmal geladen.
+        final back = t.name == 'tasks' ? store.returningFromArchive(rows) : const <String>[];
+        final subs = await _rowsFor(subtasksTable, 'task_id', back);
         await store.applyRemote(t, rows);
+        await store.applyRemote(subtasksTable, subs);
         if (rows.isEmpty) break;
         since = rows.last['synced_at'] as String;
         await settings.setCursor(t.name, since);
@@ -258,6 +265,59 @@ class SyncService extends ChangeNotifier {
     }
     final s = await db.from('settings').select().maybeSingle();
     if (s != null) settings.mergeRemote(s);
+  }
+
+  // ---------- Ältere erledigte Aufgaben nachladen ----------
+
+  /// So viele ältere erledigte Aufgaben kommen je Tipp auf „laden“ – und so viele IDs passen
+  /// gut in eine Anfrage.
+  static const olderPage = 50;
+
+  /// Ob ältere erledigte Aufgaben gerade nachgeladen werden können (online und angemeldet).
+  bool get canLoadOlder => _canSync && online;
+
+  /// Läuft gerade ein Nachladen?
+  bool loadingOlder = false;
+
+  /// Alle Zeilen von [t], deren [column] einen der Werte [ids] hat.
+  Future<List<Map<String, Object?>>> _rowsFor(TableSpec t, String column, List<String> ids) async {
+    final out = <Map<String, Object?>>[];
+    for (var i = 0; i < ids.length; i += olderPage) {
+      final chunk = ids.sublist(i, i + olderPage > ids.length ? ids.length : i + olderPage);
+      out.addAll((await cloud.client.from(t.name).select().inFilter(column, chunk)).cast<Map<String, Object?>>());
+    }
+    return out;
+  }
+
+  /// Holt die nächsten älteren erledigten Aufgaben vom Server – nur in den Speicher, nicht in
+  /// die lokale Datenbank. Auf Wunsch nur die einer Kategorie oder eines Abgabetags.
+  /// `false`, wenn es nicht geklappt hat (offline, Server nicht erreichbar).
+  Future<bool> loadOlderDone({String? categoryId, String? dueDay, int limit = olderPage}) async {
+    if (!canLoadOlder || loadingOlder) return false;
+    final ids = store.olderIdsToLoad(categoryId: categoryId, dueDay: dueDay, limit: limit);
+    if (ids.isEmpty) return true;
+    loadingOlder = true;
+    notifyListeners();
+    try {
+      final tasks = await _rowsFor(tasksTable, 'id', ids);
+      final subs = await _rowsFor(subtasksTable, 'task_id', ids);
+      store.addOlder(ids, tasks, subs);
+      return true;
+    } on Object catch (e) {
+      debugPrint('Nachladen fehlgeschlagen: ${e.runtimeType}');
+      return false;
+    } finally {
+      loadingOlder = false;
+      notifyListeners();
+    }
+  }
+
+  /// Holt alle älteren erledigten Aufgaben (für den Export). `false`, wenn welche fehlen.
+  Future<bool> loadAllOlderDone() async {
+    while (store.olderWaiting() > 0) {
+      if (!await loadOlderDone(limit: _pullPage)) return false;
+    }
+    return true;
   }
 
   @override

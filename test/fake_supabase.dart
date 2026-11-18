@@ -12,7 +12,7 @@ import 'package:todo_liste/data/settings_store.dart';
 ///
 /// Nachgebaut sind: Upsert über `on_conflict`, der `sync_guard`-Trigger aus
 /// `supabase/schema.sql` (neuester Stand gewinnt, `synced_at` setzt der Server) und
-/// der Abruf mit `synced_at=gte.…`, `order` und `limit`.
+/// der Abruf mit `synced_at=gte.…`, `order` und `limit` sowie die Filter `eq` und `in`.
 class FakeSupabase {
   FakeSupabase._(this._server);
 
@@ -21,6 +21,9 @@ class FakeSupabase {
 
   /// Liefert `true` für Zeilen, die der Server ablehnen soll (wie ein CHECK-Fehler).
   bool Function(String table, Map<String, Object?> row)? reject;
+
+  /// `true` = Abrufe scheitern (Server nicht erreichbar).
+  bool failReads = false;
 
   /// Anzahl der Anfragen je „METHODE tabelle“ (z. B. `GET tasks`).
   final Map<String, int> calls = {};
@@ -38,6 +41,16 @@ class FakeSupabase {
   Future<void> stop() => _server.close(force: true);
 
   List<Map<String, Object?>> rows(String table) => tables[table] ??= [];
+
+  /// Legt Zeilen direkt am Server ab – als hätte sie ein anderes Gerät hochgeladen.
+  void seed(String table, List<Map<String, Object?>> list) {
+    var at = '';
+    for (final (i, row) in list.indexed) {
+      // Wie echte Uploads in Paketen: höchstens 200 Zeilen teilen sich ein `synced_at`.
+      if (i % 200 == 0) at = _now();
+      rows(table).add({...row, 'synced_at': at});
+    }
+  }
 
   /// Ein Zeitstempel je Anfrage – wie `now()` in einer Transaktion.
   String _now() {
@@ -66,15 +79,17 @@ class FakeSupabase {
         status = 201;
       }
     } else {
+      if (failReads) {
+        req.response.statusCode = 500;
+        await req.response.close();
+        return;
+      }
       var result = List.of(rows(table));
-      final since = req.uri.queryParameters['synced_at'];
-      if (since != null) {
-        final op = since.substring(0, since.indexOf('.'));
-        final t = DateTime.parse(since.substring(op.length + 1));
-        result = result.where((r) {
-          final c = DateTime.parse(r['synced_at'] as String).compareTo(t);
-          return op == 'gte' ? c >= 0 : c > 0;
-        }).toList();
+      for (final MapEntry(key: column, value: filter) in req.uri.queryParameters.entries) {
+        if (const {'select', 'order', 'limit'}.contains(column)) continue;
+        final op = filter.substring(0, filter.indexOf('.'));
+        final value = filter.substring(op.length + 1);
+        result = result.where((r) => _matches(r[column], op, value)).toList();
       }
       result.sort((a, b) => (a['synced_at'] as String).compareTo(b['synced_at'] as String));
       final limit = int.tryParse(req.uri.queryParameters['limit'] ?? '');
@@ -95,6 +110,22 @@ class FakeSupabase {
       ..headers.contentType = ContentType.json
       ..write(out == null ? '' : jsonEncode(out));
     await req.response.close();
+  }
+
+  /// Die Filter, die die App benutzt: `gte`/`gt` (Zeitstempel), `eq` und `in.(a,b)`.
+  static bool _matches(Object? cell, String op, String value) {
+    switch (op) {
+      case 'gte' || 'gt':
+        final c = DateTime.parse(cell as String).compareTo(DateTime.parse(value));
+        return op == 'gte' ? c >= 0 : c > 0;
+      case 'eq':
+        return '$cell' == value;
+      case 'in':
+        final list = value.substring(1, value.length - 1).split(',').map((v) => v.replaceAll('"', ''));
+        return list.contains('$cell');
+      default:
+        throw UnsupportedError('Filter $op');
+    }
   }
 
   void _upsert(String table, List<String> keys, Map<String, Object?> row, String at) {
