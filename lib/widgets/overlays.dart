@@ -1,5 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/gestures.dart' show Drag;
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/tokens.dart';
@@ -143,12 +144,21 @@ class MenuEntry {
 
 /// ⋮-Menü: Milchglas-Kärtchen oben rechts, springt aus der Ecke auf.
 class AppMenuRoute extends PopupRoute<void> {
-  AppMenuRoute({required this.anchor, required this.builder, required this.label});
+  AppMenuRoute({required this.anchor, required this.builder, required this.label, this.scrollBehind});
 
   /// Position des ⋮-Knopfs (global).
   final Rect anchor;
   final List<Widget> Function(BuildContext context) builder;
   final String label;
+
+  /// Die Liste hinter dem Menü. Wer neben dem Menü wischt, scrollt sie – das Menü geht dabei zu.
+  final ScrollPosition? scrollBehind;
+
+  /// Unter dieser Höhe klappt das Menü nach oben auf, wenn dort mehr Platz ist.
+  static const _minBelow = 220.0;
+
+  final _hidden = ValueNotifier(false);
+  Drag? _drag;
 
   @override
   Color? get barrierColor => null;
@@ -165,32 +175,95 @@ class AppMenuRoute extends PopupRoute<void> {
   @override
   Duration get reverseTransitionDuration => const Duration(milliseconds: 150);
 
+  void _close() {
+    if (isActive) navigator?.removeRoute(this);
+  }
+
+  void _endDrag(void Function(Drag d) finish) {
+    final d = _drag;
+    _drag = null;
+    if (d != null) finish(d);
+    _close();
+  }
+
+  /// Fläche neben dem Menü: Tippen schließt; senkrecht Wischen blendet das Menü aus
+  /// und reicht die Bewegung an die Liste dahinter weiter.
+  @override
+  Widget buildModalBarrier() {
+    return Semantics(
+      label: label,
+      onDismiss: _close,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        onTap: () {
+          if (isCurrent) navigator?.pop();
+        },
+        onVerticalDragStart: (d) {
+          _hidden.value = true;
+          _drag = scrollBehind?.drag(d, () => _drag = null);
+        },
+        onVerticalDragUpdate: (d) => _drag?.update(d),
+        onVerticalDragEnd: (d) => _endDrag((x) => x.end(d)),
+        onVerticalDragCancel: () => _endDrag((x) => x.cancel()),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _drag?.cancel();
+    _hidden.dispose();
+    super.dispose();
+  }
+
+  ({double below, double above, bool up}) _space(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final below = mq.size.height - mq.padding.bottom - mq.viewInsets.bottom - anchor.bottom - 8;
+    final above = anchor.top - mq.padding.top - 8;
+    return (below: below, above: above, up: below < _minBelow && above > below);
+  }
+
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     final tok = context.tok;
-    final width = MediaQuery.sizeOf(context).width;
+    final size = MediaQuery.sizeOf(context);
+    final sp = _space(context);
     return Stack(
       children: [
         Positioned(
-          top: anchor.bottom - 2,
-          right: (width - anchor.right).clamp(8, width),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 188, maxWidth: 240),
-            child: Glass(
-              color: tok.glassStrong,
-              blur: 24,
-              radius: BorderRadius.circular(Sizes.rMenu),
-              border: Border.all(color: tok.glassEdge),
-              shadow: tok.popShadow,
-              child: Material(
-                type: MaterialType.transparency,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+          top: sp.up ? null : anchor.bottom - 2,
+          bottom: sp.up ? size.height - anchor.top - 2 : null,
+          right: (size.width - anchor.right).clamp(8, size.width),
+          child: ValueListenableBuilder(
+            valueListenable: _hidden,
+            builder: (context, hidden, child) => IgnorePointer(
+              ignoring: hidden,
+              child: AnimatedOpacity(opacity: hidden ? 0 : 1, duration: Motion.press, child: child),
+            ),
+            child: ConstrainedBox(
+              // Nie höher als der freie Platz – längere Listen scrollen im Menü.
+              constraints: BoxConstraints(
+                minWidth: 188,
+                maxWidth: 240,
+                maxHeight: (sp.up ? sp.above : sp.below).clamp(96, 2000),
+              ),
+              child: Glass(
+                color: tok.glassStrong,
+                blur: 24,
+                radius: BorderRadius.circular(Sizes.rMenu),
+                border: Border.all(color: tok.glassEdge),
+                shadow: tok.popShadow,
+                child: Material(
+                  type: MaterialType.transparency,
                   child: IntrinsicWidth(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: builder(context),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: builder(context),
+                      ),
                     ),
                   ),
                 ),
@@ -214,7 +287,7 @@ class AppMenuRoute extends PopupRoute<void> {
     return FadeTransition(
       opacity: CurvedAnimation(parent: animation, curve: const Interval(0, 0.4)),
       child: ScaleTransition(
-        alignment: Alignment(1 - 2 * 8 / MediaQuery.sizeOf(context).width, -1),
+        alignment: Alignment(1 - 2 * 8 / MediaQuery.sizeOf(context).width, _space(context).up ? 1 : -1),
         scale: Tween(begin: 0.82, end: 1.0).animate(curved),
         child: child,
       ),

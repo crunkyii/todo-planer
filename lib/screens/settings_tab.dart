@@ -383,6 +383,7 @@ class _HourPicker extends StatelessWidget {
               AppMenuRoute(
                 anchor: rect,
                 label: label,
+                scrollBehind: Scrollable.maybeOf(btnContext)?.position,
                 builder: (menuContext) => [
                   for (var h = from; h <= to; h++)
                     MenuItemRow(

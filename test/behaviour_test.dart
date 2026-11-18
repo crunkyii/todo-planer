@@ -11,6 +11,7 @@ import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/theme/tokens.dart';
 import 'package:todo_liste/util/dates.dart';
+import 'package:todo_liste/widgets/overlays.dart';
 import 'package:todo_liste/widgets/pickers.dart';
 import 'package:todo_liste/widgets/ui.dart';
 
@@ -380,6 +381,53 @@ void main() {
           await finishApp(tester, app);
         }
       }
+    });
+
+    testWidgets('Auswahl-Menü: passt auf den Bildschirm, scrollt innen; Wischen daneben scrollt die Seite', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app, size: const Size(412, 600));
+      await _tap(tester, find.bySemanticsLabel(l.settings));
+      final pageList = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(find.text(l.dayEnds), 100, scrollable: pageList);
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text('22:00'));
+      expect(tester.takeException(), isNull);
+
+      // Menü bleibt im Bild, auch wenn nicht alle neun Zeiten Platz haben
+      final menu = find.ancestor(of: find.text('16:00'), matching: find.byType(Glass)).first;
+      final box = tester.getRect(menu);
+      expect(box.top, greaterThanOrEqualTo(0));
+      expect(box.bottom, lessThanOrEqualTo(600));
+
+      // Im Menü scrollen und die letzte Zeit wählen
+      final inner = find.descendant(of: menu, matching: find.byType(Scrollable));
+      await tester.scrollUntilVisible(find.text('24:00'), 60, scrollable: inner.first);
+      await _tap(tester, find.text('24:00'));
+      expect(app.settings.dayEnd, 24);
+
+      // Neben dem Menü wischen: Menü geht zu, die Seite dahinter bewegt sich mit
+      final page = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      page.jumpTo(page.maxScrollExtent);
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text('24:00'));
+      expect(find.text('16:00'), findsOneWidget);
+      final before = page.pixels;
+      await tester.dragFrom(const Offset(40, 150), const Offset(0, 120));
+      await tester.pumpAndSettle();
+      expect(find.text('16:00'), findsNothing);
+      expect(page.pixels, lessThan(before));
+
+      // Tippen daneben schließt nur
+      await tester.scrollUntilVisible(find.text(l.dayEnds), 100, scrollable: pageList);
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text('24:00'));
+      await tester.tapAt(const Offset(30, 30));
+      await tester.pumpAndSettle();
+      expect(find.text('16:00'), findsNothing);
+      await finishApp(tester, app);
     });
 
     testWidgets('Raster, Tag beginnt/endet und Erinnerungen werden gespeichert', (tester) async {
