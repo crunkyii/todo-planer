@@ -78,6 +78,7 @@
   "errEmail": "Bitte gib eine gültige E-Mail-Adresse ein.",
   "errPassword": "Bitte gib dein Passwort ein.",
   "errPasswordShort": "Das Passwort braucht mindestens 6 Zeichen.",
+  "errPasswordLong": "Das Passwort ist zu lang (höchstens 72 Zeichen).",
   "errWrongLogin": "E-Mail oder Passwort ist falsch.",
   "accountCreatedHint": "Konto erstellt. Jetzt in Supabase „Allow new users to sign up“ ausschalten.",
   "confirmEmailHint": "Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link in der Mail und melde dich dann an.",

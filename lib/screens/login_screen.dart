@@ -1,3 +1,5 @@
+import 'dart:convert' show utf8;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
@@ -23,6 +25,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showPw = false;
   bool _busy = false;
   String? _error;
+
+  /// Supabase (bcrypt) nimmt höchstens 72 Bytes. Bei Buchstaben und Ziffern sind das 72 Zeichen;
+  /// Umlaute und Emoji zählen mehrfach – daher wird in Bytes geprüft.
+  static const maxPasswordBytes = 72;
 
   static final _emailRe = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
@@ -52,6 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
       err = l.errPassword;
     } else if (_register && pw.length < 6) {
       err = l.errPasswordShort;
+    } else if (utf8.encode(pw).length > maxPasswordBytes) {
+      err = l.errPasswordLong;
     }
     setState(() => _error = err);
     if (err != null) return;

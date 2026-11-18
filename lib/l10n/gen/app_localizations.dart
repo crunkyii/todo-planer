@@ -518,6 +518,12 @@ abstract class AppLocalizations {
   /// **'Das Passwort braucht mindestens 6 Zeichen.'**
   String get errPasswordShort;
 
+  /// No description provided for @errPasswordLong.
+  ///
+  /// In de, this message translates to:
+  /// **'Das Passwort ist zu lang (höchstens 72 Zeichen).'**
+  String get errPasswordLong;
+
   /// No description provided for @errWrongLogin.
   ///
   /// In de, this message translates to:

@@ -229,6 +229,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errPasswordShort => 'Das Passwort braucht mindestens 6 Zeichen.';
 
   @override
+  String get errPasswordLong => 'Das Passwort ist zu lang (höchstens 72 Zeichen).';
+
+  @override
   String get errWrongLogin => 'E-Mail oder Passwort ist falsch.';
 
   @override

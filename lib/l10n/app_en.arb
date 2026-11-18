@@ -71,6 +71,7 @@
   "errEmail": "Please enter a valid email address.",
   "errPassword": "Please enter your password.",
   "errPasswordShort": "The password needs at least 6 characters.",
+  "errPasswordLong": "The password is too long (72 characters at most).",
   "errWrongLogin": "Email or password is wrong.",
   "accountCreatedHint": "Account created. Now turn off \"Allow new users to sign up\" in Supabase.",
   "confirmEmailHint": "Almost done: please confirm your email address with the link in the mail, then sign in.",

@@ -535,6 +535,14 @@ void main() {
         await tester.enterText(fields.at(0), 'ich@beispiel.at');
         await _tap(tester, find.text(l.signIn).last);
         expect(find.text(l.errPassword), findsOneWidget);
+        // 72 Zeichen gehen durch die Prüfung, 73 nicht (kein Netz nötig: Abbruch vor dem Senden)
+        await tester.enterText(fields.at(1), 'a' * 73);
+        await _tap(tester, find.text(l.signIn).last);
+        expect(find.text(l.errPasswordLong), findsOneWidget);
+        expect(l.errPasswordLong, contains('72'));
+        await tester.enterText(fields.at(1), 'ä' * 37); // 74 Bytes
+        await _tap(tester, find.text(l.signIn).last);
+        expect(find.text(l.errPasswordLong), findsOneWidget);
         await finishApp(tester, app);
       }
     });

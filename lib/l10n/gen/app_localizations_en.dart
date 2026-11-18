@@ -228,6 +228,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errPasswordShort => 'The password needs at least 6 characters.';
 
   @override
+  String get errPasswordLong => 'The password is too long (72 characters at most).';
+
+  @override
   String get errWrongLogin => 'Email or password is wrong.';
 
   @override
