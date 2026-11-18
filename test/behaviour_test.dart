@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 
-import 'dart:ui' show Tristate;
+import 'dart:ui' show PointerDeviceKind, Tristate;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -217,6 +217,41 @@ void main() {
       await _tap(tester, find.text(l.save).last);
       expect(app.store.blocks.single.name, 'Chor');
       expect(app.store.blocks.single.end, greaterThan(app.store.blocks.single.start));
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Mausrad dreht das Zeitrad', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      await _tap(tester, find.bySemanticsLabel(l.newBlock).last);
+      await tester.enterText(find.byType(TextField).first, 'Früh');
+      await _tap(tester, find.text(l.from)); // klappt das Zeitrad „Von“ auf
+      final hours = find.descendant(of: find.byKey(const ValueKey('von')), matching: find.byType(ListWheelScrollView));
+      int hour() =>
+          (tester.widget<ListWheelScrollView>(hours.first).controller! as FixedExtentScrollController).selectedItem;
+      final before = hour();
+      final mouse = TestPointer(1, PointerDeviceKind.mouse)..hover(tester.getCenter(hours.first));
+      await tester.sendEventToBinding(mouse.scroll(const Offset(0, -120)));
+      await tester.pumpAndSettle();
+      expect(hour(), lessThan(before), reason: 'Rad nach oben gedreht = frühere Stunde');
+      final picked = hour();
+      await _tap(tester, find.text(l.save).last);
+      expect(app.store.blocks.single.start ~/ 60, picked, reason: 'die gedrehte Stunde wird gespeichert');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Darstellung „System“ folgt dem Gerät', (tester) async {
+      final app = await makeServices(mode: 'system');
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      await pumpApp(tester, app);
+      expect(Theme.of(tester.element(find.byType(AppShell))).brightness, Brightness.dark);
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+      await tester.pumpAndSettle();
+      expect(Theme.of(tester.element(find.byType(AppShell))).brightness, Brightness.light);
       await finishApp(tester, app);
     });
 
