@@ -25,6 +25,17 @@ DateTime _t(Object? v) => DateTime.parse(v as String).toUtc();
 DateTime? _tn(Object? v) => v == null ? null : _t(v);
 String _ts(DateTime d) => d.toUtc().toIso8601String();
 
+/// So lange bleibt eine erledigte Aufgabe am Gerät. Danach liegt sie im Modus „Auf allen
+/// Geräten“ nur noch in Supabase und wird bei Bedarf nachgeladen.
+const doneKeepLocal = Duration(days: 7);
+
+/// Merkzettel für eine erledigte Aufgabe, die nur noch online liegt (lokale Tabelle
+/// `done_archive`, wird nicht abgeglichen). Daraus rechnet die Statistik auch offline:
+/// [day] ist der Tag des Abhakens (`JJJJ-MM-TT`, lokale Zeit), [cat] die Kategorie.
+/// [due] ist der Abgabetag – `null` bei einer gelöschten Aufgabe: Die zählt nur noch für
+/// die Statistik und wird nie mehr angezeigt.
+typedef ArchivedDone = ({String id, String day, String cat, String? due});
+
 /// Ab welchem Abschnitt der Aufgaben-Liste die Aufgaben einer Kategorie zu sehen sind.
 /// Die Namen stehen so in der Datenbank (`categories.list_from`) – nicht umbenennen.
 enum ListFrom { always, week, tomorrow, today, never }
@@ -155,6 +166,14 @@ class Task {
   List<Subtask> subs = [];
 
   bool get hasTime => dueTime != null;
+
+  /// Vor mehr als [doneKeepLocal] abgehakt: so eine Aufgabe liegt im Modus „Auf allen
+  /// Geräten“ nur noch online.
+  bool isOldDone(DateTime now) => done && doneAt != null && doneAt!.isBefore(now.subtract(doneKeepLocal));
+
+  /// Der Merkzettel, der am Gerät bleibt, wenn die Aufgabe nur noch online liegt.
+  ArchivedDone get archived =>
+      (id: id, day: isoDate(doneAt!.toLocal()), cat: categoryId, due: deleted ? null : isoDate(dueDate));
 
   /// Fälligkeit als lokaler Zeitpunkt (ganztägig = Mitternacht).
   /// Über Stunde/Minute gebaut, nicht mit `add`: Am Tag der Zeitumstellung hat der Tag

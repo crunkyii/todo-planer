@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'models.dart';
+
 /// Beschreibt eine Tabelle, die lokal und in Supabase gleich aufgebaut ist.
 ///
 /// Neue Tabelle anlegen – an diesen Stellen eintragen:
@@ -128,9 +130,15 @@ class LocalDb extends GeneratedDatabase {
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
 
   /// Bei jeder Änderung an den Spalten um eins erhöhen und unten in `onUpgrade` nachziehen.
-  /// 2: `tasks.notes` · 3: `categories.list_from`.
+  /// 2: `tasks.notes` · 3: `categories.list_from` · 4: Tabelle `done_archive`.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
+
+  /// Merkzettel der erledigten Aufgaben, die nur noch online liegen (siehe [ArchivedDone]).
+  /// Nur am Gerät – diese Tabelle wird nie abgeglichen.
+  static const _createArchive =
+      'CREATE TABLE IF NOT EXISTS "done_archive" '
+      '("id" TEXT NOT NULL PRIMARY KEY, "day" TEXT NOT NULL, "category_id" TEXT NOT NULL, "due_date" TEXT)';
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -142,10 +150,12 @@ class LocalDb extends GeneratedDatabase {
           'PRIMARY KEY (${t.keys.map((k) => '"$k"').join(', ')}))',
         );
       }
+      await customStatement(_createArchive);
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) await _addColumn('tasks', 'notes', 'TEXT');
       if (from < 3) await _addColumn('categories', 'list_from', 'TEXT');
+      if (from < 4) await customStatement(_createArchive);
     },
   );
 
@@ -214,6 +224,54 @@ class LocalDb extends GeneratedDatabase {
   Future<void> wipe() => transaction(() async {
     for (final t in syncTables) {
       await customStatement('DELETE FROM "${t.name}"');
+    }
+    await customStatement('DELETE FROM "done_archive"');
+  });
+
+  // ---------- Erledigte Aufgaben, die nur noch online liegen ----------
+
+  Future<List<ArchivedDone>> archived() async {
+    final rows = await customSelect('SELECT * FROM "done_archive"').get();
+    return [
+      for (final r in rows)
+        (
+          id: r.read<String>('id'),
+          day: r.read<String>('day'),
+          cat: r.read<String>('category_id'),
+          due: r.readNullable<String>('due_date'),
+        ),
+    ];
+  }
+
+  Future<void> _putArchived(ArchivedDone a) => customStatement(
+    'INSERT OR REPLACE INTO "done_archive" ("id", "day", "category_id", "due_date") VALUES (?, ?, ?, ?)',
+    [a.id, a.day, a.cat, a.due],
+  );
+
+  Future<void> putArchived(Iterable<ArchivedDone> entries) => transaction(() async {
+    for (final a in entries) {
+      await _putArchived(a);
+    }
+  });
+
+  Future<void> removeArchived(String id) => customStatement('DELETE FROM "done_archive" WHERE "id" = ?', [id]);
+
+  /// Aufgaben, deren eigene Zeile oder eine ihrer Unteraufgaben noch auf den Upload wartet.
+  Future<Set<String>> dirtyTaskIds() async {
+    final rows = await customSelect(
+      'SELECT "id" AS id FROM "tasks" WHERE dirty = 1 UNION SELECT "task_id" AS id FROM "subtasks" WHERE dirty = 1',
+    ).get();
+    return {for (final r in rows) r.read<String>('id')};
+  }
+
+  /// Nimmt Aufgaben samt Unteraufgaben vom Gerät und lässt nur den Merkzettel da – ein Commit
+  /// für alle. Das ist kein Löschen: Es wird nichts hochgeladen, die Zeilen in Supabase
+  /// bleiben, wie sie sind. Was (wieder) auf den Upload wartet, bleibt liegen.
+  Future<void> moveToArchive(Iterable<ArchivedDone> entries) => transaction(() async {
+    for (final a in entries) {
+      await _putArchived(a);
+      await customStatement('DELETE FROM "tasks" WHERE "id" = ? AND dirty = 0', [a.id]);
+      await customStatement('DELETE FROM "subtasks" WHERE "task_id" = ? AND dirty = 0', [a.id]);
     }
   });
 }
