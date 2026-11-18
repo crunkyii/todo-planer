@@ -216,6 +216,14 @@ abstract final class Sizes {
 
   /// Ab dieser Fensterbreite (PC, Tablet quer) steht die Navigation links statt unten.
   static const double wideWidth = 900;
+
+  /// Breites Layout nur, wenn das Fenster auch hoch genug ist – ein Handy im Querformat
+  /// (z. B. 915×412) bleibt beim Handy-Layout.
+  static const double wideMinHeight = 600;
+  static bool isWide(Size window) => window.width >= wideWidth && window.height >= wideMinHeight;
+
+  /// Der Kalender zeigt den Tag erst neben dem Monat, wenn dem Monat genug Platz bleibt.
+  static const double calTwoPane = 780;
   static const double sideNavW = 236;
 
   /// Unterer Rand der Listen im breiten Layout (dort liegt keine Leiste über dem Inhalt).

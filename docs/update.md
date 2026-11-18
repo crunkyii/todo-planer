@@ -2,7 +2,7 @@
 
 ## Installer
 
-`todo-planer-<Version>-setup.exe` installiert die App nur für den angemeldeten Benutzer nach `%LOCALAPPDATA%\Programs\ToDo Planer` – ohne Admin-Rechte und ohne UAC-Abfrage. Er legt einen Eintrag im Startmenü an (auf Wunsch auch am Desktop) und lässt sich über „Apps“ in den Windows-Einstellungen wieder entfernen. Die Aufgaben liegen nicht im Programmordner; ein Update oder eine Deinstallation löscht sie nicht.
+`todo-planer-<Version>-setup.exe` installiert die App nur für den angemeldeten Benutzer nach `%LOCALAPPDATA%\Programs\ToDo Planer` – ohne Admin-Rechte und ohne UAC-Abfrage (wer schon eine ältere Version installiert hat, behält deren Ordner). Er legt einen Eintrag im Startmenü an (auf Wunsch auch am Desktop) und lässt sich über „Apps“ in den Windows-Einstellungen wieder entfernen. Die Aufgaben liegen nicht im Programmordner; ein Update oder eine Deinstallation löscht sie nicht.
 
 ## So läuft ein Update ab
 

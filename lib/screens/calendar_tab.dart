@@ -69,101 +69,105 @@ class CalendarTab extends StatelessWidget {
 
         void move(int dir) => ui.set((s) => s.calMonth = DateTime(m.year, m.month + dir));
 
-        final wide = ShellLayout.wideOf(context);
-        final month = [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 8, 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    liveRegion: true,
-                    child: Text(
-                      f.monthYear(m),
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+        return LayoutBuilder(
+          builder: (context, box) {
+            final wide = ShellLayout.wideOf(context) && box.maxWidth >= Sizes.calTwoPane;
+            final month = [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 8, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        liveRegion: true,
+                        child: Text(
+                          f.monthYear(m),
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+                        ),
+                      ),
                     ),
-                  ),
+                    IconBtn(Ic.left, label: l.prevMonth, onTap: () => move(-1)),
+                    IconBtn(Ic.right, label: l.nextMonth, onTap: () => move(1)),
+                  ],
                 ),
-                IconBtn(Ic.left, label: l.prevMonth, onTap: () => move(-1)),
-                IconBtn(Ic.right, label: l.nextMonth, onTap: () => move(1)),
-              ],
-            ),
-          ),
-          // Links/rechts wischen blättert den Monat (wie die Pfeile oben).
-          SwipeStep(
-            onMove: move,
-            child: MonthGrid(
-              month: m,
-              cell: (d, other) {
-                final isSel = sameDay(d, sel);
-                final holiday = holidayOn(d);
-                return DayCell(
-                  day: d,
-                  other: other,
-                  selected: isSel,
-                  holiday: holiday != null,
-                  semanticLabel: holiday == null ? f.dayMonth(d) : '${f.dayMonth(d)}, ${holidayName(l, holiday)}',
-                  below: dots(d, isSel),
-                  onTap: () => ui.set((s) {
-                    s.calSel = d;
-                    if (d.month != m.month || d.year != m.year) s.calMonth = DateTime(d.year, d.month);
-                  }),
-                );
-              },
-            ),
-          ),
-        ];
-        final day = [
-          Container(
-            margin: EdgeInsets.only(top: wide ? 0 : 12),
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
-            decoration: BoxDecoration(
-              // Schmal trennt die Linie Monat und Tag; breit stehen sie nebeneinander.
-              border: wide ? null : Border(top: BorderSide(color: tok.lineSoft)),
-            ),
-            child: Column(
+              ),
+              // Links/rechts wischen blättert den Monat (wie die Pfeile oben).
+              SwipeStep(
+                onMove: move,
+                child: MonthGrid(
+                  month: m,
+                  cell: (d, other) {
+                    final isSel = sameDay(d, sel);
+                    final holiday = holidayOn(d);
+                    return DayCell(
+                      day: d,
+                      other: other,
+                      selected: isSel,
+                      holiday: holiday != null,
+                      semanticLabel: holiday == null ? f.dayMonth(d) : '${f.dayMonth(d)}, ${holidayName(l, holiday)}',
+                      below: dots(d, isSel),
+                      onTap: () => ui.set((s) {
+                        s.calSel = d;
+                        if (d.month != m.month || d.year != m.year) s.calMonth = DateTime(d.year, d.month);
+                      }),
+                    );
+                  },
+                ),
+              ),
+            ];
+            final day = [
+              Container(
+                margin: EdgeInsets.only(top: wide ? 0 : 12),
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                decoration: BoxDecoration(
+                  // Schmal trennt die Linie Monat und Tag; breit stehen sie nebeneinander.
+                  border: wide ? null : Border(top: BorderSide(color: tok.lineSoft)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        f.longDate(sel),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: tok.text),
+                      ),
+                    ),
+                    if (selHoliday != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          l.holidayLine(holidayName(l, selHoliday)),
+                          style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: tok.err),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (selTasks.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                  child: Text(l.nothingDue, style: TextStyle(fontSize: 14, color: tok.sub)),
+                )
+              else
+                for (final t in selTasks) TaskCard(key: ValueKey(t.id), task: t, ui: ui),
+            ];
+            final bottom = EdgeInsets.only(bottom: ShellLayout.bottomOf(context));
+            if (!wide) return ListView(padding: bottom, children: [...month, ...day]);
+            return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    f.longDate(sel),
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: tok.text),
-                  ),
+                Expanded(
+                  child: ListView(padding: bottom, children: month),
                 ),
-                if (selHoliday != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      l.holidayLine(holidayName(l, selHoliday)),
-                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: tok.err),
-                    ),
-                  ),
+                SizedBox(
+                  width: Sizes.calSide,
+                  child: ListView(padding: bottom, children: day),
+                ),
               ],
-            ),
-          ),
-          if (selTasks.isEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-              child: Text(l.nothingDue, style: TextStyle(fontSize: 14, color: tok.sub)),
-            )
-          else
-            for (final t in selTasks) TaskCard(key: ValueKey(t.id), task: t, ui: ui),
-        ];
-        final bottom = EdgeInsets.only(bottom: ShellLayout.bottomOf(context));
-        if (!wide) return ListView(padding: bottom, children: [...month, ...day]);
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ListView(padding: bottom, children: month),
-            ),
-            SizedBox(
-              width: Sizes.calSide,
-              child: ListView(padding: bottom, children: day),
-            ),
-          ],
+            );
+          },
         );
       },
     );

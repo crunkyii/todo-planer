@@ -74,7 +74,7 @@ class AppSheetRoute<T> extends PopupRoute<T> {
     // Der Abstand für die Tastatur liegt AUSSEN: Innerhalb der Höhenbegrenzung würde er dem
     // Sheet den Platz wegnehmen (auf kleinen Handys bliebe Höhe 0 – das Sheet wäre unsichtbar).
     // Am PC (breites Fenster) steht das Formular als Fenster in der Mitte statt unten am Rand.
-    final wide = mq.size.width >= Sizes.wideWidth;
+    final wide = Sizes.isWide(mq.size);
     return Padding(
       padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
       child: Align(

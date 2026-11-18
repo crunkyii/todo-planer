@@ -1344,6 +1344,18 @@ void main() {
       final task = tester.getRect(find.text('Heute fällig'));
       expect(task.left, greaterThan(grid.right - 1));
       expect(task.top, lessThan(grid.bottom));
+      // Knapp über der Umschalt-Breite wäre der Monat zu eng: Dann steht der Tag wieder darunter.
+      tester.view.physicalSize = const Size(920, 705);
+      await tester.pumpAndSettle();
+      expect(tester.getRect(find.text('Heute fällig')).top, greaterThan(tester.getRect(find.byType(MonthGrid)).bottom));
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Handy im Querformat bleibt beim Handy-Layout', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app, size: const Size(915, 412));
+      expect(tester.getRect(find.bySemanticsLabel(l.navCalendar).last).top, greaterThan(412 / 2));
       await finishApp(tester, app);
     });
 

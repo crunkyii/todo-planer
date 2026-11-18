@@ -341,6 +341,22 @@ void main() {
       expect(r.lane, {'schule': 0, 'training': 0, 'lernen': 1});
       expect(layoutLanes([]).lane, isEmpty);
     });
+
+    test('Spuren: direkt anschließend, verschachtelt, gleicher Beginn', () {
+      // Endet einer genau dann, wenn der nächste beginnt, überschneiden sie sich nicht.
+      expect(layoutLanes([_block('a', 480, 540), _block('b', 540, 600)]).lanes, {'a': 1, 'b': 1});
+      // Ein langer Block mit zwei kurzen darin: alle drei gehören zusammen.
+      final nested = layoutLanes([_block('lang', 480, 720), _block('k1', 500, 540), _block('k2', 600, 660)]);
+      expect(nested.lanes, {'lang': 2, 'k1': 2, 'k2': 2});
+      expect(nested.lane, {'lang': 0, 'k1': 1, 'k2': 1});
+      final same = layoutLanes([
+        _block('x', 480, 540),
+        _block('y', 480, 540),
+        _block('z', 480, 540),
+        _block('spät', 600, 660),
+      ]);
+      expect(same.lanes, {'x': 3, 'y': 3, 'z': 3, 'spät': 1});
+    });
   });
 
   test('Erinnerungen nur für offene Aufgaben mit Uhrzeit in der Zukunft', () {
