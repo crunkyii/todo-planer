@@ -19,6 +19,7 @@ class Pressable extends StatefulWidget {
     this.toggled,
     this.glow = true,
     this.pressScale = 0.92,
+    this.overshoot = 0.045,
     this.radius = const BorderRadius.all(Radius.circular(999)),
     this.tooltip,
     this.excludeChildSemantics = false,
@@ -33,6 +34,10 @@ class Pressable extends StatefulWidget {
 
   /// 0.92 für Knöpfe, 0.97 für ganze Zeilen/Karten.
   final double pressScale;
+
+  /// Wie weit der Inhalt beim Loslassen über seine Größe hinausfedert. Breite Zeilen brauchen
+  /// weniger: Dieselben Prozent verschieben dort die Schrift um viel mehr Pixel.
+  final double overshoot;
   final BorderRadius radius;
   final String? tooltip;
   final bool excludeChildSemantics;
@@ -88,8 +93,11 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
     }
     // 0 % → 0.92, 40 % → 1.045, 70 % → 0.99, 100 % → 1 (Keyframes `release` aus dem CSS)
     _scale
-        .animateTo(1.045, duration: Motion.releaseDur * 0.4, curve: Motion.release)
-        .then((_) => _scale.animateTo(0.99, duration: Motion.releaseDur * 0.3, curve: Curves.easeInOut))
+        .animateTo(1 + widget.overshoot, duration: Motion.releaseDur * 0.4, curve: Motion.release)
+        .then(
+          (_) =>
+              _scale.animateTo(1 - widget.overshoot * 0.22, duration: Motion.releaseDur * 0.3, curve: Curves.easeInOut),
+        )
         .then((_) => _scale.animateTo(1, duration: Motion.releaseDur * 0.3, curve: Curves.easeOut));
   }
 

@@ -345,7 +345,9 @@ class _SideNav extends StatelessWidget {
                                     onTap: () => ui.goTab(t.$1),
                                     semanticLabel: t.$4,
                                     selected: ui.tab == t.$1,
-                                    pressScale: 0.97,
+                                    // Die Zeile ist breit: nur ein Hauch Feder, sonst hüpft die Schrift.
+                                    pressScale: 0.985,
+                                    overshoot: 0.01,
                                     radius: BorderRadius.circular(Sizes.rNavInd),
                                     excludeChildSemantics: true,
                                     child: Padding(
