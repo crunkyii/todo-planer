@@ -86,6 +86,19 @@ Section sectionOf(Task t, int offset, {DateTime? now}) {
   return Section.later;
 }
 
+/// Ob eine Aufgabe in diesem Abschnitt in der Liste steht – laut „In Aufgaben zeigen“ ihrer
+/// Kategorie. Überfällige und erledigte zählen wie „Heute“: Die sieht man, außer bei „Nie“.
+bool shownInList(ListFrom from, Section s) {
+  if (from == ListFrom.never) return false;
+  final last = switch (from) {
+    ListFrom.always || ListFrom.never => Section.later,
+    ListFrom.week => Section.week,
+    ListFrom.tomorrow => Section.tomorrow,
+    ListFrom.today => Section.today,
+  };
+  return s == Section.done || s.index <= last.index;
+}
+
 /// Sortierung nach Erledigen-Tag, dann nach Fälligkeit.
 int byDo(Task a, Task b, int Function(Task) offsetOf) {
   final c = doDate(a, offsetOf(a)).compareTo(doDate(b, offsetOf(b)));

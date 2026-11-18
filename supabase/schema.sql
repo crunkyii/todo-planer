@@ -119,6 +119,10 @@ alter table public.week_blocks add  constraint week_blocks_name_check check (cha
 alter table public.tasks add column if not exists notes text not null default '';
 alter table public.tasks drop constraint if exists tasks_notes_check;
 alter table public.tasks add  constraint tasks_notes_check check (char_length(notes) <= 20000);
+alter table public.categories add column if not exists list_from text not null default 'always';
+alter table public.categories drop constraint if exists categories_list_from_check;
+alter table public.categories add  constraint categories_list_from_check
+  check (list_from in ('always', 'week', 'tomorrow', 'today', 'never'));
 
 -- 2) Sync-Regeln: neuester Stand gewinnt, synced_at setzt der Server ------------
 

@@ -482,18 +482,41 @@ class Store extends ChangeNotifier {
 
   // Kategorien
 
-  void addCategory({required String name, required String color, required int offset}) {
+  void addCategory({
+    required String name,
+    required String color,
+    required int offset,
+    ListFrom listFrom = ListFrom.always,
+  }) {
     final pos = _cats.values.fold<int>(-1, (m, c) => c.position > m ? c.position : m) + 1;
-    _put(TaskCategory(id: newId(), name: name, color: color, offset: offset, position: pos, updatedAt: nowUtc()));
+    _put(
+      TaskCategory(
+        id: newId(),
+        name: name,
+        color: color,
+        offset: offset,
+        listFrom: listFrom,
+        position: pos,
+        updatedAt: nowUtc(),
+      ),
+    );
     _changed();
   }
 
-  void updateCategory(TaskCategory c, {required String name, required String color, required int offset}) {
+  /// [listFrom] null = unverändert.
+  void updateCategory(
+    TaskCategory c, {
+    required String name,
+    required String color,
+    required int offset,
+    ListFrom? listFrom,
+  }) {
     _put(
       c
         ..name = name
         ..color = color
-        ..offset = offset,
+        ..offset = offset
+        ..listFrom = listFrom ?? c.listFrom,
     );
     _changed();
   }

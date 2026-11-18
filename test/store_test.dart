@@ -63,6 +63,30 @@ void main() {
     expect(reloaded.taskById(t.id)!.notes, 'Folien 1–5\nQuellen am Ende');
   });
 
+  test('In Aufgaben zeigen: wird gespeichert, bleibt beim Bearbeiten ohne Angabe und übersteht den Neustart', () async {
+    store.addCategory(name: 'Geburtstag', color: '#AABBCC', offset: 0, listFrom: ListFrom.week);
+    final c = store.categories.last;
+    store.updateCategory(c, name: 'Geburtstage', color: c.color, offset: 0);
+    expect(c.listFrom, ListFrom.week);
+    await store.refreshPending();
+    final reloaded = Store(store.db);
+    await reloaded.load();
+    expect(reloaded.categoryById(c.id)!.listFrom, ListFrom.week);
+  });
+
+  test('In Aufgaben zeigen: Zeile ohne oder mit unbekanntem Wert heißt „immer“', () async {
+    final c = store.categories.first;
+    final later = c.updatedAt.add(const Duration(minutes: 1)).toIso8601String();
+    await store.applyRemote(categoriesTable, [
+      {...c.toJson(), 'updated_at': later}..remove('list_from'),
+    ]);
+    expect(store.categoryById(c.id)!.listFrom, ListFrom.always);
+    await store.applyRemote(categoriesTable, [
+      {...c.toJson(), 'updated_at': c.updatedAt.add(const Duration(minutes: 2)).toIso8601String(), 'list_from': 'bald'},
+    ]);
+    expect(store.categoryById(c.id)!.listFrom, ListFrom.always);
+  });
+
   test('Notiz: Zeile von einem Server ohne Spalte „notes“ ergibt eine leere Notiz', () async {
     final t = add('alt');
     final row = {...t.toJson(), 'updated_at': t.updatedAt.add(const Duration(minutes: 1)).toIso8601String()}

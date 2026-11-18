@@ -31,6 +31,8 @@ const categoriesTable = TableSpec(
     'name': 'TEXT NOT NULL',
     'color': 'TEXT NOT NULL',
     'offset_days': 'INTEGER NOT NULL',
+    // Ohne NOT NULL, damit `ALTER TABLE` bei alten Datenbanken geht; leer heißt „immer“.
+    'list_from': 'TEXT',
     'position': 'INTEGER NOT NULL',
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
@@ -126,9 +128,9 @@ class LocalDb extends GeneratedDatabase {
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
 
   /// Bei jeder Änderung an den Spalten um eins erhöhen und unten in `onUpgrade` nachziehen.
-  /// 2: `tasks.notes`.
+  /// 2: `tasks.notes` · 3: `categories.list_from`.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -142,9 +144,17 @@ class LocalDb extends GeneratedDatabase {
       }
     },
     onUpgrade: (m, from, to) async {
-      if (from < 2) await customStatement('ALTER TABLE "tasks" ADD COLUMN "notes" TEXT');
+      if (from < 2) await _addColumn('tasks', 'notes', 'TEXT');
+      if (from < 3) await _addColumn('categories', 'list_from', 'TEXT');
     },
   );
+
+  /// Spalte anlegen, falls es sie noch nicht gibt (ein abgebrochenes Update kann sie schon haben).
+  Future<void> _addColumn(String table, String column, String type) async {
+    final cols = await customSelect('PRAGMA table_info("$table")').get();
+    if (cols.any((c) => c.data['name'] == column)) return;
+    await customStatement('ALTER TABLE "$table" ADD COLUMN "$column" $type');
+  }
 
   static Object? _toSql(Object? v) => v is bool ? (v ? 1 : 0) : v;
 

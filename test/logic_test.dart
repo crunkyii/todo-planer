@@ -165,6 +165,26 @@ void main() {
       expect(sectionOf(_task('e', DateTime(2026, 11, 23)), 0, now: justAfter), Section.today);
     });
 
+    test('In Aufgaben zeigen: ab welchem Abschnitt, Überfällige und Erledigte wie „Heute“', () {
+      bool shows(ListFrom f, Section s) => shownInList(f, s);
+      expect(Section.values.where((s) => shows(ListFrom.always, s)), Section.values);
+      expect(Section.values.where((s) => shows(ListFrom.never, s)), isEmpty);
+      expect(Section.values.where((s) => shows(ListFrom.week, s)), [
+        Section.overdue,
+        Section.today,
+        Section.tomorrow,
+        Section.week,
+        Section.done,
+      ]);
+      expect(Section.values.where((s) => shows(ListFrom.tomorrow, s)), [
+        Section.overdue,
+        Section.today,
+        Section.tomorrow,
+        Section.done,
+      ]);
+      expect(Section.values.where((s) => shows(ListFrom.today, s)), [Section.overdue, Section.today, Section.done]);
+    });
+
     test('Vorlauf „1 Woche vorher“ über den Monatswechsel', () {
       final t = _task('Test', DateTime(2026, 12, 3));
       expect(doDate(t, 7), DateTime(2026, 11, 26));

@@ -25,6 +25,10 @@ DateTime _t(Object? v) => DateTime.parse(v as String).toUtc();
 DateTime? _tn(Object? v) => v == null ? null : _t(v);
 String _ts(DateTime d) => d.toUtc().toIso8601String();
 
+/// Ab welchem Abschnitt der Aufgaben-Liste die Aufgaben einer Kategorie zu sehen sind.
+/// Die Namen stehen so in der Datenbank (`categories.list_from`) – nicht umbenennen.
+enum ListFrom { always, week, tomorrow, today, never }
+
 class TaskCategory {
   TaskCategory({
     required this.id,
@@ -33,6 +37,7 @@ class TaskCategory {
     required this.offset,
     required this.position,
     required this.updatedAt,
+    this.listFrom = ListFrom.always,
     this.deleted = false,
   });
 
@@ -42,6 +47,9 @@ class TaskCategory {
 
   /// Vorlauf in Tagen: so viele Tage vor der Fälligkeit erscheint die Aufgabe.
   int offset;
+
+  /// z. B. Geburtstage erst ab „Diese Woche“ zeigen, damit die Liste nicht so voll ist.
+  ListFrom listFrom;
   int position;
   DateTime updatedAt;
   bool deleted;
@@ -51,6 +59,7 @@ class TaskCategory {
     'name': name,
     'color': color,
     'offset_days': offset,
+    'list_from': listFrom.name,
     'position': position,
     'updated_at': _ts(updatedAt),
     'deleted': deleted,
@@ -61,6 +70,8 @@ class TaskCategory {
     name: j['name'] as String,
     color: j['color'] as String,
     offset: (j['offset_days'] as num).toInt(),
+    // Fehlt (älterer Server/alte Zeile) oder unbekannt: immer zeigen.
+    listFrom: ListFrom.values.asNameMap()[j['list_from']] ?? ListFrom.always,
     position: (j['position'] as num).toInt(),
     updatedAt: _t(j['updated_at']),
     deleted: _b(j['deleted']),
