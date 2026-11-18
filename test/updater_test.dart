@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -23,8 +25,118 @@ Future<String> _signature(String version, List<int> bytes, {SimpleKeyPair? key})
   return base64Encode(sig.bytes);
 }
 
-Future<String> _manifestBody({String version = '1.1.0', String url = _installerUrl, String? signature}) async =>
-    jsonEncode({'version': version, 'url': url, 'signature': signature ?? await _signature(version, _installer)});
+const _apkUrl = '${releaseDownloadBase}v1.1.0/todo-planer-1.1.0.apk';
+final _apk = utf8.encode('Das ist die APK');
+
+/// [android] `null` = alte Form ohne APK; sonst der Eintrag (fehlende Felder werden richtig ergänzt).
+Future<String> _manifestBody({
+  String version = '1.1.0',
+  String url = _installerUrl,
+  String? signature,
+  Map<String, Object?>? android,
+}) async => jsonEncode({
+  'version': version,
+  'url': url,
+  'signature': signature ?? await _signature(version, _installer),
+  if (android != null) 'android': {'url': _apkUrl, 'signature': await _signature(version, _apk), ...android},
+});
+
+/// Updater wie am Handy: Das Netz ist falsch, statt Android antwortet [_FakeAndroid].
+Future<({Updater updater, _FakeAndroid android, List<Uri> requests})> _makeAndroid({
+  String? manifest,
+  List<int>? apk,
+  int apkStatus = 200,
+  String package = releaseAppId,
+  String? cert = releaseCertSha256,
+  bool canInstall = true,
+  bool grants = false,
+  bool confirms = false,
+}) async {
+  final android = _FakeAndroid(
+    package: package,
+    cert: cert,
+    canInstall: canInstall,
+    grants: grants,
+    confirms: confirms,
+  );
+  final requests = <Uri>[];
+  final platform = AndroidUpdate(android.channel);
+  // So entscheidet die App beim Start, ob sie sich selbst aktualisiert.
+  final device = await Updater.forAndroid('1.0.0', platform);
+  final client = MockClient((req) async {
+    requests.add(req.url);
+    if (req.url == latestManifestUrl) return http.Response(manifest ?? '', manifest == null ? 404 : 200);
+    return http.Response.bytes(apk ?? _apk, apkStatus);
+  });
+  final updater = Updater(
+    currentVersion: device.currentVersion,
+    supported: device.supported,
+    platform: platform,
+    client: client,
+    publicKey: _publicKey,
+  );
+  return (updater: updater, android: android, requests: requests);
+}
+
+/// Steht für `AppUpdate.kt`: beantwortet die Aufrufe der App und merkt sich, was geöffnet wurde.
+class _FakeAndroid {
+  _FakeAndroid({
+    this.package = releaseAppId,
+    this.cert = releaseCertSha256,
+    this.canInstall = true,
+    this.grants = false,
+    this.confirms = false,
+  }) {
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, _answer);
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(channel, null);
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+  }
+
+  final channel = const MethodChannel('todo_liste/update');
+  final dir = Directory.systemTemp.createTempSync('updater-android-');
+
+  final String package;
+  final String? cert;
+
+  /// Hat die App die Erlaubnis „Unbekannte Apps installieren“?
+  bool canInstall;
+
+  /// Schaltet der Nutzer die Erlaubnis ein, wenn Android ihn danach fragt?
+  final bool grants;
+
+  /// Tippt der Nutzer im Installer auf „Aktualisieren“? Dann ersetzt Android die App – es kommt nie
+  /// eine Antwort. Sonst hat er abgebrochen.
+  final bool confirms;
+
+  var permissionAsked = 0;
+
+  /// Was dem Installer übergeben wurde: Pfad und Inhalt der Datei in diesem Moment.
+  final opened = <({String path, List<int> bytes})>[];
+  final installerOpen = Completer<void>();
+
+  Future<Object?> _answer(MethodCall call) async {
+    switch (call.method) {
+      case 'info':
+        return {'package': package, 'cert': cert};
+      case 'dir':
+        return dir.path;
+      case 'canInstall':
+        return canInstall;
+      case 'requestPermission':
+        permissionAsked++;
+        return canInstall = grants;
+      case 'install':
+        final path = call.arguments as String;
+        opened.add((path: path, bytes: File(path).readAsBytesSync()));
+        if (!installerOpen.isCompleted) installerOpen.complete();
+        return confirms ? Completer<Object?>().future : false;
+    }
+    throw MissingPluginException();
+  }
+}
 
 /// Updater mit falschem Netz: [manifest] ist die Antwort auf `latest.json`, [installer] die Datei.
 ({Updater updater, List<String> launched, List<Uri> requests}) _make({
@@ -56,6 +168,8 @@ Future<String> _manifestBody({String version = '1.1.0', String url = _installerU
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUpAll(() async {
     _key = await Ed25519().newKeyPair();
     _publicKey = base64Encode((await _key.extractPublicKey()).bytes);
@@ -114,6 +228,52 @@ void main() {
         jsonEncode({'version': '1.1.0', 'url': _installerUrl, 'signature': 'kein base64!'}),
       ]) {
         expect(() => UpdateManifest.parse(body), throwsFormatException, reason: body);
+      }
+    });
+
+    test('alte Form ohne android bleibt gültig', () {
+      final m = UpdateManifest.parse(jsonEncode({'version': '1.1.0', 'url': _installerUrl, 'signature': sig}));
+      expect(m.windows.url.toString(), _installerUrl);
+      expect(m.android, isNull);
+    });
+
+    test('mit android: Installer und APK stehen nebeneinander', () {
+      final apkSig = base64Encode(List.filled(64, 2));
+      final m = UpdateManifest.parse(
+        jsonEncode({
+          'version': '1.1.0',
+          'url': _installerUrl,
+          'signature': sig,
+          'android': {'url': _apkUrl, 'signature': apkSig},
+        }),
+      );
+      expect(m.windows.url.toString(), _installerUrl);
+      expect(m.windows.signature, base64Decode(sig));
+      expect(m.android?.url.toString(), _apkUrl);
+      expect(m.android?.signature, base64Decode(apkSig));
+    });
+
+    test('android-Eintrag: fremde Adresse, fehlende Felder und falsche Typen fallen durch', () {
+      for (final android in <Object?>[
+        'apk',
+        <Object?>[],
+        <String, Object?>{},
+        {'url': _apkUrl},
+        {'url': _apkUrl, 'signature': 'AAAA'},
+        {'url': 'https://evil.test/todo.apk', 'signature': sig},
+        {'url': 'https://github.com/crunkyii/todo-planer-evil/releases/download/v1/todo.apk', 'signature': sig},
+        {
+          'url': '$releaseDownloadBase%2e%2e/%2e%2e/%2e%2e/%2e%2e/evil/repo/releases/download/v1/a.apk',
+          'signature': sig,
+        },
+      ]) {
+        expect(
+          () => UpdateManifest.parse(
+            jsonEncode({'version': '1.1.0', 'url': _installerUrl, 'signature': sig, 'android': android}),
+          ),
+          throwsFormatException,
+          reason: '$android',
+        );
       }
     });
   });
@@ -244,6 +404,159 @@ void main() {
 
     test('der eingebaute öffentliche Schlüssel ist ein Ed25519-Schlüssel', () {
       expect(base64Decode(updatePublicKey), hasLength(32));
+    });
+
+    test('latest.json mit android: Windows lädt weiter den Installer', () async {
+      final t = _make(manifest: await _manifestBody(android: {}));
+      await t.updater.check();
+      await t.updater.install();
+      expect(t.updater.state, UpdateState.installing);
+      expect(t.updater.asksUser, isFalse);
+      expect(t.requests.last.toString(), _installerUrl);
+      expect(File(t.launched.single).readAsBytesSync(), _installer);
+    });
+
+    test('Windows nimmt die APK nicht als Installer an', () async {
+      // Die Signatur oben gilt für den Installer – kommt stattdessen die APK, fällt sie durch.
+      final t = _make(
+        manifest: await _manifestBody(android: {}),
+        installer: _apk,
+      );
+      await t.updater.check();
+      await t.updater.install();
+      expect(t.updater.state, UpdateState.failed);
+      expect(t.launched, isEmpty);
+    });
+  });
+
+  group('Android', () {
+    test('findet die neuere Version, lädt die APK und öffnet genau diese Datei im Installer', () async {
+      final t = await _makeAndroid(manifest: await _manifestBody(android: {}), confirms: true);
+      await t.updater.check();
+      expect(t.updater.state, UpdateState.available);
+      expect(t.updater.found?.version, '1.1.0');
+      unawaited(t.updater.install());
+      await t.android.installerOpen.future;
+      expect(t.updater.state, UpdateState.installing);
+      expect(t.updater.asksUser, isTrue);
+      expect(t.requests.last.toString(), _apkUrl);
+      final opened = t.android.opened.single;
+      expect(opened.bytes, _apk);
+      // Die Datei liegt direkt im Update-Ordner der App – nur den gibt der FileProvider frei.
+      expect(File(opened.path).parent.path, t.android.dir.path);
+      expect(opened.path, endsWith('todo-planer-1.1.0.apk'));
+      expect(t.android.permissionAsked, 0);
+    });
+
+    test('Release ohne APK (alte latest.json): kein Update, nichts geladen', () async {
+      final t = await _makeAndroid(manifest: await _manifestBody());
+      await t.updater.check();
+      expect(t.updater.state, UpdateState.upToDate);
+      await t.updater.install();
+      expect(t.requests, [latestManifestUrl]);
+      expect(t.android.opened, isEmpty);
+    });
+
+    test('veränderte APK, fremder Schlüssel, alte APK unter neuer Nummer: Installer bleibt zu', () async {
+      final other = await Ed25519().newKeyPair();
+      final cases = {
+        'veränderte APK': (apk: utf8.encode('Das ist eine andere APK'), signature: null),
+        'fremder Schlüssel': (apk: null, signature: await _signature('1.1.0', _apk, key: other)),
+        // Die Signatur gilt für 1.0.5 – in latest.json steht aber 1.1.0.
+        'alte APK unter neuer Nummer': (apk: null, signature: await _signature('1.0.5', _apk)),
+        // Echt signiert, aber für die andere Datei des Releases.
+        'Signatur des Windows-Installers': (apk: null, signature: await _signature('1.1.0', _installer)),
+      };
+      for (final MapEntry(key: what, value: c) in cases.entries) {
+        final t = await _makeAndroid(
+          manifest: await _manifestBody(android: {'signature': ?c.signature}),
+          apk: c.apk,
+        );
+        await t.updater.check();
+        await t.updater.install();
+        expect(t.updater.state, UpdateState.failed, reason: what);
+        expect(t.android.opened, isEmpty, reason: what);
+        // Die ungeprüfte Datei bleibt nicht liegen.
+        expect(t.android.dir.listSync(), isEmpty, reason: what);
+      }
+    });
+
+    test('fehlende Erlaubnis: Die App fragt einmal und macht nach dem Einschalten weiter', () async {
+      final t = await _makeAndroid(manifest: await _manifestBody(android: {}), canInstall: false, grants: true);
+      await t.updater.check();
+      await t.updater.install();
+      expect(t.android.permissionAsked, 1);
+      expect(t.android.opened.single.bytes, _apk);
+    });
+
+    test('Erlaubnis abgelehnt: nichts geladen, keine Fehlermeldung, später geht es wieder', () async {
+      final t = await _makeAndroid(manifest: await _manifestBody(android: {}), canInstall: false);
+      await t.updater.check();
+      await t.updater.install();
+      expect(t.updater.state, UpdateState.available);
+      expect(t.requests, [latestManifestUrl]);
+      expect(t.android.opened, isEmpty);
+      // Beim nächsten Antippen fragt Android wieder.
+      await t.updater.install();
+      expect(t.android.permissionAsked, 2);
+      expect(t.updater.state, UpdateState.available);
+    });
+
+    test('Abbruch im Installer: Update steht weiter bereit, die APK ist weg', () async {
+      final t = await _makeAndroid(manifest: await _manifestBody(android: {}));
+      await t.updater.check();
+      await t.updater.install();
+      expect(t.android.opened, hasLength(1));
+      expect(t.updater.state, UpdateState.available);
+      expect(t.android.dir.listSync(), isEmpty);
+      await t.updater.install();
+      expect(t.android.opened, hasLength(2));
+    });
+
+    test('offline: Prüfung beim Start bleibt still, Download-Fehler öffnet nichts', () async {
+      final offline = await _makeAndroid();
+      await offline.updater.check(silent: true);
+      expect(offline.updater.state, UpdateState.idle);
+      await offline.updater.check();
+      expect(offline.updater.state, UpdateState.failed);
+
+      final t = await _makeAndroid(manifest: await _manifestBody(android: {}), apkStatus: 503);
+      await t.updater.check();
+      await t.updater.install();
+      expect(t.updater.state, UpdateState.failed);
+      expect(t.android.opened, isEmpty);
+    });
+
+    test('nur die veröffentlichte App aktualisiert sich: Test-Kopie und selbst gebaute Apps nicht', () async {
+      Future<bool> supported({String package = releaseAppId, String? cert = releaseCertSha256}) async =>
+          (await _makeAndroid(package: package, cert: cert)).updater.supported;
+      expect(await supported(), isTrue);
+      expect(await supported(package: '$releaseAppId.debug'), isFalse);
+      expect(await supported(cert: 'ab' * 32), isFalse);
+      expect(await supported(cert: null), isFalse);
+    });
+
+    test('antwortet Android nicht, startet die App trotzdem – ohne Updates', () async {
+      const silent = MethodChannel('todo_liste/update-fehlt');
+      final updater = await Updater.forAndroid('1.0.0', const AndroidUpdate(silent));
+      expect(updater.supported, isFalse);
+    });
+
+    test('alte Downloads werden beim Start weggeräumt', () async {
+      final android = _FakeAndroid();
+      File('${android.dir.path}/todo-planer-0.9.0.apk').writeAsStringSync('alt');
+      await Updater.forAndroid('1.0.0', AndroidUpdate(android.channel));
+      expect(android.dir.listSync(), isEmpty);
+    });
+
+    test('die Test-Kopie fragt nicht bei GitHub nach', () async {
+      final t = await _makeAndroid(
+        manifest: await _manifestBody(android: {}),
+        package: '$releaseAppId.debug',
+      );
+      await t.updater.check();
+      expect(t.requests, isEmpty);
+      expect(t.updater.state, UpdateState.idle);
     });
   });
 }

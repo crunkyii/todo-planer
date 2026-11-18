@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 
 import 'dart:convert';
+import 'dart:io' show Directory;
 import 'dart:ui' show PointerDeviceKind, Tristate;
 
 import 'package:cryptography/cryptography.dart';
@@ -856,6 +857,76 @@ void main() {
           });
           await tester.pump();
           expect(find.text(l.updateFailed), findsOneWidget);
+        }
+        await finishApp(tester, app);
+      }
+    });
+
+    testWidgets('Updates am Handy: Zeile nur in der veröffentlichten App, nicht in der Test-Kopie', (tester) async {
+      final l = l10n('de');
+      const channel = MethodChannel('todo_liste/update');
+      final messenger = tester.binding.defaultBinaryMessenger;
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      for (final package in [releaseAppId, '$releaseAppId.debug']) {
+        final release = package == releaseAppId;
+        final dir = Directory.systemTemp.createTempSync('updater-ui-');
+        addTearDown(() => dir.deleteSync(recursive: true));
+        var installerOpened = 0;
+        // Steht für AppUpdate.kt; im Installer bricht der Nutzer ab.
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'install') installerOpened++;
+          return switch (call.method) {
+            'info' => {'package': package, 'cert': releaseCertSha256},
+            'dir' => dir.path,
+            'canInstall' => true,
+            _ => false,
+          };
+        });
+        final apk = utf8.encode('APK');
+        final updater = (await tester.runAsync(() async {
+          final key = await Ed25519().newKeyPair();
+          Future<String> sign(List<int> bytes) async => base64Encode(
+            (await Ed25519().sign(signedMessage('1.1.0', (await Sha256().hash(bytes)).bytes), keyPair: key)).bytes,
+          );
+          final manifest = jsonEncode({
+            'version': '1.1.0',
+            'url': '${releaseDownloadBase}v1.1.0/todo-planer-1.1.0-setup.exe',
+            'signature': await sign(utf8.encode('Installer')),
+            'android': {'url': '${releaseDownloadBase}v1.1.0/todo-planer-1.1.0.apk', 'signature': await sign(apk)},
+          });
+          final device = await Updater.forAndroid('1.0.0', const AndroidUpdate());
+          return Updater(
+            currentVersion: device.currentVersion,
+            supported: device.supported,
+            platform: const AndroidUpdate(),
+            publicKey: base64Encode((await key.extractPublicKey()).bytes),
+            client: MockClient(
+              (req) async =>
+                  req.url == latestManifestUrl ? http.Response(manifest, 200) : http.Response.bytes(apk, 200),
+            ),
+          );
+        }))!;
+        final app = await makeServices(updater: updater);
+        await tester.runAsync(updater.check);
+        await pumpApp(tester, app);
+        expect(find.text(l.updateAvailable('1.1.0')), release ? findsOneWidget : findsNothing);
+        await _tap(tester, find.bySemanticsLabel(l.settings));
+        await tester.scrollUntilVisible(find.text(l.exportData), 300, scrollable: find.byType(Scrollable).first);
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
+        await tester.pumpAndSettle();
+        expect(find.text(l.updates), release ? findsOneWidget : findsNothing);
+        expect(find.text(l.updateInstall), release ? findsOneWidget : findsNothing);
+        if (release) {
+          await tester.runAsync(() async {
+            await tester.tap(find.text(l.updateInstall));
+            while (installerOpened == 0 || updater.busy) {
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+            }
+          });
+          await tester.pump();
+          // Abgebrochen: keine Fehlermeldung, der Knopf ist wieder da.
+          expect(find.text(l.updateFailed), findsNothing);
+          expect(find.text(l.updateInstall), findsOneWidget);
         }
         await finishApp(tester, app);
       }
