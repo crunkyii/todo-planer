@@ -21,11 +21,11 @@ Eine Aufgaben-App für Handy (Android) und PC (Windows, Linux), gebaut mit Flutt
 - Für Linux: `clang cmake ninja-build pkg-config libgtk-3-dev`
 
 ```bash
-git clone <URL dieses Repositorys>
+git clone https://github.com/crunkyii/todo-planer.git
 ```
 
 ```bash
-cd TodoListe
+cd todo-planer
 ```
 
 ```bash
