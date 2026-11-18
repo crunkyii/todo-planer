@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto-Update: Der Installer darf nur die geladene APK im Cache der App lesen (AppUpdate.kt). -->
+<paths>
+    <cache-path name="updates" path="updates/" />
+</paths>

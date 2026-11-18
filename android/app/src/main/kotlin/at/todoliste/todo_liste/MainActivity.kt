@@ -1,6 +1,7 @@
 package at.todoliste.todo_liste
 
 import android.content.Intent
+import at.todoliste.todo_liste.update.AppUpdate
 import at.todoliste.todo_liste.widgets.HabitToggles
 import at.todoliste.todo_liste.widgets.Widgets
 import io.flutter.embedding.android.FlutterActivity
@@ -12,6 +13,9 @@ class MainActivity : FlutterActivity() {
     // Kanal zur Flutter-App für die Startbildschirm-Widgets (lib/services/home_widgets.dart).
     private var widgetChannel: MethodChannel? = null
     private var pendingAction: String? = null
+
+    // Auto-Update (lib/services/update_platform.dart).
+    private var appUpdate: AppUpdate? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -36,11 +40,20 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+        appUpdate = AppUpdate(this).also {
+            MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AppUpdate.CHANNEL).setMethodCallHandler(it)
+        }
+    }
+
+    // Rückkehr aus „Unbekannte Apps installieren“ oder aus dem Installer.
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (appUpdate?.onActivityResult(requestCode) != true) super.onActivityResult(requestCode, resultCode, data)
     }
 
     // App wird beendet: Der Kanal führt ins Leere, das Widget soll ihn nicht mehr benutzen.
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         widgetChannel = null
+        appUpdate = null
         if (running?.get() === this) running = null
         super.cleanUpFlutterEngine(flutterEngine)
     }

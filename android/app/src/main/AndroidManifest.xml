@@ -4,6 +4,8 @@
     <!-- Erinnerungen: anzeigen und nach einem Neustart neu planen -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Auto-Update: die geprüfte APK an den Installer des Systems übergeben -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application
         android:label="ToDo Planer"
         android:name="${applicationName}"
@@ -85,6 +87,14 @@
             android:name=".widgets.WidgetListService"
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
+        <!-- Auto-Update: gibt dem Installer Lesezugriff auf die geladene APK, sonst auf nichts -->
+        <provider
+            android:name=".update.UpdateFileProvider"
+            android:authorities="${applicationId}.update"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/update_paths" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
