@@ -13,7 +13,7 @@ void main() {
   group('jährliche Aufgaben erkennen', () {
     test('Geburtstag, Jahrestag & Co. – auch groß/klein und mit Vorsilbe', () {
       for (final t in [
-        "Peter's Geburtstag",
+        "Max Mustermann's Geburtstag",
         'geburtstag oma',
         'Kindergeburtstag',
         'Hochzeitstag',
@@ -34,7 +34,7 @@ void main() {
     });
 
     test('Stelle des Worts für die Hervorhebung', () {
-      const title = "Peter's Geburtstag feiern";
+      const title = "Max Mustermann's Geburtstag feiern";
       final m = yearlyMatch(title)!;
       expect(title.substring(m.start, m.end), 'Geburtstag');
       expect(yearlyMatch('Einkaufen'), isNull);
@@ -65,7 +65,7 @@ void main() {
     test('Geburtstag: erledigt → neue Aufgabe in einem Jahr, wieder offen → weg', () {
       final day = DateTime(2026, 11, 18);
       final t = store.addTask(
-        title: "Peter's Geburtstag",
+        title: "Max Mustermann's Geburtstag",
         categoryId: store.categories.first.id,
         dueDate: day,
         dueTime: 8 * 60,

@@ -48,17 +48,17 @@ void main() {
       final store = app.store;
       store.addCategory(name: 'Geburtstag', color: '#AABBCC', offset: 0, listFrom: ListFrom.week);
       final c = store.categories.last;
-      for (final (title, days) in [('Bald', 0), ('Peters Geburtstag', 20)]) {
+      for (final (title, days) in [('Bald', 0), ('Max Mustermanns Geburtstag', 20)]) {
         store.addTask(title: title, categoryId: c.id, dueDate: addDays(today(), days), dueTime: null, subs: const []);
       }
       await pumpApp(tester, app);
       expect(find.text('Bald'), findsOneWidget);
-      expect(find.text('Peters Geburtstag'), findsNothing);
+      expect(find.text('Max Mustermanns Geburtstag'), findsNothing);
       expect(find.text(l.hiddenByCategory(1)), findsOneWidget);
 
       // Der Chip der Kategorie zeigt alles.
       await _tap(tester, find.text(c.name).first);
-      expect(find.text('Peters Geburtstag'), findsOneWidget);
+      expect(find.text('Max Mustermanns Geburtstag'), findsOneWidget);
       expect(find.text(l.hiddenByCategory(1)), findsNothing);
       await _tap(tester, find.text(l.all).first);
 
@@ -66,7 +66,7 @@ void main() {
       await _tap(tester, find.text(l.search));
       await tester.enterText(find.byType(TextField).first, 'geburtstag');
       await tester.pumpAndSettle();
-      expect(find.text('Peters Geburtstag'), findsOneWidget);
+      expect(find.text('Max Mustermanns Geburtstag'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await finishApp(tester, app);
     });
@@ -921,7 +921,7 @@ void main() {
       await tester.enterText(find.byType(TextField).first, 'Einkaufen');
       await tester.pump();
       expect(find.text(l.yearlyHint), findsNothing);
-      await tester.enterText(find.byType(TextField).first, "Peter's Geburtstag");
+      await tester.enterText(find.byType(TextField).first, "Max Mustermann's Geburtstag");
       await tester.pump();
       expect(find.text(l.yearlyHint), findsOneWidget);
       await tester.testTextInput.receiveAction(TextInputAction.done);

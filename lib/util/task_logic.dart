@@ -25,7 +25,7 @@ final _yearlyRe = RegExp('\\p{L}*(?:${yearlyWords.join('|')})(?!\\p{L})', caseSe
   return m == null ? null : (start: m.start, end: m.end);
 }
 
-/// „Peters Geburtstag“, „Hochzeitstag“ … wiederholen sich jedes Jahr.
+/// „Max Mustermanns Geburtstag“, „Hochzeitstag“ … wiederholen sich jedes Jahr.
 bool isYearly(String title) => _yearlyRe.hasMatch(title);
 
 /// Der nächste Jahrestag von [due], der nicht vor [from] liegt – auch wenn man erst Jahre

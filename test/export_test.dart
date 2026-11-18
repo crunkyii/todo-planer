@@ -30,7 +30,7 @@ void main() {
     store.ensureDefaultCategories([(name: 'Termin', color: '#3D9BE9', offset: 0)]);
     final cat = store.categories.first.id;
     store.addTask(
-      title: "Peter's Geburtstag",
+      title: "Max Mustermann's Geburtstag",
       categoryId: cat,
       dueDate: DateTime(2026, 12, 3),
       dueTime: 8 * 60,
@@ -58,7 +58,7 @@ void main() {
     expect(tasks.rows.last.first, 'Einkaufen; Milch'); // erledigt steht hinten
     final birthday = tasks.rows.firstWhere((r) => r.first.contains('Geburtstag'));
     expect(birthday, [
-      "Peter's Geburtstag",
+      "Max Mustermann's Geburtstag",
       'Termin',
       '03.12.2026',
       '08:00',
@@ -79,7 +79,7 @@ void main() {
     final txt = exportTxt(buildExport(store, l, f));
     expect(txt, startsWith('Todo-Liste\r\nStand: 18.11.2026\r\n'));
     expect(txt, contains('AUFGABEN (3)'));
-    expect(txt, contains("- Peter's Geburtstag\r\n  Kategorie: Termin | Abgabe: 03.12.2026 | Uhrzeit: 08:00"));
+    expect(txt, contains("- Max Mustermann's Geburtstag\r\n  Kategorie: Termin | Abgabe: 03.12.2026 | Uhrzeit: 08:00"));
     expect(txt, contains('GEWOHNHEITEN (1)'));
   });
 
