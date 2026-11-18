@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,18 +16,6 @@ import 'harness.dart';
 Future<void> _tap(WidgetTester t, Finder f) async {
   await t.tap(f);
   await t.pumpAndSettle();
-}
-
-/// Verbindung, die der Test ein- und ausschalten kann.
-class FakeConnectivity implements Connectivity {
-  final _c = StreamController<List<ConnectivityResult>>.broadcast();
-  void set(bool online) => _c.add([online ? ConnectivityResult.wifi : ConnectivityResult.none]);
-
-  @override
-  Future<List<ConnectivityResult>> checkConnectivity() async => [ConnectivityResult.wifi];
-
-  @override
-  Stream<List<ConnectivityResult>> get onConnectivityChanged => _c.stream;
 }
 
 void main() {

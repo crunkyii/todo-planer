@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo_liste/data/cloud.dart';
+import 'package:todo_liste/data/settings_store.dart';
 
 /// Kleiner nachgebauter Supabase-Server (nur PostgREST-Teile, die der Sync braucht).
 /// Läuft im Test auf localhost – es wird nie eine echte Datenbank benutzt.
@@ -126,8 +129,30 @@ class FakeCloud extends Cloud {
   @override
   SupabaseClient get client => _client;
 
+  /// Kein `Supabase.initialize` – der Client oben zeigt schon auf den nachgebauten Server.
+  @override
+  Future<void> init(CloudConfig c) async {}
+
+  @override
+  Stream<AuthState> get authChanges => const Stream.empty();
+
+  @override
+  Future<void> signOut() async => signedIn = false;
+
   @override
   User? get user => signedIn
       ? const User(id: 'user-1', appMetadata: {}, userMetadata: {}, aud: 'authenticated', createdAt: '2026-01-01')
       : null;
+}
+
+/// Verbindung, die der Test ein- und ausschalten kann.
+class FakeConnectivity implements Connectivity {
+  final _c = StreamController<List<ConnectivityResult>>.broadcast();
+  void set(bool online) => _c.add([online ? ConnectivityResult.wifi : ConnectivityResult.none]);
+
+  @override
+  Future<List<ConnectivityResult>> checkConnectivity() async => [ConnectivityResult.wifi];
+
+  @override
+  Stream<List<ConnectivityResult>> get onConnectivityChanged => _c.stream;
 }

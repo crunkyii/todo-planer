@@ -51,17 +51,21 @@ Future<AppServices> makeServices({
   String? syncMode = 'local',
   bool cloudConfig = false,
   LocalDb? db,
+  bool keepPrefs = false,
   SyncService Function(Store, SettingsStore, Cloud)? sync,
   Cloud? cloud,
 }) async {
-  SharedPreferences.resetStatic();
-  SharedPreferences.setMockInitialValues({
-    if (syncMode != null)
-      'sync.v1': cloudConfig
-          ? '{"mode":"$syncMode","url":"https://abcdefgh.supabase.co","key":"sb_publishable_test_key_123"}'
-          : '{"mode":"$syncMode"}',
-    'settings.v1': '{"lang":"$lang","mode":"$mode","theme":"$theme"}',
-  });
+  // keepPrefs: „App neu gestartet“ – die gespeicherten Einstellungen bleiben, wie sie sind.
+  if (!keepPrefs) {
+    SharedPreferences.resetStatic();
+    SharedPreferences.setMockInitialValues({
+      if (syncMode != null)
+        'sync.v1': cloudConfig
+            ? '{"mode":"$syncMode","url":"https://abcdefgh.supabase.co","key":"sb_publishable_test_key_123"}'
+            : '{"mode":"$syncMode"}',
+      'settings.v1': '{"lang":"$lang","mode":"$mode","theme":"$theme"}',
+    });
+  }
   final settings = SettingsStore(await SharedPreferences.getInstance());
   final store = Store(db ?? LocalDb(NativeDatabase.memory()));
   await store.load();
