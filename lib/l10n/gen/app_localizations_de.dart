@@ -330,6 +330,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get widgetUpcoming => 'Demnächst';
 
   @override
+  String widgetUntil(String when) {
+    return 'bis: $when';
+  }
+
+  @override
   String get widgetNoHabits => 'Noch keine Gewohnheiten.';
 
   @override

@@ -133,6 +133,14 @@
   "errPickDate": "Bitte wähle ein Datum.",
   "nothingDue": "Nichts fällig.",
   "widgetUpcoming": "Demnächst",
+  "widgetUntil": "bis: {when}",
+  "@widgetUntil": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "widgetNoHabits": "Noch keine Gewohnheiten.",
   "widgetSettings": "Widget einstellen",
   "widgetBackground": "Hintergrund",

@@ -39,6 +39,7 @@ class WidgetData private constructor(
     val habits: List<WHabit>,
     private val labels: Map<String, String>,
     private val weekdays: List<String>,
+    private val months: List<String>,
     private val english: Boolean,
     private val accentLight: Int?,
     private val accentDark: Int?,
@@ -82,10 +83,21 @@ class WidgetData private constructor(
         return c.timeInMillis + (next ?: 24 * 60) * 60_000L
     }
 
-    /** Titel mit den gewählten Kategorien dahinter, z. B. „Heute · Test, Termin“. */
-    fun title(base: String, cats: Set<String>): String {
+    /** Die gewählten Kategorien für hinter den Titel, z. B. „ · Test, Termin“ (leer: alle). */
+    fun titleSuffix(cats: Set<String>): String {
         val names = chosen(cats).map { it.name }
-        return if (names.isEmpty()) base else base + " · " + names.joinToString(", ")
+        return if (names.isEmpty()) "" else " · " + names.joinToString(", ")
+    }
+
+    /** Das heutige Datum für neben „Heute“: „18. NOV.“ bzw. „NOV 18“ (ohne Jahr). */
+    fun dateLabel(): String {
+        val (_, m, d) = civilFromDays(today)
+        val locale = if (english) Locale.ENGLISH else Locale.GERMAN
+        // Ältere Zusammenfassung ohne Monatsnamen: die von Android nehmen.
+        val name = months.getOrNull(m - 1)?.takeIf { it.isNotEmpty() }
+            ?: java.text.DateFormatSymbols.getInstance(locale).shortMonths.getOrNull(m - 1).orEmpty()
+        val month = name.uppercase(locale)
+        return if (english) "$month $d" else "$d. $month"
     }
 
     /** Akzentfarbe des App-Themes für hell bzw. dunkel (null: noch keine Daten von der App). */
@@ -106,15 +118,17 @@ class WidgetData private constructor(
     fun timeLabel(minutes: Int): String = "%02d:%02d".format(Locale.ROOT, minutes / 60, minutes % 60)
 
     /**
-     * Zweite Zeile einer Aufgabe: Abgabetag und, falls gesetzt, Uhrzeit. Ohne [withDay]
-     * (Widget „Heute“) steht der Tag nur da, wenn die Abgabe nicht heute ist.
+     * Zweite Zeile einer Aufgabe: „bis: “ und der Abgabetag mit Uhrzeit. Was heute fällig ist,
+     * zeigt nur die Uhrzeit („bis: 23:00“). Ohne Uhrzeit steht mit [withDay] (Widget
+     * „Demnächst“) „bis: Heute“ da, im Widget „Heute“ nichts.
      */
     fun subLabel(t: WTask, withDay: Boolean): String {
+        val time = t.minutes?.let(::timeLabel)
+        val day = if (t.due != today || (withDay && time == null)) dayLabel(t.due) else null
+        val due = listOfNotNull(day, time).joinToString(", ")
         val parts = ArrayList<String>()
         if (isLate(t)) parts += label("overdue", "Überfällig")
-        val day = if (withDay || t.due != today) dayLabel(t.due) else null
-        val time = t.minutes?.let(::timeLabel)
-        listOfNotNull(day, time).joinToString(", ").takeIf { it.isNotEmpty() }?.let { parts += it }
+        if (due.isNotEmpty()) parts += label("until", "bis: {}").replace("{}", due)
         return parts.joinToString(" · ")
     }
 
@@ -180,12 +194,15 @@ class WidgetData private constructor(
             o.optJSONObject("labels")?.let { l -> l.keys().forEach { k -> labels[k] = l.optString(k) } }
             val wd = ArrayList<String>()
             o.optJSONArray("wd")?.let { a -> for (i in 0 until a.length()) wd += a.optString(i) }
+            val mon = ArrayList<String>()
+            o.optJSONArray("mon")?.let { a -> for (i in 0 until a.length()) mon += a.optString(i) }
             return WidgetData(
                 allTasks = tasks,
                 categories = cats,
                 habits = habits,
                 labels = labels,
                 weekdays = wd,
+                months = mon,
                 english = o.optBoolean("en", false),
                 accentLight = parseColor(o.optString("accent")),
                 accentDark = parseColor(o.optString("accentDark")),

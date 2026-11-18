@@ -42,6 +42,9 @@ class Fmt {
   /// „18. Nov.“ / „Nov 18“
   String dayMon(DateTime d) => en ? DateFormat('MMM d', _loc).format(d) : DateFormat('d. MMM', _loc).format(d);
 
+  /// „18. NOV.“ / „NOV 18“ – das Datum neben „Heute“ im Startbildschirm-Widget.
+  String widgetDate(DateTime d) => dayMon(d).toUpperCase();
+
   /// „Dienstag, 18. November“
   String longDate(DateTime d) => l.weekdayWithDate(wdLong(wdIndex(d)), dayMonth(d));
 

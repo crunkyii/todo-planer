@@ -8,7 +8,12 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
 import android.net.Uri
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
+import android.text.style.StyleSpan
 import android.view.View
 import android.widget.RemoteViews
 import at.todoliste.todo_liste.MainActivity
@@ -110,12 +115,12 @@ object Widgets {
         val look = WidgetLook(context, cfg, data)
         val (title, count, empty) = when (mode) {
             ListMode.TODAY -> Triple(
-                data.title(data.label("today", "Heute"), cfg.cats),
+                data.label("today", "Heute"),
                 data.dueToday(cfg.cats).size.toString(),
                 data.label("nothingDue", "Nichts fällig."),
             )
             ListMode.UPCOMING -> Triple(
-                data.title(data.label("upcoming", "Demnächst"), cfg.cats),
+                data.label("upcoming", "Demnächst"),
                 data.tasks(cfg.cats).size.toString(),
                 data.label("nothingDue", "Nichts fällig."),
             )
@@ -126,7 +131,21 @@ object Widgets {
             )
         }
         look.background(v)
-        v.setTextViewText(R.id.title, title)
+        // Titel fett; im Widget „Heute“ daneben kleiner das Datum, dahinter die gewählten Kategorien.
+        val heading = SpannableStringBuilder(title)
+        if (mode == ListMode.TODAY) {
+            heading.append(' ')
+            val from = heading.length
+            heading.append(data.dateLabel())
+            heading.setSpan(RelativeSizeSpan(0.8f), from, heading.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        heading.setSpan(StyleSpan(Typeface.BOLD), 0, title.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        if (mode != ListMode.HABITS) {
+            val from = heading.length
+            heading.append(data.titleSuffix(cfg.cats))
+            heading.setSpan(StyleSpan(Typeface.BOLD), from, heading.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        v.setTextViewText(R.id.title, heading)
         look.text(v, R.id.title) { it.text }
         v.setTextViewText(R.id.count, count)
         look.text(v, R.id.count) { it.accent }

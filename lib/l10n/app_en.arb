@@ -102,6 +102,7 @@
   "errPickDate": "Please pick a date.",
   "nothingDue": "Nothing due.",
   "widgetUpcoming": "Upcoming",
+  "widgetUntil": "by: {when}",
   "widgetNoHabits": "No habits yet.",
   "widgetSettings": "Widget settings",
   "widgetBackground": "Background",

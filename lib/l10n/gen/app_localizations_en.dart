@@ -328,6 +328,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get widgetUpcoming => 'Upcoming';
 
   @override
+  String widgetUntil(String when) {
+    return 'by: $when';
+  }
+
+  @override
   String get widgetNoHabits => 'No habits yet.';
 
   @override

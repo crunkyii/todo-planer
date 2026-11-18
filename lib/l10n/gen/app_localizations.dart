@@ -704,6 +704,12 @@ abstract class AppLocalizations {
   /// **'Demnächst'**
   String get widgetUpcoming;
 
+  /// No description provided for @widgetUntil.
+  ///
+  /// In de, this message translates to:
+  /// **'bis: {when}'**
+  String widgetUntil(String when);
+
   /// No description provided for @widgetNoHabits.
   ///
   /// In de, this message translates to:

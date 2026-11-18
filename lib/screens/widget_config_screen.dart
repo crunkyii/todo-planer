@@ -7,6 +7,8 @@ import '../services/widget_config.dart';
 import '../theme/app_theme.dart';
 import '../theme/color_math.dart';
 import '../theme/tokens.dart';
+import '../util/dates.dart';
+import '../util/fmt.dart';
 import '../widgets/pickers.dart';
 import '../widgets/ui.dart';
 
@@ -270,6 +272,7 @@ class WidgetPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final tok = context.tok;
     final l = context.l;
+    final f = Fmt.of(context);
     final dark = switch (config.mode) {
       AppMode.light => false,
       AppMode.dark => true,
@@ -321,6 +324,10 @@ class WidgetPreview extends StatelessWidget {
       ),
     );
 
+    // Zweite Zeile wie am Handy: heute Fälliges nur mit Uhrzeit, sonst der Tag – immer mit „bis:“.
+    String due(int i) => l.widgetUntil(i == 0 ? f.time(14 * 60) : l.tomorrow);
+    String sub(int i) => kind == WidgetKind.habits ? (i == 0 ? l.today : l.tomorrow) : due(i);
+
     final Widget content;
     if (kind == WidgetKind.count) {
       content = Column(
@@ -342,8 +349,19 @@ class WidgetPreview extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  title,
+                // Wie am Handy: im Widget „Heute“ steht das Datum kleiner neben dem Titel.
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: base),
+                      if (kind == WidgetKind.today)
+                        TextSpan(
+                          text: ' ${f.widgetDate(today())}',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.normal),
+                        ),
+                      TextSpan(text: title.substring(base.length)),
+                    ],
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: pal.text),
@@ -356,10 +374,10 @@ class WidgetPreview extends StatelessWidget {
             ],
           ),
           if (samples.isEmpty) ...[
-            row(title, l.today, accent),
-            row(title, l.tomorrow, accent),
+            row(title, sub(0), accent),
+            row(title, sub(1), accent),
           ] else
-            for (final (i, c) in samples.indexed) row(c.name, i == 0 ? l.today : l.tomorrow, parseHex(c.color)),
+            for (final (i, c) in samples.indexed) row(c.name, due(i), parseHex(c.color)),
         ],
       );
     }

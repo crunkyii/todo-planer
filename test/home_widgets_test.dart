@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:todo_liste/services/home_widgets.dart';
 import 'package:todo_liste/util/dates.dart';
+import 'package:todo_liste/util/fmt.dart';
 import 'package:todo_liste/util/task_logic.dart';
 
 import 'harness.dart';
@@ -47,6 +48,12 @@ void main() {
       final labels = again['labels'] as Map<String, dynamic>;
       expect(labels['today'], l.today);
       expect(labels['upcoming'], l.widgetUpcoming);
+      // „bis: {}“ – das Widget setzt Tag/Uhrzeit selbst ein
+      expect(labels['until'], lang == 'en' ? 'by: {}' : 'bis: {}');
+      // Monate für das Datum neben „Heute“ (das Widget rechnet den Tag selbst)
+      expect(again['mon'], hasLength(12));
+      expect((again['mon'] as List)[10], lang == 'en' ? 'Nov' : 'Nov.');
+      expect(Fmt(l, lang).widgetDate(DateTime(2026, 11, 18)), lang == 'en' ? 'NOV 18' : '18. NOV.');
       expect(again['en'], lang == 'en');
       expect(again['wd'], hasLength(7));
       expect(again['accent'], isNot(again['accentDark']));
