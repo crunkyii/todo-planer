@@ -1,0 +1,8 @@
+# Einheitliche Zeilenenden, damit der Build auf Linux Mint und Windows gleich funktioniert
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.ico binary
+*.jks binary
+*.keystore binary
