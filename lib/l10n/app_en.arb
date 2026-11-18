@@ -217,7 +217,7 @@
   "more": "more",
   "perDay": "per day",
   "tileDone": "done",
-  "tileStreak": "{count, plural, =1{day in a row} other{days in a row}}",
+  "tileStreak": "{count, plural, =1{day streak} other{day streak}}",
   "daysRange": "{count} days",
   "heatSummary": "<b>{total}</b> done on <b>{days}</b> days",
   "heatDay": "{date}: <b>{count}</b> done",

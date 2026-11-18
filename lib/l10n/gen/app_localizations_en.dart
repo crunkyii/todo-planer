@@ -751,7 +751,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tileStreak(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'days in a row', one: 'day in a row');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'day streak', one: 'day streak');
     return '$_temp0';
   }
 
