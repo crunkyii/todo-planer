@@ -8,6 +8,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.Calendar
+import java.util.Locale
 
 /**
  * Tipp auf eine Gewohnheit im Widget: für heute abhaken (oder wieder öffnen), ohne die App zu öffnen.
@@ -19,7 +20,8 @@ import java.util.Calendar
  */
 class HabitToggleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val habitId = intent.getStringExtra(Widgets.EXTRA_HABIT) ?: return
+        // Leer: Zusammenfassung einer älteren App-Version ohne Kennung – dann lieber nichts tun.
+        val habitId = intent.getStringExtra(Widgets.EXTRA_HABIT)?.takeIf { it.isNotEmpty() } ?: return
         val app = context.applicationContext
         if (!HabitToggles.toggleToday(app, habitId)) return
         Widgets.updateAll(app)
@@ -50,6 +52,7 @@ object HabitToggles {
                 if (!was) days.put(today)
                 h.put("days", days)
                 result = !was
+                break
             }
             if (result == null) return false
             WidgetData.save(context, snap.toString())
@@ -79,6 +82,6 @@ object HabitToggles {
 
     private fun todayIso(): String {
         val c = Calendar.getInstance()
-        return "%04d-%02d-%02d".format(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH))
+        return "%04d-%02d-%02d".format(Locale.ROOT, c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH))
     }
 }

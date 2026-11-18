@@ -10,6 +10,16 @@ DateTime doDate(Task t, int offset) => addDays(sod(t.dueDate), -offset);
 /// Überfällig erst, wenn die Abgabe vorbei ist: nach der Uhrzeit – ohne Uhrzeit gilt der
 /// ganze Abgabetag (bis 23:59). Der Vorlauf der Kategorie macht eine Aufgabe nie überfällig,
 /// er holt sie nur früher in die Liste.
+/// Wann sich die Liste das nächste Mal von selbst ändert: um Mitternacht (neuer Tag) oder
+/// vorher, sobald die Uhrzeit einer offenen Aufgabe vorbei ist (ab dann ist sie überfällig).
+DateTime nextListChange(Iterable<Task> tasks, DateTime now) {
+  var next = addDays(sod(now), 1);
+  for (final t in tasks) {
+    if (!t.done && t.hasTime && t.due.isAfter(now) && t.due.isBefore(next)) next = t.due;
+  }
+  return next;
+}
+
 bool isLate(Task t, int offset, {DateTime? now}) {
   if (t.done) return false;
   final n = now ?? clock();

@@ -466,11 +466,11 @@ class AppInput extends StatelessWidget {
         onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
         maxLength: maxLength,
         maxLengthEnforcement: MaxLengthEnforcement.enforced,
-        autocorrect: !obscure,
-        // Normale Textfelder (Titel, Namen): Wortvorschläge der Tastatur und großer Satzanfang.
-        // Nicht bei Passwort, E-Mail oder Adressen.
-        enableSuggestions: !obscure,
-        textCapitalization: obscure || keyboardType != null ? TextCapitalization.none : TextCapitalization.sentences,
+        // Normale Textfelder (Titel, Namen): Wortvorschläge der Tastatur, Autokorrektur und
+        // großer Satzanfang. Nicht bei Passwort, E-Mail, Adressen oder Schlüsseln.
+        autocorrect: !obscure && keyboardType == null,
+        enableSuggestions: !obscure && keyboardType == null,
+        textCapitalization: !obscure && keyboardType == null ? TextCapitalization.sentences : TextCapitalization.none,
         style: TextStyle(fontSize: fontSize, color: tok.text),
         decoration: InputDecoration(
           counterText: '',

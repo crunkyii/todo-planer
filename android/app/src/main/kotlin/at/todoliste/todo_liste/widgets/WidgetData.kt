@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import org.json.JSONObject
 import java.util.Calendar
+import java.util.Locale
 
 /**
  * Eine offene Aufgabe, wie die App sie ins Widget schreibt.
@@ -63,7 +64,22 @@ class WidgetData private constructor(
         if (t.due < today) return true
         val m = t.minutes ?: return false
         val c = Calendar.getInstance()
-        return t.due == today && m < c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE)
+        return t.due == today && m <= c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE)
+    }
+
+    /**
+     * Wann sich die Widgets das nächste Mal von selbst ändern: sobald die Uhrzeit einer Aufgabe
+     * von heute vorbei ist (dann ist sie überfällig), spätestens um Mitternacht.
+     */
+    fun nextChangeMillis(): Long {
+        val c = Calendar.getInstance()
+        val nowMinutes = c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE)
+        val next = allTasks.filter { it.due == today }.mapNotNull { it.minutes }.filter { it > nowMinutes }.minOrNull()
+        c.set(Calendar.HOUR_OF_DAY, 0)
+        c.set(Calendar.MINUTE, 0)
+        c.set(Calendar.SECOND, 5)
+        c.set(Calendar.MILLISECOND, 0)
+        return c.timeInMillis + (next ?: 24 * 60) * 60_000L
     }
 
     /** Titel mit den gewählten Kategorien dahinter, z. B. „Heute · Test, Termin“. */
@@ -87,7 +103,7 @@ class WidgetData private constructor(
         }
     }
 
-    fun timeLabel(minutes: Int): String = "%02d:%02d".format(minutes / 60, minutes % 60)
+    fun timeLabel(minutes: Int): String = "%02d:%02d".format(Locale.ROOT, minutes / 60, minutes % 60)
 
     /**
      * Zweite Zeile einer Aufgabe: Abgabetag und, falls gesetzt, Uhrzeit. Ohne [withDay]

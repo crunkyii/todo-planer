@@ -67,6 +67,8 @@
         </receiver>
         <!-- Gewohnheit im Widget abhaken -->
         <receiver android:name=".widgets.HabitToggleReceiver" android:exported="false" />
+        <!-- Widgets zur nächsten Abgabe-Uhrzeit bzw. um Mitternacht neu zeichnen -->
+        <receiver android:name=".widgets.WidgetRefreshReceiver" android:exported="false" />
         <!-- Einstellungen eines Widgets; nur der Startbildschirm darf sie öffnen -->
         <activity
             android:name=".widgets.WidgetConfigActivity"

@@ -1,8 +1,10 @@
 package at.todoliste.todo_liste.widgets
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -35,9 +37,28 @@ object Widgets {
         for ((cls, mode) in listWidgets) {
             for (id in mgr.getAppWidgetIds(ComponentName(context, cls))) updateList(context, mgr, id, mode, data)
         }
-        for (id in mgr.getAppWidgetIds(ComponentName(context, CountWidget::class.java))) {
-            updateCount(context, mgr, id, data)
-        }
+        val counts = mgr.getAppWidgetIds(ComponentName(context, CountWidget::class.java))
+        for (id in counts) updateCount(context, mgr, id, data)
+        val any = counts.isNotEmpty() || listWidgets.keys.any { mgr.getAppWidgetIds(ComponentName(context, it)).isNotEmpty() }
+        scheduleRefresh(context, if (any) data.nextChangeMillis() else null)
+    }
+
+    /**
+     * Die Widgets zeichnen sonst nur neu, wenn die App Daten schreibt (oder alle 30 Minuten).
+     * Damit eine Aufgabe pünktlich auf „überfällig“ springt und um Mitternacht der neue Tag
+     * stimmt, weckt Android die Widgets zu diesem Zeitpunkt ([at] = null: keine Widgets mehr).
+     * Ungenauer Wecker: braucht keine Berechtigung und weckt das Telefon nicht extra auf.
+     * Android erlaubt dafür höchstens „innerhalb von 10 Minuten“ – so spät kann es also werden.
+     */
+    private fun scheduleRefresh(context: Context, at: Long?) {
+        val alarm = context.getSystemService(AlarmManager::class.java) ?: return
+        val refresh = PendingIntent.getBroadcast(
+            context,
+            4,
+            Intent(context, WidgetRefreshReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        if (at == null) alarm.cancel(refresh) else alarm.setWindow(AlarmManager.RTC, at, 10 * 60_000L, refresh)
     }
 
     fun updateList(context: Context, mgr: AppWidgetManager, id: Int, mode: ListMode, data: WidgetData) {
@@ -132,6 +153,11 @@ object Widgets {
             (if (mutable) PendingIntent.FLAG_MUTABLE else PendingIntent.FLAG_IMMUTABLE)
         return PendingIntent.getActivity(context, if (mutable) 2 else if (action == null) 0 else 1, intent, flags)
     }
+}
+
+/** Der Wecker aus [Widgets.updateAll]: alle Widgets neu zeichnen. */
+class WidgetRefreshReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) = Widgets.updateAll(context.applicationContext)
 }
 
 abstract class BaseWidget : AppWidgetProvider() {

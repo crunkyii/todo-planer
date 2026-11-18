@@ -225,6 +225,28 @@ void main() {
       expect(suggestCategory([at('weg', 1), at('weg', 2), at('termin', 3)], cats), 'termin');
     });
 
+    test('Liste ändert sich von selbst: zur nächsten Abgabe-Uhrzeit, sonst um Mitternacht', () {
+      final midnight = DateTime(2026, 11, 19);
+      expect(nextListChange(const [], now), midnight);
+      final tasks = [
+        _task('vorbei', DateTime(2026, 11, 18), time: 9 * 60),
+        _task('ohne Uhrzeit', DateTime(2026, 11, 18)),
+        _task('abends', DateTime(2026, 11, 18), time: 23 * 60),
+        _task('erledigt', DateTime(2026, 11, 18), time: 11 * 60, done: true),
+        _task('morgen', DateTime(2026, 11, 19), time: 8 * 60),
+      ];
+      expect(nextListChange(tasks, now), DateTime(2026, 11, 18, 23));
+      expect(
+        nextListChange([_task('nachmittags', DateTime(2026, 11, 18), time: 14 * 60), ...tasks], now),
+        DateTime(2026, 11, 18, 14),
+      );
+      // Genau zur Uhrzeit ist die Aufgabe noch nicht überfällig, eine Sekunde später schon
+      final abends = tasks[2];
+      expect(isLate(abends, 0, now: DateTime(2026, 11, 18, 23)), isFalse);
+      expect(isLate(abends, 0, now: DateTime(2026, 11, 18, 23, 0, 1)), isTrue);
+      expect(nextListChange(tasks, DateTime(2026, 11, 18, 23, 0, 1)), midnight);
+    });
+
     test('Uhrzeit vorbei = überfällig, Woche bis Sonntag', () {
       expect(sectionOf(_task('a', DateTime(2026, 11, 18), time: 9 * 60), 0, now: now), Section.overdue);
       expect(sectionOf(_task('b', DateTime(2026, 11, 18), time: 11 * 60), 0, now: now), Section.today);

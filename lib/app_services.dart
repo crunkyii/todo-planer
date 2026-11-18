@@ -12,6 +12,7 @@ import 'services/home_widgets.dart';
 import 'services/reminders.dart';
 import 'util/dates.dart';
 import 'util/fmt.dart';
+import 'util/task_logic.dart';
 import 'widgets/snack.dart';
 
 /// Alle Dienste der App an einem Ort; über [AppScope] im Widget-Baum erreichbar.
@@ -28,39 +29,35 @@ class AppServices extends ChangeNotifier {
     settings.addListener(_onSettingsChanged);
     sync.onPulled = _afterPull;
     _lifecycle = AppLifecycleListener(onResume: _onResume);
-    _scheduleMidnight();
+    store.addListener(_scheduleNextChange);
+    _scheduleNextChange();
   }
 
   /// Startbildschirm-Widgets (Android): bekommen nach jeder Änderung die aktuellen Daten.
   final homeWidgets = HomeWidgets();
 
   late final AppLifecycleListener _lifecycle;
-  Timer? _midnight;
+  Timer? _nextChangeTimer;
+  DateTime _nextChange = clock();
 
   /// Zurück in der App: Neues vom Server holen und „heute“ neu berechnen.
   void _onResume() {
     if (signedIn) sync.schedule(pullOnly: true);
-    _dayChanged();
+    // War die App im Hintergrund, kann der Zeitpunkt inzwischen vorbei sein.
+    if (!clock().isBefore(_nextChange)) _listChanged();
   }
 
-  /// Um Mitternacht neu zeichnen, damit „Heute“, „Morgen“ und Gewohnheiten stimmen.
-  void _scheduleMidnight() {
-    _midnight?.cancel();
+  /// Neu zeichnen, sobald sich die Liste von selbst ändert: um Mitternacht („Heute“, „Morgen“,
+  /// Gewohnheiten) und wenn die Uhrzeit einer Abgabe vorbei ist (ab dann ist sie überfällig).
+  void _scheduleNextChange() {
+    _nextChangeTimer?.cancel();
     final now = clock();
-    final next = DateTime(now.year, now.month, now.day + 1, 0, 0, 1);
-    _midnight = Timer(next.difference(now), () {
-      _dayChanged();
-      _scheduleMidnight();
-    });
+    _nextChange = nextListChange(store.tasks, now);
+    _nextChangeTimer = Timer(_nextChange.difference(now) + const Duration(seconds: 1), _listChanged);
   }
 
-  DateTime _shownDay = today();
-  void _dayChanged() {
-    final d = today();
-    if (d == _shownDay) return;
-    _shownDay = d;
-    store.touch();
-  }
+  /// Zeichnet neu; der Zeitgeber wird dabei neu gestellt (der Store meldet die Änderung).
+  void _listChanged() => store.touch();
 
   final SettingsStore settings;
   final Store store;
@@ -250,7 +247,8 @@ class AppServices extends ChangeNotifier {
   void dispose() {
     _authSub?.cancel();
     _reminderTimer?.cancel();
-    _midnight?.cancel();
+    _nextChangeTimer?.cancel();
+    store.removeListener(_scheduleNextChange);
     _lifecycle.dispose();
     snack.dispose();
     super.dispose();
