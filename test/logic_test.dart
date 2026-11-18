@@ -127,6 +127,30 @@ void main() {
       expect([f.wd(0), f.wd(1), f.wd(6)], ['Mo', 'Tu', 'Su']); // zwei Buchstaben wie im Prototyp
       expect(f.oneDecimal(1.9), '1.9');
     });
+
+    test('Monatskürzel wie im Prototyp (Deutsch mit Punkt, Englisch ohne)', () {
+      List<String> all(String lang) => [
+        for (var m = 1; m <= 12; m++) Fmt(lookupAppLocalizations(Locale(lang)), lang).monShort(DateTime(2026, m, 5)),
+      ];
+      expect(all('de'), [
+        'Jän.',
+        'Feb.',
+        'März',
+        'Apr.',
+        'Mai',
+        'Juni',
+        'Juli',
+        'Aug.',
+        'Sep.',
+        'Okt.',
+        'Nov.',
+        'Dez.',
+      ]);
+      expect(all('en'), ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']);
+      final de = Fmt(lookupAppLocalizations(const Locale('de')), 'de');
+      expect(de.weekRange(DateTime(2026, 11, 16)), '16.–22. Nov.');
+      expect(de.weekRange(DateTime(2026, 12, 28)), '28. Dez. – 3. Jän.');
+    });
   });
 
   group('Abschnitte', () {

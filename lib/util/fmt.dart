@@ -31,7 +31,10 @@ class Fmt {
   String wdLong(int i) => DateFormat.EEEE(_loc).format(addDays(_monday, i));
   String month(DateTime d) => DateFormat.MMMM(_loc).format(d);
   String monthYear(DateTime d) => DateFormat.yMMMM(_loc).format(d);
-  String monShort(DateTime d) => en ? DateFormat.MMM(_loc).format(d) : DateFormat('MMM', _loc).format(d);
+
+  /// „Nov.“, „Juli“, „Jän.“ / „Nov“ – dieselbe Form wie in [dayMon]. Ein einzelnes `MMM`
+  /// liefert in intl die alleinstehende Form ohne Punkt („Nov“, „Jul“), der Prototyp zeigt die mit Punkt.
+  String monShort(DateTime d) => DateFormat(null, _loc).dateSymbols.SHORTMONTHS[d.month - 1];
 
   /// „18. November“ / „November 18“
   String dayMonth(DateTime d) => en ? DateFormat('MMMM d', _loc).format(d) : DateFormat('d. MMMM', _loc).format(d);
