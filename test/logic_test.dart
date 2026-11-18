@@ -272,6 +272,13 @@ void main() {
         de.errWrongLogin,
       );
       expect(friendlyErrorMessage(de, StateError('x')), de.errUnexpected);
+      // Lehnt der Server eine richtig geschriebene Adresse ab, zeigt die App seine Meldung
+      // und behauptet nicht „ungültige E-Mail“.
+      for (final code in ['validation_failed', 'email_address_invalid', 'email_address_not_authorized']) {
+        final msg = friendlyErrorMessage(de, AuthException('Grund vom Server', code: code));
+        expect(msg, isNot(de.errEmail), reason: code);
+        expect(msg, contains('Grund vom Server'), reason: code);
+      }
     });
   });
 }

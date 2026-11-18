@@ -20,9 +20,9 @@ String friendlyErrorMessage(AppLocalizations l, Object error) {
         return l.errAccountExists;
       case 'weak_password':
         return l.errWeakPassword;
-      case 'email_address_invalid':
-      case 'validation_failed':
-        return l.errEmail;
+      // 'validation_failed' und 'email_address_invalid' absichtlich nicht auf „ungültige E-Mail“
+      // abbilden: Das Format prüft die App schon selbst. Kommt so ein Code vom Server, steckt etwas
+      // anderes dahinter (Adresse abgelehnt, Passwort zu lang …) – dann die Meldung des Servers zeigen.
       case 'over_email_send_rate_limit':
       case 'over_request_rate_limit':
         return l.errRateLimit;
@@ -46,6 +46,14 @@ String friendlyErrorMessage(AppLocalizations l, Object error) {
 
   return l.errUnexpected;
 }
+
+/// Kurze Zeile fürs Log: nur Art, Code und Status – nie die Meldung selbst,
+/// denn die kann persönliche Daten enthalten (z. B. die E-Mail-Adresse).
+String errorLogLine(Object error) => switch (error) {
+  AuthException e => '${e.runtimeType} code=${e.code} status=${e.statusCode}',
+  PostgrestException e => '${e.runtimeType} code=${e.code}',
+  _ => '${error.runtimeType}',
+};
 
 bool isNetworkError(Object error) {
   if (error is SocketException ||

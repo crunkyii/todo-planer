@@ -69,6 +69,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await app.cloud.signIn(email, pw);
       }
     } on Object catch (e) {
+      // Nur Art und Code ins Log – die Meldung selbst kann die E-Mail-Adresse enthalten.
+      debugPrint('Anmeldung fehlgeschlagen: ${errorLogLine(e)}');
       if (mounted) setState(() => _error = friendlyErrorMessage(l, e));
     } finally {
       if (mounted) setState(() => _busy = false);
