@@ -1,0 +1,663 @@
+{
+  "@@locale": "de",
+  "appTitle": "Todo-Liste",
+  "cancel": "Abbrechen",
+  "save": "Speichern",
+  "delete": "Löschen",
+  "undo": "Rückgängig",
+  "add": "Hinzufügen",
+  "added": "Hinzugefügt",
+  "saved": "Gespeichert",
+  "back": "Zurück",
+  "all": "Alle",
+  "name": "Name",
+  "color": "Farbe",
+  "customColor": "Eigene Farbe",
+  "chooseCustomColor": "Eigene Farbe wählen",
+  "apply": "Übernehmen",
+  "hue": "Farbton",
+  "saturation": "Sättigung",
+  "brightness": "Helligkeit",
+  "none": "Keine",
+  "timeNone": "Ohne",
+  "done": "Erledigt",
+  "reopened": "Wieder offen",
+  "moreOptions": "Weitere Optionen",
+  "mainNavigation": "Hauptnavigation",
+  "navTasks": "Aufgaben",
+  "navCalendar": "Kalender",
+  "navWeek": "Woche",
+  "navStats": "Statistik",
+  "navSettings": "Optionen",
+  "weeklyPlan": "Wochenplan",
+  "statistics": "Statistik",
+  "settings": "Einstellungen",
+  "welcome": "Willkommen",
+  "setupLead": "Wo sollen deine Aufgaben gespeichert werden?",
+  "setupCloudTitle": "Auf allen Geräten",
+  "setupCloudText": "Eigene kostenlose Supabase-Datenbank. Handy und PC bleiben gleich, auch offline nutzbar.",
+  "setupLocalTitle": "Nur auf diesem Gerät",
+  "setupLocalText": "Kein Konto, keine Einrichtung. Später in den Optionen umstellbar.",
+  "languageBoth": "Sprache · Language",
+  "connectDb": "Datenbank verbinden",
+  "connectOtherDb": "Andere Datenbank verbinden",
+  "openSupabase": "supabase.com öffnen",
+  "copySql": "SQL kopieren",
+  "sqlCopied": "SQL kopiert – jetzt im SQL Editor einfügen",
+  "connect": "Verbinden",
+  "connecting": "Verbinde …",
+  "setupStep1": "Auf <b>supabase.com</b> kostenlos registrieren und ein <b>neues Projekt</b> anlegen.",
+  "setupStep2": "Im Projekt <b>SQL Editor</b> öffnen, das SQL einfügen und auf <b>Run</b> tippen. Damit werden die Tabellen angelegt.",
+  "setupStep3": "Unter <b>Project Settings → API Keys</b> die <b>Project URL</b> und den <b>Publishable Key</b> kopieren und hier einfügen.",
+  "setupStep4": "Nach deiner Registrierung: <b>Authentication → Sign In / Providers</b> → <b>„Allow new users to sign up“</b> ausschalten. Dann kann sich niemand sonst ein Konto in deiner Datenbank anlegen.",
+  "secretNote": "Niemals den <b>Secret Key</b> (service_role) eingeben – der gehört nicht in eine App.",
+  "projectUrl": "Project URL",
+  "publishableKey": "Publishable Key",
+  "projectUrlHint": "https://abcdefgh.supabase.co",
+  "publishableKeyHint": "sb_publishable_…",
+  "errUrl": "Die Project URL sieht so aus: https://abcdefgh.supabase.co",
+  "errKeyFormat": "Der Key beginnt mit „sb_publishable_“ (oder bei älteren Projekten mit „eyJ“).",
+  "errSecretKey": "Das ist der geheime Schlüssel. Bitte den Publishable Key nehmen.",
+  "errNoConnection": "Keine Verbindung. Stimmt die URL und wurde das SQL ausgeführt?",
+  "connectedTo": "Verbunden mit {host}",
+  "@connectedTo": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "signIn": "Anmelden",
+  "signUp": "Registrieren",
+  "createAccount": "Konto erstellen",
+  "haveAccount": "Ich habe schon ein Konto",
+  "email": "E-Mail",
+  "password": "Passwort",
+  "showPassword": "Passwort anzeigen",
+  "hidePassword": "Passwort verbergen",
+  "errEmail": "Bitte gib eine gültige E-Mail-Adresse ein.",
+  "errPassword": "Bitte gib dein Passwort ein.",
+  "errPasswordShort": "Das Passwort braucht mindestens 6 Zeichen.",
+  "errWrongLogin": "E-Mail oder Passwort ist falsch.",
+  "accountCreatedHint": "Konto erstellt. Jetzt in Supabase „Allow new users to sign up“ ausschalten.",
+  "confirmEmailHint": "Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link in der Mail und melde dich dann an.",
+  "errNetwork": "Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.",
+  "errEmailNotConfirmed": "Bitte bestätige zuerst deine E-Mail-Adresse (Link in der Bestätigungs-Mail).",
+  "errAccountExists": "Für diese E-Mail-Adresse gibt es bereits ein Konto. Bitte melde dich an.",
+  "errWeakPassword": "Das Passwort ist zu schwach. Verwende mindestens 6 Zeichen.",
+  "errRateLimit": "Zu viele Versuche. Bitte warte kurz und versuche es dann erneut.",
+  "errSignupDisabled": "Registrierung ist in dieser Datenbank ausgeschaltet.",
+  "errSessionExpired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+  "errAuthGeneric": "Anmeldung fehlgeschlagen: {message}",
+  "@errAuthGeneric": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "errNoPermission": "Keine Berechtigung für diese Aktion. Bitte melde dich erneut an.",
+  "errTableMissing": "In der Datenbank fehlen Tabellen. Bitte das SQL aus der Einrichtung noch einmal ausführen.",
+  "errDbGeneric": "Datenbankfehler: {message}",
+  "@errDbGeneric": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "errUnexpected": "Unerwarteter Fehler. Bitte versuche es erneut.",
+  "today": "Heute",
+  "tomorrow": "Morgen",
+  "yesterday": "Gestern",
+  "overdue": "Überfällig",
+  "thisWeek": "Diese Woche",
+  "later": "Später",
+  "sectionCount": "{label} ({count})",
+  "@sectionCount": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newTask": "Neue Aufgabe",
+  "editTask": "Aufgabe bearbeiten",
+  "deleteTask": "Aufgabe löschen",
+  "task": "Aufgabe",
+  "errTaskTitle": "Bitte gib ein, was zu tun ist.",
+  "errPickDate": "Bitte wähle ein Datum.",
+  "nothingDue": "Nichts fällig.",
+  "nothingFound": "Nichts gefunden.",
+  "noTasks": "Keine Aufgaben.",
+  "searchTasks": "Aufgaben durchsuchen",
+  "search": "Suchen",
+  "closeSearch": "Suche schließen",
+  "sort": "Sortieren",
+  "sortByDate": "Nach Datum",
+  "sortByCategory": "Nach Kategorie",
+  "sortByName": "Nach Name (A–Z)",
+  "filterByCategory": "Nach Kategorie filtern",
+  "showCompleted": "Erledigte anzeigen",
+  "hideCompleted": "Erledigte ausblenden",
+  "completedHidden": "Erledigte ausgeblendet",
+  "completedShown": "Erledigte werden angezeigt",
+  "deleteCompleted": "Erledigte löschen",
+  "noCompleted": "Keine erledigten Aufgaben",
+  "completedDeleted": "{count} erledigte gelöscht",
+  "@completedDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "completedTasks": "Erledigte Aufgaben",
+  "subtask": "Unteraufgabe",
+  "subtasks": "Unteraufgaben",
+  "removeSubtask": "Unteraufgabe entfernen",
+  "dueOn": "Fällig am",
+  "dateAndTime": "Datum und Uhrzeit",
+  "time": "Uhrzeit",
+  "hour": "Stunde",
+  "minute": "Minute",
+  "quickDate": "Schnellauswahl Datum",
+  "quickTime": "Schnellauswahl Uhrzeit",
+  "inOneWeek": "In 1 Woche",
+  "prevMonth": "Voriger Monat",
+  "nextMonth": "Nächster Monat",
+  "a11yDone": "Erledigt: {title}",
+  "@a11yDone": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "a11yReopen": "Wieder öffnen: {title}",
+  "@a11yReopen": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "a11yCheckSub": "Unteraufgabe abhaken: {title}",
+  "@a11yCheckSub": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "a11yReopenSub": "Unteraufgabe wieder öffnen: {title}",
+  "@a11yReopenSub": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryLabel": "Kategorie: {name}",
+  "@categoryLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deletedItem": "„{name}“ gelöscht",
+  "@deletedItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deletedCatMoved": "„{name}“ gelöscht, Aufgaben → {target}",
+  "@deletedCatMoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "infoDue": "Fällig {day}",
+  "@infoDue": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "infoHandIn": "Abgabe {day}",
+  "@infoHandIn": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "infoListFrom": "{info} · in der Liste ab {day}",
+  "@infoListFrom": {
+    "placeholders": {
+      "info": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "dayWithTime": "{day}, {time}",
+  "@dayWithTime": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "weekdayWithDate": "{weekday}, {date}",
+  "@weekdayWithDate": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "weekdayShortWithDate": "{weekday} {date}",
+  "@weekdayShortWithDate": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "progress": "{done}/{total}",
+  "@progress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pendingSyncHint": "Wird synchronisiert, sobald du online bist",
+  "habits": "Gewohnheiten",
+  "habit": "Gewohnheit",
+  "newHabit": "Neue Gewohnheit",
+  "editHabit": "Gewohnheit bearbeiten",
+  "daily": "Täglich",
+  "habitsCheckAll": "Alle Gewohnheiten für heute abhaken",
+  "habitsReopenAll": "Alle Gewohnheiten wieder öffnen",
+  "habitHint": "z. B. Wasser trinken",
+  "a11yHabitDoneToday": "{name} heute erledigt",
+  "@a11yHabitDoneToday": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "a11yHabitReopen": "{name} wieder öffnen",
+  "@a11yHabitReopen": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "a11yHabitDay": "{name}, {date}",
+  "@a11yHabitDay": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noHabits": "Noch keine Gewohnheiten – tippe auf +.",
+  "streakDays": "{count, plural, =1{1 Tag} other{{count} Tage}}",
+  "@streakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categories": "Kategorien",
+  "manageCategories": "Kategorien verwalten",
+  "newCategory": "Neue Kategorie",
+  "editCategory": "Kategorie bearbeiten",
+  "errCategoryExists": "Diese Kategorie gibt es schon.",
+  "errName": "Bitte gib einen Namen ein.",
+  "categoryHint": "z. B. Referat",
+  "catHomework": "Hausübung",
+  "catTask": "Aufgabe",
+  "catTest": "Test",
+  "catAppointment": "Termin",
+  "doWhen": "Erledigen",
+  "offsetSameDay": "Selber Tag",
+  "offsetDaysBefore": "{count, plural, =1{1 Tag vorher} other{{count} Tage vorher}}",
+  "@offsetDaysBefore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offsetWeekBefore": "1 Woche vorher",
+  "catDoSameDay": "Am selben Tag erledigen · {open} offen",
+  "@catDoSameDay": {
+    "placeholders": {
+      "open": {
+        "type": "int"
+      }
+    }
+  },
+  "catDoDaysBefore": "{count, plural, =1{1 Tag vorher erledigen · {open} offen} other{{count} Tage vorher erledigen · {open} offen}}",
+  "@catDoDaysBefore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "open": {
+        "type": "int"
+      }
+    }
+  },
+  "catDoWeekBefore": "1 Woche vorher erledigen · {open} offen",
+  "@catDoWeekBefore": {
+    "placeholders": {
+      "open": {
+        "type": "int"
+      }
+    }
+  },
+  "categoriesCount": "{count, plural, =1{1 Kategorie} other{{count} Kategorien}}",
+  "@categoriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newBlock": "Neuer Block",
+  "editBlock": "Block bearbeiten",
+  "blockAdded": "Block angelegt",
+  "blocksAdded": "{count} Blöcke angelegt",
+  "@blocksAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "blockDeleted": "Block gelöscht",
+  "from": "Von",
+  "to": "Bis",
+  "timeWithDuration": "Zeit · {duration}",
+  "@timeWithDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "day": "Tag",
+  "days": "Tage",
+  "everyWeek": "Jede Woche",
+  "repeatEveryWeek": "Jede Woche wiederholen",
+  "errToAfterFrom": "„Bis“ muss nach „Von“ liegen.",
+  "durInvalid": "„Bis“ muss nach „Von“ liegen",
+  "errPickDay": "Bitte wähle mindestens einen Tag.",
+  "blockHint": "Schule, Training …",
+  "prevWeek": "Vorige Woche",
+  "nextWeek": "Nächste Woche",
+  "prevDay": "Voriger Tag",
+  "nextDay": "Nächster Tag",
+  "backToWeek": "Zurück zur Woche",
+  "showDay": "{day} anzeigen",
+  "@showDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "weekNumber": "KW {number}",
+  "@weekNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "dayAndWeek": "{day} · {week}",
+  "@dayAndWeek": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "week": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeDash": "{from} – {to}",
+  "@rangeDash": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "a11yBlock": "{name}, {day} {from} bis {to}",
+  "@a11yBlock": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "durHoursMin": "{hours} Std. {minutes} Min.",
+  "@durHoursMin": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durHours": "{hours} Std.",
+  "@durHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durMin": "{minutes} Min.",
+  "@durMin": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "quickPlus30": "+30 Min.",
+  "quickPlus60": "+1 Std.",
+  "quickPlus90": "+1½ Std.",
+  "quickPlus120": "+2 Std.",
+  "activity": "Aktivität",
+  "period": "Zeitraum",
+  "less": "weniger",
+  "more": "mehr",
+  "perDay": "pro Tag",
+  "tileDone": "erledigt",
+  "tileStreak": "{count, plural, =1{Tag Serie} other{Tage Serie}}",
+  "@tileStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysRange": "{count} Tage",
+  "@daysRange": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "heatSummary": "<b>{total}</b> erledigt an <b>{days}</b> Tagen",
+  "@heatSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "heatDay": "{date}: <b>{count}</b> erledigt",
+  "@heatDay": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "a11yHeatDay": "{date}: {count} erledigt",
+  "@a11yHeatDay": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chartA11y": "{count} erledigte Aufgaben in {days} Tagen",
+  "@chartA11y": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "barTooltip": "{day}: {count}",
+  "@barTooltip": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "byCategory": "Nach Kategorie",
+  "language": "Sprache",
+  "appearance": "Darstellung",
+  "light": "Hell",
+  "dark": "Dunkel",
+  "system": "System",
+  "theme": "Theme",
+  "themeHimmel": "Himmel",
+  "themeOzean": "Ozean",
+  "themeMint": "Mint",
+  "themeWald": "Wald",
+  "themeSonne": "Sonne",
+  "themeAbendrot": "Abendrot",
+  "themeBeere": "Beere",
+  "themeLavendel": "Lavendel",
+  "themeNord": "Nord",
+  "themeGraphit": "Graphit",
+  "colorSkyBlue": "Himmelblau",
+  "colorMintGreen": "Mintgrün",
+  "colorSunYellow": "Sonnengelb",
+  "colorCoral": "Koralle",
+  "colorLavender": "Lavendel",
+  "reminders": "Erinnerungen",
+  "grid": "Raster (Minuten)",
+  "dayStarts": "Tag beginnt",
+  "dayEnds": "Tag endet",
+  "storage": "Speicherort",
+  "database": "Datenbank",
+  "signOut": "Abmelden",
+  "offline": "Offline",
+  "offlinePending": "Offline · {count} warten",
+  "@offlinePending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "synced": "Synchronisiert",
+  "syncing": "Synchronisiere …",
+  "allSynced": "Alles synchronisiert",
+  "offlineToast": "Offline – Änderungen werden am Gerät gespeichert",
+  "backOnline": "Wieder online",
+  "backOnlineSyncing": "{count, plural, =1{Wieder online – synchronisiere 1 Änderung …} other{Wieder online – synchronisiere {count} Änderungen …}}",
+  "@backOnlineSyncing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "savedOnDevice": "Am Gerät gespeichert",
+  "savedOnDeviceLater": "Am Gerät gespeichert – wird später synchronisiert",
+  "noSyncOtherDevices": "Kein Abgleich mit anderen Geräten",
+  "connectToDb": "Mit Datenbank verbinden",
+  "connectToDbSub": "Aufgaben auf Handy und PC abgleichen",
+  "notifChannelName": "Erinnerungen",
+  "notifChannelDesc": "Erinnert an Aufgaben mit Uhrzeit",
+  "notifOpen": "Öffnen",
+  "langDe": "Deutsch",
+  "langEn": "English"
+}
