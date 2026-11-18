@@ -55,11 +55,30 @@ void main() {
       categoryId: t.categoryId,
       dueDate: t.dueDate,
       dueTime: 9 * 60,
-      subs: [(title: 'A2', done: false)],
+      subs: [(id: firstId, title: 'A2')],
+      removedSubIds: {t.subs.last.id},
     );
     expect(t.subs.single.id, firstId);
     expect(t.subs.single.title, 'A2');
     expect(t.dueTime, 540);
+  });
+
+  test('Unteraufgaben bearbeiten: Haken bleibt, Unbekanntes bleibt, Neues kommt dazu', () {
+    final t = add('Referat', subs: [(title: 'A', done: true), (title: 'B', done: false), (title: 'C', done: true)]);
+    final [a, b, c] = t.subs;
+    // Das Formular kannte nur A und B (C kam am anderen Gerät dazu): B entfernt, A umbenannt, D neu.
+    store.updateTask(
+      t,
+      title: t.title,
+      categoryId: t.categoryId,
+      dueDate: t.dueDate,
+      dueTime: null,
+      subs: [(id: a.id, title: 'A2'), (id: null, title: 'D')],
+      removedSubIds: {b.id},
+    );
+    expect(t.subs.map((s) => (s.title, s.done)), [('A2', true), ('D', false), ('C', true)]);
+    expect(t.subs.map((s) => s.position), [0, 1, 2]);
+    expect(t.subs.last.id, c.id);
   });
 
   test('Löschen mit Rückgängig, auch für Unteraufgaben', () {
@@ -80,7 +99,8 @@ void main() {
       categoryId: t.categoryId,
       dueDate: t.dueDate,
       dueTime: null,
-      subs: [(title: 'A', done: false)],
+      subs: [(id: t.subs.first.id, title: 'A')],
+      removedSubIds: {t.subs.last.id},
     );
     store.deleteTask(t)();
     expect(store.tasks.single.subs.map((s) => s.title), ['A']);

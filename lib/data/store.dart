@@ -313,18 +313,26 @@ class Store extends ChangeNotifier {
       updatedAt: now,
     );
     _put(t);
-    _writeSubs(t.id, const [], subs);
+    _writeSubs(t.id, subs);
     _changed();
     return t;
   }
 
+  /// Speichert das Bearbeiten-Formular. [subs] sind die Unteraufgaben in der Reihenfolge des
+  /// Formulars – mit `id`, wenn es sie schon gab, ohne für neue. [removedSubIds] sind die, die
+  /// im Formular entfernt wurden.
+  ///
+  /// Abgeglichen wird nach ID, nicht nach Platz: Eine Unteraufgabe, die während des Bearbeitens
+  /// am anderen Gerät dazukam, bleibt (hinten angehängt), und der Haken jeder Unteraufgabe
+  /// bleibt, wie er jetzt ist.
   void updateTask(
     Task t, {
     required String title,
     required String categoryId,
     required DateTime dueDate,
     required int? dueTime,
-    required List<({String title, bool done})> subs,
+    required List<({String? id, String title})> subs,
+    Set<String> removedSubIds = const {},
   }) {
     t
       ..title = title
@@ -332,41 +340,41 @@ class Store extends ChangeNotifier {
       ..dueDate = sod(dueDate)
       ..dueTime = dueTime;
     _put(t);
-    _writeSubs(t.id, List.of(t.subs), subs);
+    final rest = {for (final s in t.subs) s.id: s};
+    var position = 0;
+    for (final e in subs) {
+      final s = rest.remove(e.id);
+      if (s == null) {
+        _newSub(t.id, e.title, done: false, position: position);
+      } else if (s.title != e.title || s.position != position) {
+        _put(
+          s
+            ..title = e.title
+            ..position = position,
+        );
+      }
+      position++;
+    }
+    for (final s in rest.values) {
+      if (removedSubIds.contains(s.id)) {
+        _put(s..deleted = true);
+      } else {
+        if (s.position != position) _put(s..position = position);
+        position++;
+      }
+    }
     _changed();
   }
 
-  /// Unteraufgaben abgleichen: vorhandene der Reihe nach wiederverwenden,
-  /// überzählige löschen, fehlende neu anlegen.
-  void _writeSubs(String taskId, List<Subtask> old, List<({String title, bool done})> next) {
-    for (var i = 0; i < next.length; i++) {
-      if (i < old.length) {
-        final s = old[i];
-        if (s.title != next[i].title || s.done != next[i].done || s.position != i) {
-          _put(
-            s
-              ..title = next[i].title
-              ..done = next[i].done
-              ..position = i,
-          );
-        }
-      } else {
-        _put(
-          Subtask(
-            id: newId(),
-            taskId: taskId,
-            title: next[i].title,
-            done: next[i].done,
-            position: i,
-            updatedAt: nowUtc(),
-          ),
-        );
-      }
-    }
-    for (var i = next.length; i < old.length; i++) {
-      _put(old[i]..deleted = true);
+  /// Legt die Unteraufgaben einer neuen Aufgabe in der gegebenen Reihenfolge an.
+  void _writeSubs(String taskId, List<({String title, bool done})> subs) {
+    for (final (i, s) in subs.indexed) {
+      _newSub(taskId, s.title, done: s.done, position: i);
     }
   }
+
+  void _newSub(String taskId, String title, {required bool done, required int position}) =>
+      _put(Subtask(id: newId(), taskId: taskId, title: title, done: done, position: position, updatedAt: nowUtc()));
 
   void toggleTask(Task t) {
     t.done = !t.done;
@@ -413,7 +421,7 @@ class Store extends ChangeNotifier {
         updatedAt: now,
       );
       _put(n);
-      _writeSubs(n.id, const [], [for (final s in t.subs) (title: s.title, done: false)]);
+      _writeSubs(n.id, [for (final s in t.subs) (title: s.title, done: false)]);
       _yearlyCopies[t.id] = n.id;
     }
   }

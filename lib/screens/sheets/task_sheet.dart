@@ -78,6 +78,9 @@ class _TaskSheetState extends State<TaskSheet> {
   int? _time;
   late bool _dateTouched;
   late List<_SubEdit> _subs;
+
+  /// Die Unteraufgaben, die es beim Öffnen gab – nur diese kann das Formular löschen.
+  late final Set<String> _openedSubIds;
   bool _catOpen = false;
   late bool _dateOpen;
   late bool _subsOpen;
@@ -110,6 +113,7 @@ class _TaskSheetState extends State<TaskSheet> {
     _time = t?.dueTime;
     _dateTouched = t != null || widget.preset != null;
     _subs = [for (final s in t?.subs ?? const <Subtask>[]) _SubEdit(s.title, id: s.id)];
+    _openedSubIds = {for (final s in _subs) s.id!};
     _dateOpen = widget.preset != null;
     _subsOpen = _subs.isNotEmpty;
   }
@@ -145,19 +149,35 @@ class _TaskSheetState extends State<TaskSheet> {
     final opened = widget.task;
     final t = opened == null ? null : app.store.taskById(opened.id);
     if (opened != null && t == null) return closeSheetItemGone(context);
-    final doneNow = {for (final s in t?.subs ?? const <Subtask>[]) s.id: s.done};
     final subs = [
       for (final s in _subs)
-        if (s.ctrl.text.trim().isNotEmpty) (title: s.ctrl.text.trim(), done: doneNow[s.id] ?? false),
+        if (s.ctrl.text.trim().isNotEmpty) (id: s.id, title: s.ctrl.text.trim()),
     ];
     // Wurde die gewählte Kategorie inzwischen (z. B. auf einem anderen Gerät) gelöscht,
     // landet die Aufgabe in ihrer Nachfolgerin – nie mit leerer Kategorie.
     if (app.store.categories.isEmpty) app.ensureCategoriesNow(l);
     final cat = app.store.catOf(_cat).id;
     if (t == null) {
-      app.store.addTask(title: title, categoryId: cat, dueDate: _date, dueTime: _time, subs: subs);
+      app.store.addTask(
+        title: title,
+        categoryId: cat,
+        dueDate: _date,
+        dueTime: _time,
+        subs: [for (final s in subs) (title: s.title, done: false)],
+      );
     } else {
-      app.store.updateTask(t, title: title, categoryId: cat, dueDate: _date, dueTime: _time, subs: subs);
+      // Entfernt ist, was beim Öffnen da war und jetzt fehlt (gelöscht oder leer gemacht) –
+      // was erst danach am anderen Gerät dazukam, bleibt.
+      final kept = {for (final s in subs) s.id};
+      app.store.updateTask(
+        t,
+        title: title,
+        categoryId: cat,
+        dueDate: _date,
+        dueTime: _time,
+        subs: subs,
+        removedSubIds: _openedSubIds.difference(kept),
+      );
     }
     Navigator.pop(context);
     showSavedToast(context, isNew: t == null);

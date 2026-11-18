@@ -218,6 +218,55 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Am anderen Gerät kommt eine Unteraufgabe dazu: Speichern behält sie', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      final t = app.store.tasks.firstWhere((t) => t.title == 'Referat Geschichte');
+      await _tap(tester, find.text('Referat Geschichte'));
+
+      final added = Subtask(
+        id: 'vom-anderen-geraet',
+        taskId: t.id,
+        title: 'Handout drucken',
+        done: true,
+        position: 2,
+        updatedAt: nowUtc(),
+      );
+      await tester.runAsync(() => app.store.applyRemote(subtasksTable, [added.toJson()]));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'Referat neu');
+      await _tap(tester, find.bySemanticsLabel(l.save));
+      final saved = app.store.taskById(t.id)!;
+      expect(saved.subs.map((s) => s.title), ['Quellen suchen', 'Folien bauen', 'Handout drucken']);
+      expect(saved.subs.last.done, isTrue);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Gewohnheit am anderen Gerät gelöscht: Speichern legt sie nicht wieder an', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      final h = app.store.habits.firstWhere((h) => h.name == 'Lesen');
+      await _tap(tester, find.text('Lesen').first);
+      expect(find.text(l.editHabit), findsWidgets);
+
+      await tester.runAsync(
+        () => app.store.applyRemote(habitsTable, [
+          newer(h.toJson(), {'deleted': true}),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      await _tap(tester, find.text(l.save).last);
+      expect(find.text(l.itemGone), findsOneWidget);
+      expect(app.store.habitById(h.id), isNull);
+      await finishApp(tester, app);
+    });
+
     testWidgets('Am anderen Gerät gelöscht: Speichern legt die Aufgabe nicht wieder an', (tester) async {
       final l = l10n('de');
       final app = await makeServices();
