@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -51,7 +52,7 @@ class ExportData {
 ExportData buildExport(Store store, AppLocalizations l, Fmt f) {
   String yesNo(bool v) => v ? l.yes : l.no;
 
-  final tasks = store.tasks..sort((a, b) => a.done != b.done ? (a.done ? 1 : -1) : a.due.compareTo(b.due));
+  final tasks = store.tasks..sort((a, b) => doneLast(a, b) ?? a.due.compareTo(b.due));
   final blocks = store.blocks..sort((a, b) => a.day != b.day ? a.day.compareTo(b.day) : a.start.compareTo(b.start));
 
   return ExportData(
@@ -116,7 +117,9 @@ ExportData buildExport(Store store, AppLocalizations l, Fmt f) {
 String exportFileName(ExportFormat format) => 'todo-liste-${isoDate(today())}.${format.ext}';
 
 Future<Uint8List> exportBytes(ExportData data, ExportFormat format, {bool english = false}) async => switch (format) {
-  ExportFormat.pdf => await exportPdf(data),
+  // Das PDF entsteht in einem eigenen Isolate: Bei vielen Aufgaben dauert das Setzen der
+  // Tabellen spürbar, und die Oberfläche soll dabei nicht stehen bleiben.
+  ExportFormat.pdf => await Isolate.run(() => exportPdf(data)),
   ExportFormat.txt => utf8.encode(exportTxt(data)),
   // Mit BOM, damit Excel die Umlaute richtig liest.
   ExportFormat.csv => Uint8List.fromList([0xEF, 0xBB, 0xBF, ...utf8.encode(exportCsv(data, sep: english ? ',' : ';'))]),
