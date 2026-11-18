@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Für Supabase (Login + Live-Sync) im Release-Build erforderlich -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="todo_liste"
+        android:label="Todo-Liste"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
