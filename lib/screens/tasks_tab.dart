@@ -7,6 +7,7 @@ import '../util/dates.dart';
 import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlays.dart';
+import '../widgets/layout.dart';
 import '../widgets/ui.dart';
 import 'task_card.dart';
 import 'ui_state.dart';
@@ -361,7 +362,7 @@ class _TaskList extends StatelessWidget {
       );
     }
     return ListView(
-      padding: EdgeInsets.only(bottom: Sizes.contentBottom + MediaQuery.paddingOf(context).bottom),
+      padding: EdgeInsets.only(bottom: ShellLayout.bottomOf(context)),
       children: children,
     );
   }

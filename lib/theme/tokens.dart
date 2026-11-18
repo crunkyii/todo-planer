@@ -214,6 +214,19 @@ abstract final class Sizes {
   static const double wheelH = 200;
   static const double maxWidth = 560;
 
+  /// Ab dieser Fensterbreite (PC, Tablet quer) steht die Navigation links statt unten.
+  static const double wideWidth = 900;
+  static const double sideNavW = 236;
+
+  /// Unterer Rand der Listen im breiten Layout (dort liegt keine Leiste über dem Inhalt).
+  static const double wideBottom = 28;
+
+  /// Breite des Inhalts im breiten Layout: Listen bleiben lesbar schmal, Raster dürfen breiter werden.
+  static const double wideList = 860;
+  static const double wideGrid = 1240;
+  static const double wideWeek = 1600;
+  static const double calSide = 400;
+
   /// Bis zu dieser Fensterhöhe rücken Kopf und Abstände zusammen (Querformat am Handy).
   static const double lowHeight = 640;
 

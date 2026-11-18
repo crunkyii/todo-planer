@@ -10,6 +10,7 @@ import '../util/fmt.dart';
 import '../util/stats.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
+import '../widgets/layout.dart';
 import '../widgets/ui.dart';
 import 'sheets.dart';
 import 'ui_state.dart';
@@ -59,16 +60,45 @@ class StatsTab extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.only(bottom: Sizes.contentBottom + MediaQuery.paddingOf(context).bottom),
-                children: [
-                  _Tiles(total: total, streak: st, range: range),
-                  _Heatmap(ui: ui, entries: entries),
-                  _Chart(days: days, perDay: perDay, totals: totals),
-                  _ByCategory(perDay: perDay),
-                  _Habits(ui: ui),
-                ],
-              ),
+              child: ShellLayout.wideOf(context)
+                  // Breit: Zahlen und Balken links, Heatmap und Gewohnheiten rechts.
+                  ? SingleChildScrollView(
+                      padding: EdgeInsets.only(bottom: ShellLayout.bottomOf(context)),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _Tiles(total: total, streak: st, range: range),
+                                _Chart(days: days, perDay: perDay, totals: totals),
+                                _ByCategory(perDay: perDay),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _Heatmap(ui: ui, entries: entries),
+                                _Habits(ui: ui),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView(
+                      padding: EdgeInsets.only(bottom: ShellLayout.bottomOf(context)),
+                      children: [
+                        _Tiles(total: total, streak: st, range: range),
+                        _Heatmap(ui: ui, entries: entries),
+                        _Chart(days: days, perDay: perDay, totals: totals),
+                        _ByCategory(perDay: perDay),
+                        _Habits(ui: ui),
+                      ],
+                    ),
             ),
           ],
         );

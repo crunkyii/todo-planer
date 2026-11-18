@@ -16,6 +16,7 @@ import 'package:todo_liste/data/models.dart';
 import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/screens/shell.dart';
+import 'package:todo_liste/screens/stats_tab.dart';
 import 'package:todo_liste/services/export.dart';
 import 'package:todo_liste/services/update_manifest.dart';
 import 'package:todo_liste/services/updater.dart';
@@ -1283,6 +1284,91 @@ void main() {
         expect(app.settings.cloud, isNull, reason: 'nichts davon darf gespeichert werden');
         await finishApp(tester, app);
       }
+    });
+  });
+
+  group('Breites Fenster (PC)', () {
+    for (final size in const [Size(1920, 1009), Size(1366, 705), Size(900, 700)]) {
+      testWidgets('${size.width.toInt()}×${size.height.toInt()}: Navigation links, alle Tabs ohne Überlauf', (
+        tester,
+      ) async {
+        final l = l10n('de');
+        final app = await makeServices();
+        seedDemo(app.store, l);
+        await pumpApp(tester, app, size: size);
+        // Die Navigation steht links neben dem Inhalt, nicht mehr unten.
+        final nav = tester.getRect(find.bySemanticsLabel(l.navCalendar));
+        expect(nav.right, lessThan(Sizes.sideNavW + 2 * Sizes.navGap));
+        expect(nav.top, lessThan(size.height / 2));
+        for (final tab in [l.navCalendar, l.weeklyPlan, l.statistics, l.settings, l.navTasks]) {
+          await _tap(tester, find.bySemanticsLabel(tab));
+          expect(tester.takeException(), isNull, reason: tab);
+        }
+        await finishApp(tester, app);
+      });
+    }
+
+    testWidgets('„Neue Aufgabe“ links öffnet das Formular in der Mitte und speichert', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      const size = Size(1366, 705);
+      await pumpApp(tester, app, size: size);
+      await _tap(tester, find.bySemanticsLabel(l.newTask));
+      final field = find.byType(EditableText).first;
+      // Als Fenster in der Mitte – nicht am unteren Rand wie am Handy.
+      expect(tester.getRect(field).center.dx, closeTo(size.width / 2, 40));
+      expect(tester.getRect(field).bottom, lessThan(size.height * 0.75));
+      await tester.enterText(field, 'Am PC angelegt');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(app.store.tasks.map((t) => t.title), contains('Am PC angelegt'));
+      expect(find.text('Am PC angelegt'), findsOneWidget);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Kalender: Monat links, Aufgaben des Tages rechts daneben', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      app.store.addTask(
+        title: 'Heute fällig',
+        categoryId: app.store.categories.first.id,
+        dueDate: today(),
+        dueTime: null,
+        subs: const [],
+      );
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      await _tap(tester, find.bySemanticsLabel(l.navCalendar));
+      final grid = tester.getRect(find.byType(MonthGrid));
+      final task = tester.getRect(find.text('Heute fällig'));
+      expect(task.left, greaterThan(grid.right - 1));
+      expect(task.top, lessThan(grid.bottom));
+      await finishApp(tester, app);
+    });
+
+    testWidgets('In den Optionen fehlt der „Neu“-Knopf, die Tabs bleiben an ihrem Platz', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      final before = tester.getRect(find.bySemanticsLabel(l.navCalendar));
+      await _tap(tester, find.bySemanticsLabel(l.settings));
+      expect(find.bySemanticsLabel(l.newTask), findsNothing);
+      expect(tester.getRect(find.bySemanticsLabel(l.navCalendar)), before);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Fenster schmaler ziehen: Navigation wandert nach unten, der Tab bleibt', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      await _tap(tester, find.bySemanticsLabel(l.statistics));
+      tester.view.physicalSize = const Size(600, 705);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(tester.getRect(find.bySemanticsLabel(l.navCalendar)).top, greaterThan(705 / 2));
+      expect(find.byType(StatsTab), findsOneWidget);
+      await finishApp(tester, app);
     });
   });
 

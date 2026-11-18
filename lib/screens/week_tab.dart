@@ -12,6 +12,7 @@ import '../util/week_layout.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
 import '../widgets/swipe.dart';
+import '../widgets/layout.dart';
 import '../widgets/ui.dart';
 import 'sheets.dart';
 import 'ui_state.dart';
@@ -65,7 +66,7 @@ class _WeekTabState extends State<WeekTab> {
             Expanded(
               child: SingleChildScrollView(
                 controller: _scroll,
-                padding: EdgeInsets.only(bottom: Sizes.weekBottom + MediaQuery.paddingOf(context).bottom),
+                padding: EdgeInsets.only(bottom: ShellLayout.bottomOf(context, narrow: Sizes.weekBottom)),
                 child: _Grid(ui: ui),
               ),
             ),
@@ -323,7 +324,6 @@ class _DayColumn extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, box) {
-        final w = box.maxWidth / lay.lanes;
         // Nur für Finger/Maus: Für Screenreader und Tastatur gibt es den +-Knopf „Neuer Block“.
         return GestureDetector(
           excludeFromSemantics: true,
@@ -352,6 +352,7 @@ class _DayColumn extends StatelessWidget {
                         // Die Zeilen mit der Uhrzeit wachsen mit der Systemschrift – also auch
                         // die Höhe, ab der sie Platz haben.
                         final ts = MediaQuery.textScalerOf(context).scale(1);
+                        final w = box.maxWidth / lay.lanes[b.id]!;
                         final timeStyle = TextStyle(
                           fontSize: one ? 12 : fs,
                           height: lh / fs,

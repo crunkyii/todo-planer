@@ -330,8 +330,16 @@ void main() {
 
     test('überlappende Blöcke bekommen eigene Spuren', () {
       final r = layoutLanes([_block('a', 480, 600), _block('b', 540, 660), _block('c', 600, 700)]);
-      expect(r.lanes, 2);
+      expect(r.lanes, {'a': 2, 'b': 2, 'c': 2});
       expect(r.lane, {'a': 0, 'b': 1, 'c': 0});
+    });
+
+    test('ein Block ohne Überschneidung behält die ganze Breite', () {
+      // Vormittag allein, am Abend zwei gleichzeitig: Nur die beiden teilen sich die Spalte.
+      final r = layoutLanes([_block('schule', 480, 780), _block('training', 1020, 1110), _block('lernen', 1050, 1140)]);
+      expect(r.lanes, {'schule': 1, 'training': 2, 'lernen': 2});
+      expect(r.lane, {'schule': 0, 'training': 0, 'lernen': 1});
+      expect(layoutLanes([]).lane, isEmpty);
     });
   });
 

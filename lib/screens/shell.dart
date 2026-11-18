@@ -8,6 +8,7 @@ import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
 import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
+import '../widgets/layout.dart';
 import '../widgets/overlays.dart';
 import '../widgets/pressable.dart';
 import '../widgets/snack.dart';
@@ -33,6 +34,9 @@ class _AppShellState extends State<AppShell> {
   StreamSubscription<SyncEvent>? _sub;
   late final _widgets = context.app.homeWidgets;
   AppLifecycleListener? _resume;
+
+  /// Hält den Zustand der Seite (Scroll-Position), wenn das Fenster zwischen schmal und breit wechselt.
+  final _pageKey = GlobalKey();
 
   @override
   void initState() {
@@ -110,25 +114,51 @@ class _AppShellState extends State<AppShell> {
     final l = context.l;
     final mq = MediaQuery.of(context);
     final low = mq.size.height < Sizes.lowHeight;
+    final wide = mq.size.width >= Sizes.wideWidth;
     return Scaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
       body: BlobBackground(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: Sizes.maxWidth),
-            child: ListenableBuilder(
-              listenable: ui,
-              builder: (context, _) {
-                final fab = _fab(l);
-                return Stack(
+        child: ListenableBuilder(
+          listenable: ui,
+          builder: (context, _) {
+            final fab = _fab(l);
+            final page = Padding(
+              padding: EdgeInsets.only(top: mq.padding.top),
+              child: _PageSwitcher(key: _pageKey, ui: ui, child: _tab()),
+            );
+            // Breit (PC): Navigation und „Neu“-Knopf links, der Inhalt nutzt den Platz daneben.
+            if (wide) {
+              return ShellLayout(
+                wide: true,
+                child: Row(
                   children: [
-                    Positioned.fill(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: mq.padding.top),
-                        child: _PageSwitcher(ui: ui, child: _tab()),
+                    _SideNav(ui: ui, fab: fab),
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: _wideWidth),
+                                child: page,
+                              ),
+                            ),
+                          ),
+                          SnackHost(controller: app.snack, undoLabel: l.undo, bottom: Sizes.wideBottom),
+                        ],
                       ),
                     ),
+                  ],
+                ),
+              );
+            }
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: Sizes.maxWidth),
+                child: Stack(
+                  children: [
+                    Positioned.fill(child: page),
                     // Schlüssel: In den Optionen fehlt der Plus-Knopf. Ohne Schlüssel rückt die Leiste dann
                     // auf seinen Platz, wird neu aufgebaut – und ihr Balken springt, statt zu gleiten.
                     if (fab != null)
@@ -147,14 +177,21 @@ class _AppShellState extends State<AppShell> {
                     ),
                     SnackHost(controller: app.snack, undoLabel: l.undo, bottom: low ? 76 : Sizes.fabBottom),
                   ],
-                );
-              },
-            ),
-          ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
+
+  /// Wie breit der Inhalt im breiten Layout wird: Listen bleiben lesbar, Raster nutzen den Platz.
+  double get _wideWidth => switch (ui.tab) {
+    AppTab.week => Sizes.wideWeek,
+    AppTab.calendar || AppTab.stats => Sizes.wideGrid,
+    AppTab.tasks || AppTab.settings => Sizes.wideList,
+  };
 
   Widget _tab() => switch (ui.tab) {
     AppTab.tasks => TasksTab(key: const ValueKey('tasks'), ui: ui),
@@ -170,7 +207,7 @@ class _AppShellState extends State<AppShell> {
 
 /// Seitenwechsel gleitet in Richtung des Tabs (enter-r / enter-l).
 class _PageSwitcher extends StatelessWidget {
-  const _PageSwitcher({required this.ui, required this.child});
+  const _PageSwitcher({super.key, required this.ui, required this.child});
   final UiState ui;
   final Widget child;
 
@@ -220,6 +257,136 @@ class _Fab extends StatelessWidget {
   }
 }
 
+/// Die Tabs der Navigation: Tab, kurze Beschriftung, Symbol, Beschriftung für Screenreader.
+List<(AppTab, String, Ic, String)> _navTabs(AppLocalizations l) => [
+  (AppTab.tasks, l.navTasks, Ic.tasks, l.navTasks),
+  (AppTab.calendar, l.navCalendar, Ic.calendar, l.navCalendar),
+  (AppTab.week, l.navWeek, Ic.week, l.weeklyPlan),
+  (AppTab.stats, l.navStats, Ic.stats, l.statistics),
+  (AppTab.settings, l.navSettings, Ic.settings, l.settings),
+];
+
+/// Navigation am linken Rand (breites Layout): App-Name, „Neu“-Knopf und die Tabs untereinander.
+class _SideNav extends StatelessWidget {
+  const _SideNav({required this.ui, required this.fab});
+  final UiState ui;
+  final ({String label, VoidCallback onTap})? fab;
+
+  static const double _itemH = 48;
+  static const double _buttonH = 40;
+
+  @override
+  Widget build(BuildContext context) {
+    final tok = context.tok;
+    final l = context.l;
+    final tabs = _navTabs(l);
+    final top = MediaQuery.paddingOf(context).top;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(Sizes.navGap, Sizes.navGap + top, 0, Sizes.navGap),
+      child: SizedBox(
+        width: Sizes.sideNavW,
+        child: Glass(
+          color: tok.glass,
+          blur: 22,
+          radius: BorderRadius.circular(Sizes.rNav),
+          border: Border.all(color: tok.glassEdge),
+          shadow: tok.navShadow,
+          // Scrollbar: Bei niedrigem Fenster oder großer Schrift passt nicht alles untereinander.
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+                    child: Text(
+                      l.appTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: tok.text),
+                    ),
+                  ),
+                  // In den Optionen gibt es nichts anzulegen: Der Platz bleibt, damit die Tabs nicht springen.
+                  if (fab case final f?)
+                    AppButton(label: f.label, icon: Ic.plus, height: _buttonH, onTap: f.onTap)
+                  else
+                    const SizedBox(height: _buttonH),
+                  const SizedBox(height: 16),
+                  Semantics(
+                    container: true,
+                    label: l.mainNavigation,
+                    explicitChildNodes: true,
+                    child: SizedBox(
+                      height: _itemH * tabs.length,
+                      child: Stack(
+                        children: [
+                          AnimatedPositioned(
+                            duration: Motion.of(context, Motion.nav),
+                            curve: Motion.springNav,
+                            top: _itemH * ui.tab.index,
+                            left: 0,
+                            right: 0,
+                            height: _itemH,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: tok.pc,
+                                borderRadius: BorderRadius.circular(Sizes.rNavInd),
+                              ),
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              for (final t in tabs)
+                                SizedBox(
+                                  height: _itemH,
+                                  child: Pressable(
+                                    onTap: () => ui.goTab(t.$1),
+                                    semanticLabel: t.$4,
+                                    selected: ui.tab == t.$1,
+                                    pressScale: 0.97,
+                                    radius: BorderRadius.circular(Sizes.rNavInd),
+                                    excludeChildSemantics: true,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                                      child: Row(
+                                        children: [
+                                          AppIcon(t.$3, size: 22, color: ui.tab == t.$1 ? tok.onPc : tok.sub),
+                                          const SizedBox(width: 14),
+                                          Expanded(
+                                            child: Text(
+                                              t.$4,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w500,
+                                                color: ui.tab == t.$1 ? tok.onPc : tok.sub,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Schwebende Milchglas-Navigation mit gleitendem Indikator (Feder-Kurve).
 class _GlassNav extends StatelessWidget {
   const _GlassNav({required this.ui, required this.height});
@@ -230,13 +397,7 @@ class _GlassNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final tok = context.tok;
     final l = context.l;
-    final tabs = [
-      (AppTab.tasks, l.navTasks, Ic.tasks, l.navTasks),
-      (AppTab.calendar, l.navCalendar, Ic.calendar, l.navCalendar),
-      (AppTab.week, l.navWeek, Ic.week, l.weeklyPlan),
-      (AppTab.stats, l.navStats, Ic.stats, l.statistics),
-      (AppTab.settings, l.navSettings, Ic.settings, l.settings),
-    ];
+    final tabs = _navTabs(l);
     final idx = ui.tab.index;
     return Semantics(
       container: true,

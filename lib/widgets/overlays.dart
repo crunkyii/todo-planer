@@ -73,10 +73,12 @@ class AppSheetRoute<T> extends PopupRoute<T> {
     final mq = MediaQuery.of(context);
     // Der Abstand für die Tastatur liegt AUSSEN: Innerhalb der Höhenbegrenzung würde er dem
     // Sheet den Platz wegnehmen (auf kleinen Handys bliebe Höhe 0 – das Sheet wäre unsichtbar).
+    // Am PC (breites Fenster) steht das Formular als Fenster in der Mitte statt unten am Rand.
+    final wide = mq.size.width >= Sizes.wideWidth;
     return Padding(
       padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
       child: Align(
-        alignment: Alignment.bottomCenter,
+        alignment: wide ? Alignment.center : Alignment.bottomCenter,
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: Sizes.maxWidth,
@@ -90,8 +92,10 @@ class AppSheetRoute<T> extends PopupRoute<T> {
             child: Glass(
               color: tok.glassStrong,
               blur: 28,
-              radius: const BorderRadius.vertical(top: Radius.circular(Sizes.rSheet)),
-              border: Border(top: BorderSide(color: tok.glassEdge)),
+              radius: wide
+                  ? BorderRadius.circular(Sizes.rSheet)
+                  : const BorderRadius.vertical(top: Radius.circular(Sizes.rSheet)),
+              border: wide ? Border.all(color: tok.glassEdge) : Border(top: BorderSide(color: tok.glassEdge)),
               shadow: tok.sheetShadow,
               child: Material(
                 type: MaterialType.transparency,

@@ -11,6 +11,7 @@ import '../util/fmt.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlays.dart';
 import '../widgets/pressable.dart';
+import '../widgets/layout.dart';
 import '../widgets/ui.dart';
 import 'setup_screen.dart';
 import 'sheets.dart';
@@ -48,7 +49,7 @@ class SettingsTab extends StatelessWidget {
             TopBar(title: l.settings),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.only(bottom: Sizes.contentBottom + MediaQuery.paddingOf(context).bottom),
+                padding: EdgeInsets.only(bottom: ShellLayout.bottomOf(context)),
                 children: [
                   CapsHeading(l.theme),
                   _Themes(settings: s),
@@ -459,7 +460,7 @@ class CategoriesPage extends StatelessWidget {
             ),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.only(bottom: Sizes.contentBottom + MediaQuery.paddingOf(context).bottom),
+                padding: EdgeInsets.only(bottom: ShellLayout.bottomOf(context)),
                 children: [
                   for (final c in store.categories)
                     SetRow(
