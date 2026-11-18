@@ -3,8 +3,12 @@
 Eine Aufgaben-App für Handy (Android) und PC (Windows, Linux), gebaut mit Flutter.
 
 - **Aufgaben** mit Kategorien, Vorlauf (z. B. Hausübung „1 Tag vorher erledigen“), Uhrzeit, Unteraufgaben, Suche, Sortierung und Wischen zum Löschen
+- **Jährliche Aufgaben**: Steht „Geburtstag“, „Jahrestag“ o. Ä. im Titel, entsteht beim Abhaken dieselbe Aufgabe fürs nächste Jahr
 - **Gewohnheiten** mit Serien-Flamme
-- **Kalender**, **Wochenplan** mit Zeitblöcken und **Statistik** mit Heatmap
+- **Kalender** mit österreichischen Feiertagen, **Wochenplan** mit Zeitblöcken und **Statistik** mit Heatmap
+- **Erinnerungen** für Aufgaben mit Uhrzeit
+- **Startbildschirm-Widgets** (Android): „Heute fällig“ und Gewohnheiten zum Abhaken, Farben einstellbar
+- **Export** aller Daten als PDF, Text oder CSV
 - **10 Themes**, hell/dunkel, Deutsch/Englisch
 - **Offline zuerst**: Alles wird sofort am Gerät gespeichert und später abgeglichen
 - Optional: eigene kostenlose **Supabase**-Datenbank, damit Handy und PC gleich bleiben
@@ -71,6 +75,34 @@ flutter analyze
 flutter test
 ```
 
+`flutter test` braucht kein Gerät und keine Datenbank: Die lokale Datenbank läuft im Speicher, Supabase wird durch [`test/fake_supabase.dart`](test/fake_supabase.dart) ersetzt.
+
+| Datei | Was sie prüft |
+|---|---|
+| `test/logic_test.dart`, `test/yearly_holidays_test.dart` | Reine Logik: Datum, Sortierung, Abschnitte, Serien, Feiertage, jährliche Aufgaben |
+| `test/store_test.dart`, `test/sync_test.dart` | Store, Warteschlange und Abgleich (gegen das Supabase-Double) |
+| `test/behaviour_test.dart`, `test/widget_test.dart` | Die ganze App wird bedient: Formulare, Menüs, Tastatur, Schriftgrößen, Barrierefreiheit |
+| `test/screens_test.dart` | Bildvergleich jedes Tabs (Goldens in `test/goldens/`) |
+| `test/export_test.dart`, `test/home_widgets_test.dart`, `test/widget_config_test.dart` | Export, Daten für die Startbildschirm-Widgets und deren Einstellungen |
+
+Hat sich das Aussehen absichtlich geändert, die Vergleichsbilder neu erzeugen:
+
+```bash
+flutter test --update-goldens --tags golden
+```
+
+Ein Durchlauf der echten App am PC (Fenster geht auf, die App wird durchgeklickt):
+
+```bash
+flutter test integration_test -d windows
+```
+
+Das App-Symbol in allen Größen wird aus `tool/icon/source.webp` erzeugt:
+
+```bash
+flutter test tool/icon/make_icons_test.dart
+```
+
 ## Bauen
 
 ### Windows
@@ -104,16 +136,46 @@ flutter build apk --release
 
 Die APK liegt in `build/app/outputs/flutter-apk/app-release.apk`. Ohne `key.properties` bricht der Release-Build mit einem Hinweis ab.
 
+### Android (Test-Version neben der echten App)
+
+```bash
+flutter build apk --debug
+```
+
+Die Debug-Version hat eine eigene App-ID (`….debug`) und heißt am Handy „Todo-Liste Test“. Sie lässt sich neben der echten App installieren und hat eigene, leere Daten – zum Ausprobieren, ohne die eigenen Aufgaben anzufassen.
+
+## So ist die App aufgebaut
+
+```
+Bildschirme (lib/screens)  →  AppServices  →  Store  →  LocalDb (SQLite am Gerät)
+        ↑ zeichnen neu, wenn der Store sich meldet       ↘  SyncService  ⇄  Supabase
+```
+
+- **Bildschirme** lesen aus dem `Store` und ändern Daten nur über seine Methoden (`addTask`, `toggleTask` …). Sie kennen weder SQL noch Supabase.
+- **`Store`** ([`lib/data/store.dart`](lib/data/store.dart)) hält alle Daten im Speicher, schreibt jede Änderung in die lokale Datenbank und merkt sie für den Abgleich vor.
+- **`SyncService`** ([`lib/data/sync_service.dart`](lib/data/sync_service.dart)) lädt Vorgemerktes hoch und holt Neues ab. Bei einem Konflikt gewinnt die Zeile mit dem neueren `updated_at` – am Gerät und (per Trigger) auch in der Datenbank.
+- **`AppServices`** ([`lib/app_services.dart`](lib/app_services.dart)) verbindet alles: Anmeldung, Abgleich anstoßen, Erinnerungen neu planen, Widgets aktualisieren.
+- **Reine Logik** (was ist überfällig, wie wird sortiert, welcher Tag ist ein Feiertag) liegt ohne Widgets in `lib/util/` und ist einzeln getestet.
+- **Aussehen**: Farben, Radien, Größen und Kurven stehen in [`lib/theme/tokens.dart`](lib/theme/tokens.dart); Widgets holen sie über `context.tok`, `Sizes`, `Fs`, `Motion`.
+
+Der Weg einer Änderung, z. B. „Aufgabe abhaken“: Tipp → `Store.toggleTask` → Speicher + lokale Datenbank (als „noch hochzuladen“ markiert) → alle Bildschirme zeichnen neu → `SyncService` lädt die Zeile hoch → andere Geräte bekommen sie über Realtime.
+
+
 ## Projektaufbau
 
 | Ordner | Inhalt |
 |---|---|
-| `lib/data/` | Modelle, lokale Datenbank (drift), Store, Einstellungen, Supabase und Sync |
-| `lib/screens/` | Bildschirme: Einrichtung, Anmeldung, Aufgaben, Kalender, Woche, Statistik, Optionen, Sheets |
+| `lib/data/` | Modelle, lokale Datenbank (drift, rohes SQL), Store, Einstellungen, Supabase und Sync |
+| `lib/screens/` | Bildschirme: Einrichtung, Anmeldung, Aufgaben, Kalender, Woche, Statistik, Optionen, Widget-Einstellungen |
+| `lib/screens/sheets/` | Die Formulare, die von unten hereinfahren – eines je Datei (Aufgabe, Block, Gewohnheit, Kategorie, Export) |
+| `lib/services/` | Erinnerungen, Export (PDF/Text/CSV), Daten für die Startbildschirm-Widgets, Fehlermeldungen |
+| `lib/util/` | Reine Logik ohne Widgets: Datum, Formate, Sortierung, Feiertage, Statistik, Wochenplan-Spuren |
 | `lib/widgets/` | Bausteine: Knöpfe mit Feder-Effekt, Sheets, Menü, Kalender- und Uhrzeit-Auswahl, Meldungen |
 | `lib/theme/` | Farben, Themes, Größen, Animationskurven |
-| `lib/l10n/` | Texte auf Deutsch (`app_de.arb`) und Englisch (`app_en.arb`) |
+| `lib/l10n/` | Texte auf Deutsch (`app_de.arb`) und Englisch (`app_en.arb`); `gen/` wird daraus erzeugt |
+| `android/app/src/main/kotlin/…/widgets/` | Die Startbildschirm-Widgets (Kotlin) – sie zeigen, was `lib/services/home_widgets.dart` ihnen schickt |
 | `supabase/schema.sql` | Datenbank-Schema mit Row Level Security |
-| `design/prototyp.html` | Klick-Prototyp, nach dem die App gebaut ist |
+| `test/`, `integration_test/` | Tests (siehe oben) |
+| `tool/icon/` | Quelle und Erzeuger des App-Symbols |
 
 Neue Texte immer in **beide** ARB-Dateien eintragen; `flutter pub get` erzeugt daraus den Code.
