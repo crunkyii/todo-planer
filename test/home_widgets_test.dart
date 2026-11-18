@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:todo_liste/services/home_widgets.dart';
 import 'package:todo_liste/util/dates.dart';
+import 'package:todo_liste/util/task_logic.dart';
 
 import 'harness.dart';
 
@@ -24,8 +25,16 @@ void main() {
       expect(tasks.map((t) => t['t']), isNot(contains('Zimmer aufräumen')), reason: 'erledigte Aufgaben fehlen');
       expect(tasks.first['t'], 'Mathe S. 42 Nr. 3–7', reason: 'überfällige zuerst');
       expect(tasks.first['d'], '2026-11-17');
-      final days = tasks.map((t) => t['d'] as String).toList();
-      expect(days, [...days]..sort(), reason: 'nach Tag sortiert');
+      // Reihenfolge und „heute“ wie in der App: nach dem Tag, ab dem die Aufgabe in der Liste steht
+      // (Abgabe minus Vorlauf der Kategorie), nicht nach dem Abgabetag.
+      final starts = tasks.map((t) => t['s'] as String).toList();
+      expect(starts, [...starts]..sort(), reason: 'nach Listen-Tag sortiert');
+      for (final t in app.store.tasks.where((t) => !t.done)) {
+        final row = tasks.firstWhere((r) => r['t'] == t.title);
+        expect(row['s'], isoDate(doDate(t, app.store.catOf(t.categoryId).offset)), reason: t.title);
+        expect(row['d'], isoDate(t.dueDate), reason: t.title);
+      }
+      expect(tasks.any((t) => t['s'] != t['d']), isTrue, reason: 'die Demo hat Aufgaben mit Vorlauf');
       final trash = tasks.firstWhere((t) => t['t'] == 'Müll rausbringen');
       expect(trash['m'], 18 * 60);
       expect(trash['c'], startsWith('#'));

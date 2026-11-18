@@ -4,12 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/models.dart';
 import '../data/store.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../theme/color_math.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
+import '../util/task_logic.dart';
 
 /// Startbildschirm-Widgets (nur Android).
 ///
@@ -81,7 +83,8 @@ class HomeWidgets {
 /// Alles, was die Widgets brauchen – ohne Datum von „heute“: Das rechnet das Widget selbst,
 /// damit es auch nach Mitternacht stimmt, wenn die App nicht läuft.
 ///
-/// - `tasks`: offene Aufgaben, nach Fälligkeit sortiert (`t` Titel, `d` Tag, `m` Minuten oder null, `c` Farbe,
+/// - `tasks`: offene Aufgaben, nach Fälligkeit sortiert (`t` Titel, `d` Abgabetag, `s` Tag, ab dem sie in der
+///   Liste steht (Abgabe minus Vorlauf der Kategorie), `m` Minuten oder null, `c` Farbe,
 ///   `k` Kategorie)
 /// - `cats`: Kategorien (`id`, `n` Name, `c` Farbe) – jedes Widget kann auf einzelne davon eingestellt werden
 /// - `habits`: Gewohnheiten (`n` Name, `c` Farbe, `days` erledigte Tage der letzten 14 Tage)
@@ -89,7 +92,9 @@ class HomeWidgets {
 /// - `accent` / `accentDark`: Primärfarbe des gewählten Themes
 Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {required String themeId}) {
   final f = Fmt(l, l.localeName);
-  final open = store.tasks.where((t) => !t.done).toList()..sort((a, b) => a.due.compareTo(b.due));
+  int offset(Task t) => store.catOf(t.categoryId).offset;
+  // Gleiche Reihenfolge wie die Aufgabenliste der App.
+  final open = store.tasks.where((t) => !t.done).toList()..sort((a, b) => byDo(a, b, offset));
   final t0 = today();
   final recent = [for (var i = 0; i < 14; i++) isoDate(addDays(t0, -i))];
   final th = themeOf(themeId);
@@ -118,6 +123,7 @@ Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {requi
         {
           't': t.title,
           'd': isoDate(t.dueDate),
+          's': isoDate(doDate(t, offset(t))),
           'm': t.dueTime,
           'c': store.catOf(t.categoryId).color,
           'k': t.categoryId,

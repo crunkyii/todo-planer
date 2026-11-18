@@ -61,7 +61,8 @@ class WidgetListService : RemoteViewsService() {
                 v.setInt(R.id.bar, "setColorFilter", t.color)
                 v.setTextViewText(R.id.sub, sub)
                 v.setViewVisibility(R.id.sub, if (sub.isEmpty()) View.GONE else View.VISIBLE)
-                look.text(v, R.id.sub) { if (t.day < data.today) it.overdue else it.sub }
+                val late = data.isLate(t)
+                look.text(v, R.id.sub) { if (late) it.overdue else it.sub }
                 v.setViewVisibility(R.id.mark, View.GONE)
             }
             // Tippen auf die Zeile öffnet die App (füllt die Vorlage des Widgets aus).

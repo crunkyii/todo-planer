@@ -95,7 +95,7 @@ object Widgets {
         val cfg = WidgetConfig.load(context, id)
         val look = WidgetLook(context, cfg, data)
         val due = data.dueToday(cfg.cats)
-        val overdue = due.count { it.day < data.today }
+        val overdue = due.count(data::isLate)
         look.background(v)
         v.setTextViewText(R.id.number, due.size.toString())
         look.text(v, R.id.number) { it.accent }

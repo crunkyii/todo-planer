@@ -5,8 +5,19 @@ import android.graphics.Color
 import org.json.JSONObject
 import java.util.Calendar
 
-/** Eine offene Aufgabe, wie die App sie ins Widget schreibt. */
-data class WTask(val title: String, val day: Int, val minutes: Int?, val color: Int, val cat: String)
+/**
+ * Eine offene Aufgabe, wie die App sie ins Widget schreibt.
+ * [day] ist der Tag, ab dem sie in der Liste steht (Abgabe minus Vorlauf der Kategorie),
+ * [due] der Abgabetag.
+ */
+data class WTask(
+    val title: String,
+    val day: Int,
+    val due: Int,
+    val minutes: Int?,
+    val color: Int,
+    val cat: String,
+)
 
 /** Eine Kategorie (für die Auswahl „nur diese Kategorien“ je Widget). */
 data class WCat(val id: String, val name: String)
@@ -44,8 +55,16 @@ class WidgetData private constructor(
         return if (ids.isEmpty()) allTasks else allTasks.filter { it.cat in ids }
     }
 
-    /** Überfällige und heute fällige Aufgaben. */
+    /** Was heute in der Liste der App steht: Überfälliges und alles, was heute dran ist. */
     fun dueToday(cats: Set<String>): List<WTask> = tasks(cats).filter { it.day <= today }
+
+    /** Überfällig wie in der App: der Tag ist vorbei – oder heute die Uhrzeit. */
+    fun isLate(t: WTask): Boolean {
+        if (t.day < today) return true
+        val m = t.minutes ?: return false
+        val c = Calendar.getInstance()
+        return t.due == today && m < c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE)
+    }
 
     /** Titel mit den gewählten Kategorien dahinter, z. B. „Heute · Test, Termin“. */
     fun title(base: String, cats: Set<String>): String {
@@ -70,15 +89,17 @@ class WidgetData private constructor(
 
     fun timeLabel(minutes: Int): String = "%02d:%02d".format(minutes / 60, minutes % 60)
 
-    /** Zweite Zeile einer Aufgabe: Tag und, falls gesetzt, Uhrzeit. */
+    /**
+     * Zweite Zeile einer Aufgabe: Abgabetag und, falls gesetzt, Uhrzeit. Ohne [withDay]
+     * (Widget „Heute“) steht der Tag nur da, wenn die Abgabe nicht heute ist.
+     */
     fun subLabel(t: WTask, withDay: Boolean): String {
+        val parts = ArrayList<String>()
+        if (isLate(t)) parts += label("overdue", "Überfällig")
+        val day = if (withDay || t.due != today) dayLabel(t.due) else null
         val time = t.minutes?.let(::timeLabel)
-        return when {
-            t.day < today -> label("overdue", "Überfällig") + " · " + dayLabel(t.day)
-            withDay && time != null -> dayLabel(t.day) + ", " + time
-            withDay -> dayLabel(t.day)
-            else -> time ?: ""
-        }
+        listOfNotNull(day, time).joinToString(", ").takeIf { it.isNotEmpty() }?.let { parts += it }
+        return parts.joinToString(" · ")
     }
 
     companion object {
@@ -101,10 +122,11 @@ class WidgetData private constructor(
             o.optJSONArray("tasks")?.let { a ->
                 for (i in 0 until a.length()) {
                     val t = a.getJSONObject(i)
-                    val day = parseDay(t.optString("d")) ?: continue
+                    val due = parseDay(t.optString("d")) ?: continue
                     tasks += WTask(
                         title = t.optString("t"),
-                        day = day,
+                        day = parseDay(t.optString("s")) ?: due,
+                        due = due,
                         minutes = if (t.isNull("m")) null else t.optInt("m"),
                         color = parseColor(t.optString("c")) ?: Color.GRAY,
                         cat = t.optString("k"),

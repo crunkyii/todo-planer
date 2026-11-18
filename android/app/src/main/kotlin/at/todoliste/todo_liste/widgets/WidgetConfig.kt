@@ -145,12 +145,30 @@ class WidgetLook(context: Context, private val cfg: WidgetConfig, data: WidgetDa
     fun text(v: RemoteViews, viewId: Int, pick: (WidgetPalette) -> Int) = color(v, viewId, "setTextColor", pick)
     fun tint(v: RemoteViews, viewId: Int, pick: (WidgetPalette) -> Int) = color(v, viewId, "setColorFilter", pick)
 
+    /**
+     * Der Startbildschirm schneidet jedes Widget an den Ecken rund ab (bei Samsung immer).
+     * Damit „weich“ und „eckig“ trotzdem zu sehen sind, rückt der Hintergrund so weit nach
+     * innen, dass seine Ecken innerhalb dieser Rundung liegen.
+     */
+    private val inset: Int = run {
+        val res = context.resources
+        val outer = res.getDimension(R.dimen.widget_radius)
+        val own = when (cfg.shape) {
+            WidgetShape.ROUND -> outer
+            WidgetShape.SOFT -> res.getDimension(R.dimen.widget_radius_soft)
+            WidgetShape.SQUARE -> 0f
+        }
+        // Abstand der Ecke eines Quadrats zum Kreisbogen: r · (1 − 1/√2) ≈ 0,3 · r
+        if (!cfg.background || own >= outer) 0 else Math.ceil((outer - own) * 0.3 + res.displayMetrics.density).toInt()
+    }
+
     /** Hintergrund: Form, Farbe, Durchsichtigkeit – oder ganz weg. */
     fun background(v: RemoteViews) {
-        v.setViewVisibility(R.id.bg, if (cfg.background) View.VISIBLE else View.GONE)
+        v.setViewPadding(R.id.root, inset, inset, inset, inset)
+        v.setViewVisibility(android.R.id.background, if (cfg.background) View.VISIBLE else View.GONE)
         if (!cfg.background) return
-        v.setImageViewResource(R.id.bg, cfg.shape.drawable)
-        tint(v, R.id.bg) { it.bg or 0xFF000000.toInt() }
-        v.setInt(R.id.bg, "setImageAlpha", 255 * (100 - cfg.transparency) / 100)
+        v.setImageViewResource(android.R.id.background, cfg.shape.drawable)
+        tint(v, android.R.id.background) { it.bg or 0xFF000000.toInt() }
+        v.setInt(android.R.id.background, "setImageAlpha", 255 * (100 - cfg.transparency) / 100)
     }
 }
