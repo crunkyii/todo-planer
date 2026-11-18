@@ -78,6 +78,8 @@ class _AppShellState extends State<AppShell> {
         s.show(pending > 0 ? l.backOnlineSyncing(pending) : l.backOnline, icon: pending > 0 ? Ic.sync : Ic.cloudok);
       case AllSynced():
         s.show(l.allSynced, icon: Ic.cloudok);
+      case SchemaOutdated():
+        s.show(l.schemaOutdated, icon: Ic.database);
     }
   }
 

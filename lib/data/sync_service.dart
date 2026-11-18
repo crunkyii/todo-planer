@@ -27,6 +27,12 @@ class AllSynced extends SyncEvent {
   const AllSynced();
 }
 
+/// Der Server kennt eine Spalte nicht, die die App schickt: `supabase/schema.sql` ist älter als
+/// die App und muss in Supabase noch einmal ausgeführt werden.
+class SchemaOutdated extends SyncEvent {
+  const SchemaOutdated();
+}
+
 /// Offline-First-Sync: Änderungen liegen zuerst lokal (Warteschlange = Zeilen mit `dirty = 1`)
 /// und werden hochgeladen, sobald das Gerät online und angemeldet ist.
 /// Danach werden neue Zeilen vom Server geholt (alles mit `synced_at` nach dem letzten Abruf).
@@ -141,6 +147,8 @@ class SyncService extends ChangeNotifier {
   /// Zeilen, die der Server beim letzten Hochladen abgelehnt hat (bleiben in der Warteschlange).
   int rejected = 0;
 
+  bool _schemaHintShown = false;
+
   Future<void>? _running;
 
   /// Wartet, bis ein gerade laufender Abgleich fertig ist (z. B. vor dem Abmelden).
@@ -207,6 +215,11 @@ class SyncService extends ChangeNotifier {
             } on PostgrestException catch (e) {
               bad++;
               debugPrint('Zeile in ${t.name} abgelehnt: ${e.code}');
+              // PGRST204 = „Spalte nicht gefunden“. Nur einmal je App-Start melden.
+              if (e.code == 'PGRST204' && !_schemaHintShown) {
+                _schemaHintShown = true;
+                _events.add(const SchemaOutdated());
+              }
             }
           }
         }
