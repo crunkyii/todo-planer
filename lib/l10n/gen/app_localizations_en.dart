@@ -156,7 +156,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setupStep3 =>
-      'Under <b>Project Settings → API Keys</b>, copy the <b>Project URL</b> and the <b>Publishable Key</b> and paste them here.';
+      '<b>Project URL</b>: tap <b>Connect</b> at the top of the project or open <b>Project Settings → Data API</b>. It looks like this: https://abcdefgh.supabase.co – the part before \".supabase.co\" is the <b>Project ID</b> (Project Settings → General). <b>Publishable Key</b>: under <b>Project Settings → API Keys</b>, starts with sb_publishable_. Copy both and paste them below.';
 
   @override
   String get setupStep4 =>

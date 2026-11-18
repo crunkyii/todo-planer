@@ -48,7 +48,7 @@
   "connecting": "Verbinde …",
   "setupStep1": "Auf <b>supabase.com</b> kostenlos registrieren und ein <b>neues Projekt</b> anlegen.",
   "setupStep2": "Im Projekt <b>SQL Editor</b> öffnen, das SQL einfügen und auf <b>Run</b> tippen. Damit werden die Tabellen angelegt.",
-  "setupStep3": "Unter <b>Project Settings → API Keys</b> die <b>Project URL</b> und den <b>Publishable Key</b> kopieren und hier einfügen.",
+  "setupStep3": "<b>Project URL</b>: oben im Projekt auf <b>Connect</b> tippen oder <b>Project Settings → Data API</b> öffnen. Sie sieht so aus: https://abcdefgh.supabase.co – der Teil vor „.supabase.co“ ist die <b>Project ID</b> (Project Settings → General). <b>Publishable Key</b>: unter <b>Project Settings → API Keys</b>, beginnt mit sb_publishable_. Beides kopieren und unten einfügen.",
   "setupStep4": "Nach deiner Registrierung: <b>Authentication → Sign In / Providers</b> → <b>„Allow new users to sign up“</b> ausschalten. Dann kann sich niemand sonst ein Konto in deiner Datenbank anlegen.",
   "secretNote": "Niemals den <b>Secret Key</b> (service_role) eingeben – der gehört nicht in eine App.",
   "projectUrl": "Project URL",

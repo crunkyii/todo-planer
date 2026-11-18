@@ -383,7 +383,7 @@ abstract class AppLocalizations {
   /// No description provided for @setupStep3.
   ///
   /// In de, this message translates to:
-  /// **'Unter <b>Project Settings → API Keys</b> die <b>Project URL</b> und den <b>Publishable Key</b> kopieren und hier einfügen.'**
+  /// **'<b>Project URL</b>: oben im Projekt auf <b>Connect</b> tippen oder <b>Project Settings → Data API</b> öffnen. Sie sieht so aus: https://abcdefgh.supabase.co – der Teil vor „.supabase.co“ ist die <b>Project ID</b> (Project Settings → General). <b>Publishable Key</b>: unter <b>Project Settings → API Keys</b>, beginnt mit sb_publishable_. Beides kopieren und unten einfügen.'**
   String get setupStep3;
 
   /// No description provided for @setupStep4.
