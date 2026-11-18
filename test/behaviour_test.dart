@@ -482,6 +482,50 @@ void main() {
     });
   });
 
+  group('Anmeldung und Einrichtung', () {
+    testWidgets('Anmeldung prüft E-Mail und Passwort', (tester) async {
+      for (final lang in ['de', 'en']) {
+        final l = l10n(lang);
+        final app = await makeServices(lang: lang, syncMode: 'cloud', cloudConfig: true);
+        await pumpApp(tester, app);
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), 'keine-mail');
+        await _tap(tester, find.text(l.signIn).last);
+        expect(find.text(l.errEmail), findsOneWidget);
+        await tester.enterText(fields.at(0), 'ich@beispiel.at');
+        await _tap(tester, find.text(l.signIn).last);
+        expect(find.text(l.errPassword), findsOneWidget);
+        await finishApp(tester, app);
+      }
+    });
+
+    testWidgets('Einrichtung lehnt falsche URL, falschen Key und den Secret Key ab', (tester) async {
+      for (final lang in ['de', 'en']) {
+        final l = l10n(lang);
+        final app = await makeServices(lang: lang, syncMode: null);
+        await pumpApp(tester, app);
+        await _tap(tester, find.text(l.setupCloudTitle));
+        final fields = find.byType(TextField);
+        Future<void> submit(String url, String key) async {
+          await tester.ensureVisible(fields.at(0));
+          await tester.enterText(fields.at(0), url);
+          await tester.enterText(fields.at(1), key);
+          await tester.ensureVisible(find.text(l.connect).last);
+          await _tap(tester, find.text(l.connect).last);
+        }
+
+        await submit('http://abc.supabase.co', 'sb_publishable_abcdefghijkl');
+        expect(find.text(l.errUrl), findsOneWidget);
+        await submit('https://abcdefgh.supabase.co', 'irgendwas');
+        expect(find.text(l.errKeyFormat), findsOneWidget);
+        await submit('https://abcdefgh.supabase.co', 'sb_secret_abcdefghijklmnop');
+        expect(find.text(l.errSecretKey), findsOneWidget);
+        expect(app.settings.cloud, isNull, reason: 'nichts davon darf gespeichert werden');
+        await finishApp(tester, app);
+      }
+    });
+  });
+
   group('Offline', () {
     testWidgets('Toast beim Offline-Gehen, „Am Gerät gespeichert“, Toast bei wieder online', (tester) async {
       final l = l10n('de');

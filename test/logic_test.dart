@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo_liste/data/cloud.dart';
@@ -12,6 +13,7 @@ import 'package:todo_liste/services/error_messages.dart';
 import 'package:todo_liste/services/reminders.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/util/dates.dart';
+import 'package:todo_liste/util/fmt.dart';
 import 'package:todo_liste/util/task_logic.dart';
 
 Task _task(String title, DateTime due, {int? time, bool done = false, String cat = 'c'}) => Task(
@@ -69,7 +71,82 @@ void main() {
     });
   });
 
+  group('Kalender-Grenzen', () {
+    test('Schaltjahr, Monats- und Jahreswechsel', () {
+      expect(addDays(DateTime(2028, 2, 28), 1), DateTime(2028, 2, 29));
+      expect(addDays(DateTime(2027, 2, 28), 1), DateTime(2027, 3, 1));
+      expect(addDays(DateTime(2026, 12, 31), 1), DateTime(2027, 1, 1));
+      expect(addDays(DateTime(2027, 1, 1), -1), DateTime(2026, 12, 31));
+      expect(dayDiff(DateTime(2028, 3, 1), DateTime(2028, 2, 1)), 29);
+      expect(isoDate(DateTime(2026, 1, 5)), '2026-01-05');
+      expect(parseIsoDate('2028-02-29T10:00:00'), DateTime(2028, 2, 29));
+    });
+
+    test('Woche beginnt am Montag, auch über Monat und Jahr hinweg', () {
+      expect(monday(DateTime(2026, 11, 22)), DateTime(2026, 11, 16)); // Sonntag gehört zur Woche davor
+      expect(monday(DateTime(2026, 12, 1)), DateTime(2026, 11, 30));
+      expect(monday(DateTime(2027, 1, 1)), DateTime(2026, 12, 28));
+      expect(wdIndex(DateTime(2026, 11, 16)), 0);
+      expect(wdIndex(DateTime(2026, 11, 22)), 6);
+      expect(isoWeek(DateTime(2026, 12, 28)), 53);
+      expect(isoWeek(DateTime(2027, 1, 4)), 1);
+      expect(isoWeek(DateTime(2024, 12, 30)), 1);
+    });
+
+    test('Tage zählen über die Zeitumstellung hinweg', () {
+      expect(dayDiff(DateTime(2027, 3, 29), DateTime(2027, 3, 27)), 2);
+      expect(addDays(DateTime(2027, 3, 27), 2), DateTime(2027, 3, 29));
+      expect(addDays(DateTime(2027, 10, 30), 2), DateTime(2027, 11, 1));
+    });
+
+    test('Serie über den Monatswechsel', () {
+      final t = DateTime(2026, 12, 2);
+      final done = {'2026-12-02', '2026-12-01', '2026-11-30', '2026-11-29'};
+      expect(streak((d) => done.contains(isoDate(d)), from: t), 4);
+    });
+  });
+
+  group('Formate je Sprache', () {
+    setUpAll(() => initializeDateFormatting());
+    final d = DateTime(2026, 11, 20);
+
+    test('Deutsch', () {
+      final f = Fmt(lookupAppLocalizations(const Locale('de')), 'de');
+      expect(f.dayMonth(d), '20. November');
+      expect(f.dayNum(d), '20.');
+      expect(f.wd(0), 'Mo');
+      expect(f.oneDecimal(1.9), '1,9');
+      expect(f.duration(90), contains('1'));
+      expect(f.time(8 * 60 + 5), '08:05');
+    });
+
+    test('Englisch', () {
+      final f = Fmt(lookupAppLocalizations(const Locale('en')), 'en');
+      expect(f.dayMonth(d), 'November 20');
+      expect(f.dayNum(d), '20');
+      expect([f.wd(0), f.wd(1), f.wd(6)], ['Mo', 'Tu', 'Su']); // zwei Buchstaben wie im Prototyp
+      expect(f.oneDecimal(1.9), '1.9');
+    });
+  });
+
   group('Abschnitte', () {
+    test('Am Sonntag ist „Diese Woche“ leer; Mitternacht trennt die Tage', () {
+      final sunday = DateTime(2026, 11, 22, 23, 59);
+      expect(sectionOf(_task('a', DateTime(2026, 11, 23)), 0, now: sunday), Section.tomorrow);
+      expect(sectionOf(_task('b', DateTime(2026, 11, 24)), 0, now: sunday), Section.later);
+      expect(sectionOf(_task('c', DateTime(2026, 11, 22)), 0, now: sunday), Section.today);
+      final justAfter = DateTime(2026, 11, 23, 0, 0, 1);
+      expect(sectionOf(_task('c', DateTime(2026, 11, 22)), 0, now: justAfter), Section.overdue);
+      expect(sectionOf(_task('d', DateTime(2026, 11, 23), time: 0), 0, now: justAfter), Section.overdue);
+      expect(sectionOf(_task('e', DateTime(2026, 11, 23)), 0, now: justAfter), Section.today);
+    });
+
+    test('Vorlauf „1 Woche vorher“ über den Monatswechsel', () {
+      final t = _task('Test', DateTime(2026, 12, 3));
+      expect(doDate(t, 7), DateTime(2026, 11, 26));
+      expect(sectionOf(t, 7, now: DateTime(2026, 11, 26, 8)), Section.today);
+    });
+
     final now = DateTime(2026, 11, 18, 10); // Mittwoch
 
     test('Vorlauf der Kategorie verschiebt den Erledigen-Tag', () {
