@@ -393,10 +393,7 @@ class _TaskSheetState extends State<_TaskSheet> {
                   step: 5,
                   quick: [
                     (minutes: null, label: l.timeNone),
-                    (minutes: 8 * 60, label: '8:00'),
-                    (minutes: 12 * 60, label: '12:00'),
-                    (minutes: 16 * 60, label: '16:00'),
-                    (minutes: 20 * 60, label: '20:00'),
+                    for (final h in const [8, 12, 16, 20]) (minutes: h * 60, label: f.time(h * 60)),
                   ],
                   onQuick: (q) => setState(() {
                     _time = q.minutes;
@@ -539,7 +536,10 @@ class _BlockSheetState extends State<_BlockSheet> {
     final app = context.app;
     final name = _name.text.trim();
     final r = _raster;
-    final start = (_start / r).round() * r, end = (_end / r).round() * r;
+    // Nur gerundet wird, was der User geändert hat – wer einen alten 10:15-Block nach dem
+    // Wechsel auf ein 30-Minuten-Raster nur umbenennt, behält 10:15.
+    int snap(int v, int orig) => v == orig ? v : (v / r).round() * r;
+    final start = snap(_start, widget.start), end = snap(_end, widget.end);
     String? err;
     if (name.isEmpty) {
       err = l.errName;
@@ -641,6 +641,8 @@ class _BlockSheetState extends State<_BlockSheet> {
                   (minutes: 90, label: l.quickPlus90),
                   (minutes: 120, label: l.quickPlus120),
                 ],
+                // Die Chips sind Dauern ab „Von“, keine Uhrzeiten.
+                isSelected: (q) => _end - _start == q.minutes,
                 onQuick: (q) => setState(() => _end = (_start + q.minutes!).clamp(0, 24 * 60 - _raster)),
                 onChanged: (v) => setState(() => _end = v),
               ),

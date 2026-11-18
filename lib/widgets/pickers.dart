@@ -20,7 +20,7 @@ typedef QuickTime = ({int? minutes, String label});
 /// Zwei Räder (Stunde : Minute), drehen mit Schwung und rasten ein (.wheels).
 /// [step] = Minutenschritt (5 für Aufgaben, das Raster für Blöcke).
 class TimeWheel extends StatefulWidget {
-  const TimeWheel({super.key, required this.value, required this.step, required this.onChanged, this.quick = const [], this.onQuick});
+  const TimeWheel({super.key, required this.value, required this.step, required this.onChanged, this.quick = const [], this.onQuick, this.isSelected});
 
   /// Aktuelle Zeit in Minuten; `null` = keine Uhrzeit (Rad zeigt 08:00).
   final int? value;
@@ -28,6 +28,9 @@ class TimeWheel extends StatefulWidget {
   final ValueChanged<int> onChanged;
   final List<QuickTime> quick;
   final ValueChanged<QuickTime>? onQuick;
+
+  /// Wann ein Schnellwahl-Chip markiert ist (Standard: gleiche Uhrzeit).
+  final bool Function(QuickTime)? isSelected;
 
   @override
   State<TimeWheel> createState() => _TimeWheelState();
@@ -152,7 +155,7 @@ class _TimeWheelState extends State<TimeWheel> {
           for (final q in widget.quick)
             AppChip(
               label: q.label,
-              selected: widget.value == q.minutes && q.minutes != null,
+              selected: widget.isSelected?.call(q) ?? (widget.value == q.minutes && q.minutes != null),
               height: 32,
               padding: 12,
               fontSize: 13,
