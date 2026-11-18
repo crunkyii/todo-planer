@@ -339,6 +339,7 @@
   "updateInstall": "Install",
   "updateDownloading": "Downloading … {percent} %",
   "updateInstalling": "Installing – the app will restart shortly",
+  "updateConfirm": "Please tap “Update” in the Android dialog",
   "updateFailed": "That did not work – click here to try again",
   "langDe": "Deutsch",
   "langEn": "English",

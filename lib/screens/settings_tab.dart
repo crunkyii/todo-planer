@@ -197,7 +197,7 @@ class _UpdateRow extends StatelessWidget {
       UpdateState.checking => l.updateChecking,
       UpdateState.available => l.updateAvailable(updater.found?.version ?? ''),
       UpdateState.downloading => l.updateDownloading((updater.progress * 100).floor()),
-      UpdateState.installing => l.updateInstalling,
+      UpdateState.installing => updater.asksUser ? l.updateConfirm : l.updateInstalling,
       UpdateState.failed => l.updateFailed,
     };
     return Semantics(

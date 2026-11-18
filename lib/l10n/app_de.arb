@@ -798,6 +798,7 @@
     }
   },
   "updateInstalling": "Wird installiert – die App startet gleich neu",
+  "updateConfirm": "Bitte im Fenster von Android auf „Aktualisieren“ tippen",
   "updateFailed": "Das hat nicht geklappt – hier klicken, um es noch einmal zu versuchen",
   "langDe": "Deutsch",
   "langEn": "English",

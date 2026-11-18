@@ -1168,6 +1168,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateInstalling => 'Installing – the app will restart shortly';
 
   @override
+  String get updateConfirm => 'Please tap “Update” in the Android dialog';
+
+  @override
   String get updateFailed => 'That did not work – click here to try again';
 
   @override

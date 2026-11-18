@@ -1177,6 +1177,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get updateInstalling => 'Wird installiert – die App startet gleich neu';
 
   @override
+  String get updateConfirm => 'Bitte im Fenster von Android auf „Aktualisieren“ tippen';
+
+  @override
   String get updateFailed => 'Das hat nicht geklappt – hier klicken, um es noch einmal zu versuchen';
 
   @override

@@ -2126,6 +2126,12 @@ abstract class AppLocalizations {
   /// **'Wird installiert – die App startet gleich neu'**
   String get updateInstalling;
 
+  /// No description provided for @updateConfirm.
+  ///
+  /// In de, this message translates to:
+  /// **'Bitte im Fenster von Android auf „Aktualisieren“ tippen'**
+  String get updateConfirm;
+
   /// No description provided for @updateFailed.
   ///
   /// In de, this message translates to:
