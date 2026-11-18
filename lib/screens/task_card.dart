@@ -134,7 +134,7 @@ class _TaskCardState extends State<TaskCard> {
     final when = c.offset > 0 ? l.infoHandIn(f.day(t.dueDate)) : f.dayTime(t.dueDate, t.dueTime);
     final subDone = t.subs.where((s) => s.done).length;
     final pending = app.offlineCloud && store.pendingTaskIds.contains(t.id);
-    final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()]);
+    final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular);
 
     final card = Container(
       decoration: BoxDecoration(
@@ -319,7 +319,7 @@ class HabitsTaskCard extends StatelessWidget {
     final all = hs.isNotEmpty && done == hs.length;
     final open = !ui.collapsed.contains('habits');
     final cc = tok.item(habitColorHex);
-    final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()]);
+    final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
@@ -494,7 +494,7 @@ class _HabitSub extends StatelessWidget {
                   const SizedBox(width: 3),
                   Text(
                     '$st',
-                    style: TextStyle(fontSize: 12, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()]),
+                    style: TextStyle(fontSize: 12, color: tok.sub, fontFeatures: Fs.tabular),
                   ),
                 ],
               ),

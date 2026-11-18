@@ -10,11 +10,9 @@ import 'pressable.dart';
 
 /// Text mit `<b>…</b>`-Markierungen (aus den ARB-Dateien) fett darstellen.
 class RichB extends StatelessWidget {
-  const RichB(this.text, {super.key, this.style, this.boldWeight = FontWeight.w500, this.textAlign});
+  const RichB(this.text, {super.key, this.style});
   final String text;
   final TextStyle? style;
-  final FontWeight boldWeight;
-  final TextAlign? textAlign;
 
   @override
   Widget build(BuildContext context) {
@@ -26,37 +24,24 @@ class RichB extends StatelessWidget {
       spans.add(
         TextSpan(
           text: m.group(1),
-          style: TextStyle(fontWeight: boldWeight, color: style?.color),
+          style: TextStyle(fontWeight: FontWeight.w500, color: style?.color),
         ),
       );
       i = m.end;
     }
     if (i < text.length) spans.add(TextSpan(text: text.substring(i)));
-    return Text.rich(
-      TextSpan(children: spans),
-      style: style,
-      textAlign: textAlign,
-    );
+    return Text.rich(TextSpan(children: spans), style: style);
   }
 }
 
 /// Runder Icon-Knopf 44×44 (.icon-btn).
 class IconBtn extends StatelessWidget {
-  const IconBtn(
-    this.icon, {
-    super.key,
-    required this.label,
-    required this.onTap,
-    this.pressed,
-    this.size = 24,
-    this.color,
-  });
+  const IconBtn(this.icon, {super.key, required this.label, required this.onTap, this.pressed, this.size = 24});
   final Ic icon;
   final String label;
   final VoidCallback? onTap;
   final bool? pressed;
   final double size;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +59,7 @@ class IconBtn extends StatelessWidget {
         height: Sizes.iconBtn,
         decoration: BoxDecoration(shape: BoxShape.circle, color: on ? tok.pc : Colors.transparent),
         alignment: Alignment.center,
-        child: AppIcon(icon, size: size, color: color ?? (on ? tok.p : tok.sub)),
+        child: AppIcon(icon, size: size, color: on ? tok.p : tok.sub),
       ),
     );
   }
@@ -506,10 +491,9 @@ class AppInput extends StatelessWidget {
 
 /// Großer Überschrift-Abschnitt in Großbuchstaben (.set-h, .section-h).
 class CapsHeading extends StatelessWidget {
-  const CapsHeading(this.text, {super.key, this.padding = const EdgeInsets.fromLTRB(20, 20, 20, 8), this.color});
+  const CapsHeading(this.text, {super.key, this.padding = const EdgeInsets.fromLTRB(20, 20, 20, 8)});
   final String text;
   final EdgeInsets padding;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -518,12 +502,7 @@ class CapsHeading extends StatelessWidget {
       header: true,
       child: Text(
         text.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12.5,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.6,
-          color: color ?? context.tok.sub,
-        ),
+        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, letterSpacing: 0.6, color: context.tok.sub),
       ),
     ),
   );

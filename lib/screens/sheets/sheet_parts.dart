@@ -140,7 +140,7 @@ class DateTimeButton extends StatelessWidget {
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: tok.text,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      fontFeatures: Fs.tabular,
                     ),
                   ),
                 ],

@@ -10,6 +10,7 @@ import 'data/sync_service.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'services/home_widgets.dart';
 import 'services/reminders.dart';
+import 'theme/tokens.dart';
 import 'util/dates.dart';
 import 'util/fmt.dart';
 import 'util/task_logic.dart';
@@ -25,7 +26,7 @@ class AppServices extends ChangeNotifier {
     required this.reminders,
   }) {
     store.onLocalChange = _onLocalChange;
-    store.addListener(_scheduleReminders);
+    store.addListener(_refreshRemindersAndWidgets);
     settings.addListener(_onSettingsChanged);
     sync.onPulled = _afterPull;
     _lifecycle = AppLifecycleListener(onResume: _onResume);
@@ -120,8 +121,7 @@ class AppServices extends ChangeNotifier {
       if (settings.owner != null) {
         await store.wipe();
       } else {
-        await store.db.markAllDirty();
-        await store.refreshPending();
+        await store.markAllDirty();
       }
       await settings.resetCursors();
       await settings.setOwner(owner);
@@ -150,10 +150,10 @@ class AppServices extends ChangeNotifier {
     final l = _l;
     if (l == null) return;
     store.ensureDefaultCategories([
-      (name: l.catHomework, color: '#3D9BE9', offset: 1),
-      (name: l.catTask, color: '#34C38F', offset: 0),
-      (name: l.catTest, color: '#F07A5F', offset: 2),
-      (name: l.catAppointment, color: '#8E7CF0', offset: 0),
+      (name: l.catHomework, color: ColorPreset.skyBlue.hex, offset: 1),
+      (name: l.catTask, color: ColorPreset.mintGreen.hex, offset: 0),
+      (name: l.catTest, color: ColorPreset.coral.hex, offset: 2),
+      (name: l.catAppointment, color: ColorPreset.lavender.hex, offset: 0),
     ]);
   }
 
@@ -163,7 +163,7 @@ class AppServices extends ChangeNotifier {
     _l = l;
     reminders.setTexts(channelName: l.notifChannelName, channelDesc: l.notifChannelDesc);
     if (settings.syncMode == SyncMode.local || (signedIn && _firstSyncDone)) _ensureDefaults();
-    if (changed) _scheduleReminders();
+    if (changed) _refreshRemindersAndWidgets();
   }
 
   /// Die App braucht mindestens eine Kategorie, um eine Aufgabe anzulegen – notfalls
@@ -216,10 +216,12 @@ class AppServices extends ChangeNotifier {
 
   void _onSettingsChanged() {
     if (settings.dirty && signedIn) sync.schedule();
-    _scheduleReminders();
+    _refreshRemindersAndWidgets();
   }
 
-  void _scheduleReminders() {
+  /// Nach jeder Änderung an Daten oder Einstellungen (gebündelt, mit kurzer Pause): die
+  /// Startbildschirm-Widgets bekommen den neuen Stand und die Erinnerungen werden neu geplant.
+  void _refreshRemindersAndWidgets() {
     _reminderTimer?.cancel();
     _reminderTimer = Timer(const Duration(milliseconds: 800), () {
       final l = _l;
@@ -248,7 +250,12 @@ class AppServices extends ChangeNotifier {
     _authSub?.cancel();
     _reminderTimer?.cancel();
     _nextChangeTimer?.cancel();
-    store.removeListener(_scheduleNextChange);
+    store
+      ..removeListener(_scheduleNextChange)
+      ..removeListener(_refreshRemindersAndWidgets)
+      ..onLocalChange = null;
+    settings.removeListener(_onSettingsChanged);
+    sync.onPulled = null;
     _lifecycle.dispose();
     snack.dispose();
     super.dispose();

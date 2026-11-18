@@ -49,13 +49,9 @@ class WidgetConfigApp extends StatelessWidget {
       localizationsDelegates: const [AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates],
       theme: buildAppTheme(themeId, dark: false),
       darkTheme: buildAppTheme(themeId, dark: true),
-      themeMode: switch (mode) {
-        AppMode.light => ThemeMode.light,
-        AppMode.dark => ThemeMode.dark,
-        AppMode.system => ThemeMode.system,
-      },
+      themeMode: themeModeOf(mode),
       scrollBehavior: const AppScrollBehavior(),
-      builder: (context, child) => MediaQuery.withClampedTextScaling(maxScaleFactor: 1.6, child: child!),
+      builder: (context, child) => MediaQuery.withClampedTextScaling(maxScaleFactor: maxTextScale, child: child!),
       home: WidgetConfigScreen(
         themeId: themeId,
         kind: kind,

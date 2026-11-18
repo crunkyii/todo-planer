@@ -7,27 +7,12 @@ import '../theme/color_math.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
+import '../util/stats.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
 import '../widgets/ui.dart';
 import 'sheets.dart';
 import 'ui_state.dart';
-
-const int heatWeeks = 18;
-
-/// Stufe 0–4 der Heatmap aus der Anzahl erledigter Aufgaben eines Tages.
-int heatLevel(int n) => n == 0
-    ? 0
-    : n <= 1
-    ? 1
-    : n <= 3
-    ? 2
-    : n <= 5
-    ? 3
-    : 4;
-
-/// Obere Achsen-Grenze des Balkendiagramms: mindestens 4, gerade Zahl.
-int chartMax(Iterable<int> totals) => math.max(4, (totals.fold<int>(0, math.max) / 2).ceil() * 2);
 
 /// Tab „Statistik“: Kacheln, Heatmap, gestapelte Balken, Kategorien, Gewohnheiten.
 class StatsTab extends StatelessWidget {
@@ -130,7 +115,7 @@ class _Tiles extends StatelessWidget {
       height: 32 / 26,
       fontWeight: FontWeight.w500,
       color: tok.text,
-      fontFeatures: const [FontFeature.tabularFigures()],
+      fontFeatures: Fs.tabular,
     );
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
@@ -320,11 +305,7 @@ class _Heatmap extends StatelessWidget {
             children: [
               Semantics(
                 liveRegion: true,
-                child: RichB(
-                  info,
-                  style: TextStyle(fontSize: 12, color: tok.sub),
-                  boldWeight: FontWeight.w500,
-                ),
+                child: RichB(info, style: TextStyle(fontSize: 12, color: tok.sub)),
               ),
               ExcludeSemantics(
                 child: Row(
@@ -370,7 +351,7 @@ class _Chart extends StatelessWidget {
     final total = totals.fold<int>(0, (a, b) => a + b);
     final reduced = Motion.reduced(context);
     const h = 130.0;
-    final axis = TextStyle(fontSize: Fs.tiny, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()]);
+    final axis = TextStyle(fontSize: Fs.tiny, color: tok.sub, fontFeatures: Fs.tabular);
     final delay = range > 7 ? 12 : 40;
     final totalMs = Motion.bar.inMilliseconds + delay * (range - 1);
 
@@ -604,11 +585,7 @@ class _ByCategory extends StatelessWidget {
                       child: Text(
                         '${x.n}',
                         textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: tok.sub,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
+                        style: TextStyle(fontSize: 14, color: tok.sub, fontFeatures: Fs.tabular),
                       ),
                     ),
                   ],
@@ -677,11 +654,7 @@ class _Habits extends StatelessWidget {
                           const SizedBox(width: 3),
                           Text(
                             l.streakDays(st),
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: tok.sub,
-                              fontFeatures: const [FontFeature.tabularFigures()],
-                            ),
+                            style: TextStyle(fontSize: 12.5, color: tok.sub, fontFeatures: Fs.tabular),
                           ),
                         ],
                       ),
@@ -738,7 +711,7 @@ class _Habits extends StatelessWidget {
                                                         height: 18 / 14,
                                                         fontWeight: FontWeight.w500,
                                                         color: hc.ci,
-                                                        fontFeatures: const [FontFeature.tabularFigures()],
+                                                        fontFeatures: Fs.tabular,
                                                       ),
                                                     ),
                                             ),

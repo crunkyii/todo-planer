@@ -2,6 +2,7 @@ import 'dart:ui' show PointerDeviceKind;
 
 import 'package:material_ui/material_ui.dart';
 
+import '../data/settings_store.dart';
 import 'tokens.dart';
 
 /// Scrollen wie am Handy, auch am PC: Listen lassen sich mit der Maus ziehen. Ohne das wären
@@ -12,6 +13,17 @@ class AppScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => PointerDeviceKind.values.toSet();
 }
+
+/// Sehr große Systemschrift (bis 2×) würde das dichte Layout sprengen: Bis hierher wächst
+/// alles mit, darüber bleibt es bei diesem Faktor.
+const double maxTextScale = 1.6;
+
+/// Die Einstellung „Hell / Dunkel / System“ als Material-Wert.
+ThemeMode themeModeOf(AppMode mode) => switch (mode) {
+  AppMode.light => ThemeMode.light,
+  AppMode.dark => ThemeMode.dark,
+  AppMode.system => ThemeMode.system,
+};
 
 /// Baut das Material-Theme aus den Prototyp-Tokens. Die Widgets lesen ihre
 /// Farben über `context.tok`, Material-Bausteine (Textfelder, Dialoge) über das ColorScheme.

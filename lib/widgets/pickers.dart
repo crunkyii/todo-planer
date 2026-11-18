@@ -162,11 +162,7 @@ class _TimeWheelState extends State<TimeWheel> {
                       builder: (context, i) => Center(
                         child: Text(
                           pad2(i * mult),
-                          style: TextStyle(
-                            fontSize: Fs.wheel,
-                            color: tok.text,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
+                          style: TextStyle(fontSize: Fs.wheel, color: tok.text, fontFeatures: Fs.tabular),
                         ),
                       ),
                     ),
@@ -380,7 +376,7 @@ class DayCell extends StatelessWidget {
                   fontSize: 14,
                   color: other && !selected && !holiday ? tok.sub : numColor,
                   fontWeight: holiday ? FontWeight.w600 : null,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+                  fontFeatures: Fs.tabular,
                 ),
               ),
             ),

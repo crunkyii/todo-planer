@@ -20,15 +20,12 @@ class Pressable extends StatefulWidget {
     this.glow = true,
     this.pressScale = 0.92,
     this.radius = const BorderRadius.all(Radius.circular(999)),
-    this.focusRadius,
     this.tooltip,
     this.excludeChildSemantics = false,
-    this.onTapDown,
   });
 
   final Widget child;
   final VoidCallback? onTap;
-  final ValueChanged<TapDownDetails>? onTapDown;
   final String? semanticLabel;
   final bool? selected;
   final bool? toggled;
@@ -37,7 +34,6 @@ class Pressable extends StatefulWidget {
   /// 0.92 für Knöpfe, 0.97 für ganze Zeilen/Karten.
   final double pressScale;
   final BorderRadius radius;
-  final BorderRadius? focusRadius;
   final String? tooltip;
   final bool excludeChildSemantics;
 
@@ -69,7 +65,6 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
   }
 
   void _down(TapDownDetails d) {
-    widget.onTapDown?.call(d);
     if (widget.onTap == null || _reduced) return;
     _scale.animateTo(widget.pressScale, duration: Motion.press, curve: Curves.easeOut);
     if (widget.glow) _addGlow(d.localPosition);
@@ -131,7 +126,7 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
       child = DecoratedBox(
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
-          borderRadius: widget.focusRadius ?? widget.radius,
+          borderRadius: widget.radius,
           border: Border.all(color: tok.p, width: 2),
         ),
         child: child,

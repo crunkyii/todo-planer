@@ -7,14 +7,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo_liste/data/cloud.dart';
 import 'package:todo_liste/data/models.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
-import 'package:todo_liste/screens/stats_tab.dart';
-import 'package:todo_liste/screens/week_tab.dart';
 import 'package:todo_liste/services/error_messages.dart';
 import 'package:todo_liste/services/reminders.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/util/dates.dart';
 import 'package:todo_liste/util/fmt.dart';
+import 'package:todo_liste/util/stats.dart';
 import 'package:todo_liste/util/task_logic.dart';
+import 'package:todo_liste/util/week_layout.dart';
 
 Task _task(String title, DateTime due, {int? time, bool done = false, String cat = 'c'}) => Task(
   id: newId(),

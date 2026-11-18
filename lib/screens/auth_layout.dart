@@ -14,7 +14,7 @@ class AuthLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final low = MediaQuery.sizeOf(context).height < 640;
+    final low = MediaQuery.sizeOf(context).height < Sizes.lowHeight;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: BlobBackground(
@@ -58,7 +58,7 @@ class LogoTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
-    final low = MediaQuery.sizeOf(context).height < 640;
+    final low = MediaQuery.sizeOf(context).height < Sizes.lowHeight;
     final s = low ? 64.0 : 84.0;
     return Column(
       children: [

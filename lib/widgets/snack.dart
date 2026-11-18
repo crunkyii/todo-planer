@@ -16,10 +16,13 @@ class SnackMsg {
   final Duration duration;
 
   static Duration _durationFor(VoidCallback? undo, Ic? icon) {
-    // Mit „Rückgängig“ bleibt es 4 s, reine Bestätigungen nur ein kurzer Sprung
+    // Mit „Rückgängig“ bleibt es 4 s stehen, damit man den Knopf erreicht.
     if (undo != null) return const Duration(milliseconds: 4000);
+    // Hinweise zum Konto (ganzer Satz zum Lesen) am längsten …
     if (icon == Ic.database) return const Duration(milliseconds: 4500);
+    // … Meldungen zum Abgleich (offline, wieder online) mittellang …
     if (icon == Ic.cloudoff || icon == Ic.sync) return const Duration(milliseconds: 2600);
+    // … und reine Bestätigungen („Gespeichert“) nur als kurzer Sprung.
     return const Duration(milliseconds: 1300);
   }
 }

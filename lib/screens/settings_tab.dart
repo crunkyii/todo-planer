@@ -88,7 +88,7 @@ class SettingsTab extends StatelessWidget {
                     title: l.grid,
                     trailing: Seg<int>(
                       label: l.grid,
-                      options: const [(5, '5'), (15, '15'), (30, '30')],
+                      options: [for (final r in SettingsStore.rasterChoices) (r, '$r')],
                       value: s.raster,
                       onChanged: (v) => s.update((x) => x.raster = v),
                     ),
@@ -98,8 +98,8 @@ class SettingsTab extends StatelessWidget {
                     trailing: _HourPicker(
                       label: l.dayStarts,
                       value: s.dayStart,
-                      from: 4,
-                      to: 10,
+                      from: SettingsStore.dayStartMin,
+                      to: SettingsStore.dayStartMax,
                       onChanged: (v) => s.update((x) => x.dayStart = v),
                     ),
                   ),
@@ -108,8 +108,8 @@ class SettingsTab extends StatelessWidget {
                     trailing: _HourPicker(
                       label: l.dayEnds,
                       value: s.dayEnd,
-                      from: 16,
-                      to: 24,
+                      from: SettingsStore.dayEndMin,
+                      to: SettingsStore.dayEndMax,
                       onChanged: (v) => s.update((x) => x.dayEnd = v),
                     ),
                   ),
@@ -420,7 +420,7 @@ class _HourPicker extends StatelessWidget {
               children: [
                 Text(
                   hmString(value * 60),
-                  style: TextStyle(fontSize: 14, color: tok.text, fontFeatures: const [FontFeature.tabularFigures()]),
+                  style: TextStyle(fontSize: 14, color: tok.text, fontFeatures: Fs.tabular),
                 ),
                 const SizedBox(width: 4),
                 AppIcon(Ic.down, size: 18, color: tok.sub),

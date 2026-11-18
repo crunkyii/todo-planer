@@ -51,7 +51,7 @@ class CalendarTab extends StatelessWidget {
                       height: 0.9,
                       fontWeight: FontWeight.w700,
                       color: selected ? tok.text : tok.sub,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      fontFeatures: Fs.tabular,
                     ),
                   )
                 : Row(

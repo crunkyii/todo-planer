@@ -97,7 +97,7 @@ class _AppShellState extends State<AppShell> {
     final app = AppScope.of(context);
     final l = context.l;
     final mq = MediaQuery.of(context);
-    final low = mq.size.height < 640;
+    final low = mq.size.height < Sizes.lowHeight;
     return Scaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,

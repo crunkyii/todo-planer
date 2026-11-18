@@ -184,7 +184,6 @@ class AppTokens extends ThemeExtension<AppTokens> {
 
 /// Radien und Abstände (aus dem CSS des Prototyps).
 abstract final class Sizes {
-  static const double rChip = 18;
   static const double rCard = 12;
   static const double rCardLarge = 22;
   static const double rTile = 20;
@@ -199,7 +198,6 @@ abstract final class Sizes {
   static const double rSnack = 8;
   static const double rToast = 20;
   static const double rSeg = 20;
-  static const double rBtn = 20;
   static const double rCalDay = 12;
   static const double rChoice = 22;
   static const double rBlock = 6;
@@ -219,8 +217,12 @@ abstract final class Sizes {
   static const double wheelItem = 40;
   static const double wheelH = 200;
   static const double maxWidth = 560;
-  static const double gutter = 20;
-  static const double cardMargin = 12;
+
+  /// Bis zu dieser Fensterhöhe rücken Kopf und Abstände zusammen (Querformat am Handy).
+  static const double lowHeight = 640;
+
+  /// Bis zu dieser Breite gilt ein Handy als schmal: kleinere Schrift im Wochenplan, kürzere Chips.
+  static const double narrowWidth = 360;
 }
 
 /// Schriftgrößen (px aus dem CSS).
@@ -240,6 +242,9 @@ abstract final class Fs {
   static const double wheel = 22;
   static const double tile = 26;
   static const double login = 28;
+
+  /// Ziffern gleich breit – Zahlen und Uhrzeiten springen nicht, wenn sich ihr Wert ändert.
+  static const tabular = [FontFeature.tabularFigures()];
 }
 
 /// Bewegung: Feder-Kurven und Dauern aus dem CSS.
@@ -264,7 +269,6 @@ abstract final class Motion {
   static const Duration nav = Duration(milliseconds: 600);
   static const Duration page = Duration(milliseconds: 500);
   static const Duration sheet = Duration(milliseconds: 550);
-  static const Duration scrim = Duration(milliseconds: 250);
   static const Duration menu = Duration(milliseconds: 420);
   static const Duration pop = Duration(milliseconds: 400);
   static const Duration fast = Duration(milliseconds: 200);

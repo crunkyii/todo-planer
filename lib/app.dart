@@ -28,16 +28,10 @@ class TodoApp extends StatelessWidget {
           localizationsDelegates: const [AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates],
           theme: buildAppTheme(s.theme, dark: false),
           darkTheme: buildAppTheme(s.theme, dark: true),
-          themeMode: switch (s.mode) {
-            AppMode.light => ThemeMode.light,
-            AppMode.dark => ThemeMode.dark,
-            AppMode.system => ThemeMode.system,
-          },
+          themeMode: themeModeOf(s.mode),
           themeAnimationDuration: const Duration(milliseconds: 200),
           scrollBehavior: const AppScrollBehavior(),
-          // Sehr große Systemschrift (bis 2×) würde das dichte Layout sprengen: bis 1,6× wächst
-          // alles mit, darüber bleibt es bei 1,6×.
-          builder: (context, child) => MediaQuery.withClampedTextScaling(maxScaleFactor: 1.6, child: child!),
+          builder: (context, child) => MediaQuery.withClampedTextScaling(maxScaleFactor: maxTextScale, child: child!),
           home: const RootGate(),
         ),
       ),

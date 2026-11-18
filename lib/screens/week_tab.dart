@@ -8,31 +8,13 @@ import '../data/models.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
+import '../util/week_layout.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
 import '../widgets/swipe.dart';
 import '../widgets/ui.dart';
 import 'sheets.dart';
 import 'ui_state.dart';
-
-/// Ordnet überlappende Blöcke nebeneinander an (Spur je Block, Anzahl Spuren).
-({Map<String, int> lane, int lanes}) layoutLanes(List<WeekBlock> sorted) {
-  final ends = <int>[];
-  final lane = <String, int>{};
-  for (final b in sorted) {
-    var i = 0;
-    while (i < ends.length && ends[i] > b.start) {
-      i++;
-    }
-    if (i == ends.length) {
-      ends.add(b.end);
-    } else {
-      ends[i] = b.end;
-    }
-    lane[b.id] = i;
-  }
-  return (lane: lane, lanes: math.max(1, ends.length));
-}
 
 /// Tab „Woche“: Wochenplan mit Zeitraster, Tagesansicht per Tipp auf den Tag.
 class WeekTab extends StatefulWidget {
@@ -131,7 +113,7 @@ class _WeekHead extends StatelessWidget {
     final f = Fmt.of(context);
     final ws = ui.weekStart;
     final sel = one ? addDays(ws, ui.weekDay!) : null;
-    final narrow = MediaQuery.sizeOf(context).width <= 360;
+    final narrow = MediaQuery.sizeOf(context).width <= Sizes.narrowWidth;
     return Padding(
       padding: EdgeInsets.fromLTRB(one ? 4 : (narrow ? 16 : 20), 10, 8, 6),
       child: Row(
@@ -216,7 +198,7 @@ class _DayHeads extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: isToday ? tok.onP : tok.text,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+                        fontFeatures: Fs.tabular,
                       ),
                     ),
                   );
@@ -260,7 +242,7 @@ class _Grid extends StatelessWidget {
     final start = s.dayStart, end = s.dayEnd;
     final height = (end - start) * Sizes.hour;
     final idx = one ? [ui.weekDay!] : [for (var i = 0; i < 7; i++) i];
-    final narrow = MediaQuery.sizeOf(context).width <= 360;
+    final narrow = MediaQuery.sizeOf(context).width <= Sizes.narrowWidth;
 
     return Padding(
       padding: const EdgeInsets.only(right: 4),
@@ -281,12 +263,7 @@ class _Grid extends StatelessWidget {
                         right: 6,
                         child: Text(
                           hmString(h * 60),
-                          style: TextStyle(
-                            fontSize: Fs.tiny,
-                            height: 1.3,
-                            color: tok.sub,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
+                          style: TextStyle(fontSize: Fs.tiny, height: 1.3, color: tok.sub, fontFeatures: Fs.tabular),
                         ),
                       ),
                   ],
@@ -379,7 +356,7 @@ class _DayColumn extends StatelessWidget {
                           fontSize: one ? 12 : fs,
                           height: lh / fs,
                           color: bc.ci.withValues(alpha: 0.85),
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                          fontFeatures: Fs.tabular,
                         );
                         return Positioned(
                           top: top,
