@@ -65,8 +65,11 @@ class WidgetListService : RemoteViewsService() {
                 look.text(v, R.id.sub) { if (late) it.overdue else it.sub }
                 v.setViewVisibility(R.id.mark, View.GONE)
             }
-            // Tippen auf die Zeile öffnet die App (füllt die Vorlage des Widgets aus).
-            v.setOnClickFillInIntent(R.id.row, Intent())
+            // Tippen auf die Zeile füllt die Vorlage des Widgets aus: Aufgaben öffnen die App,
+            // Gewohnheiten werden abgehakt (dafür steht hier, welche gemeint ist).
+            val fill = Intent()
+            if (mode == ListMode.HABITS) data.habits.getOrNull(position)?.let { fill.putExtra(Widgets.EXTRA_HABIT, it.id) }
+            v.setOnClickFillInIntent(R.id.row, fill)
             return v
         }
 

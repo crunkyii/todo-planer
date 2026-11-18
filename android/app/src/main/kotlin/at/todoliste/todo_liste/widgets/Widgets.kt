@@ -21,6 +21,7 @@ object Widgets {
     const val ACTION_NEW_TASK = "new_task"
     const val EXTRA_MODE = "mode"
     const val EXTRA_ID = "widget_id"
+    const val EXTRA_HABIT = "habit_id"
 
     private val listWidgets = mapOf(
         TodayWidget::class.java to ListMode.TODAY,
@@ -83,7 +84,11 @@ object Widgets {
         v.setOnClickPendingIntent(R.id.header, openApp(context, null))
         v.setOnClickPendingIntent(R.id.empty, openApp(context, null))
         v.setOnClickPendingIntent(R.id.plus, openApp(context, ACTION_NEW_TASK))
-        v.setPendingIntentTemplate(R.id.list, openApp(context, null, mutable = true))
+        // Zeile antippen: Aufgaben öffnen die App, Gewohnheiten werden gleich im Widget abgehakt.
+        v.setPendingIntentTemplate(
+            R.id.list,
+            if (mode == ListMode.HABITS) toggleHabit(context) else openApp(context, null, mutable = true),
+        )
 
         mgr.updateAppWidget(id, v)
         @Suppress("DEPRECATION")
@@ -107,6 +112,14 @@ object Widgets {
         v.setOnClickPendingIntent(R.id.root, openApp(context, null))
         mgr.updateAppWidget(id, v)
     }
+
+    /** Vorlage für die Zeilen des Gewohnheiten-Widgets; welche Gewohnheit, trägt die Zeile ein. */
+    private fun toggleHabit(context: Context): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        3,
+        Intent(context, HabitToggleReceiver::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+    )
 
     /** Öffnet die App; mit [action] „new_task“ gleich mit dem Sheet für eine neue Aufgabe. */
     private fun openApp(context: Context, action: String?, mutable: Boolean = false): PendingIntent {

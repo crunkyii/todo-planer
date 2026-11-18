@@ -65,6 +65,8 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_habits_info" />
         </receiver>
+        <!-- Gewohnheit im Widget abhaken -->
+        <receiver android:name=".widgets.HabitToggleReceiver" android:exported="false" />
         <!-- Einstellungen eines Widgets; nur der Startbildschirm darf sie öffnen -->
         <activity
             android:name=".widgets.WidgetConfigActivity"

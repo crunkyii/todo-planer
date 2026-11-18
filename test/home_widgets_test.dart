@@ -72,6 +72,41 @@ void main() {
     await finishApp(tester, app);
   });
 
+  testWidgets('im Widget abgehakte Gewohnheiten landen in den Daten der App', (tester) async {
+    useFixedClock();
+    final l = l10n('de');
+    final app = await makeServices();
+    seedDemo(app.store, l);
+    final day = isoDate(today());
+    final [wasser, lesen, sport] = app.store.habits;
+    expect(app.store.habitDone(wasser.id, day), isTrue);
+    expect(app.store.habitDone(sport.id, day), isFalse);
+
+    // Die Zusammenfassung nennt die Gewohnheit, damit das Widget sagen kann, welche gemeint ist
+    final snap = buildWidgetSnapshot(app.store, l, themeId: 'himmel');
+    expect((snap['habits'] as List).map((h) => (h as Map)['id']), [wasser.id, lesen.id, sport.id]);
+
+    // Merkzettel von Android: Sport abgehakt, Wasser wieder geöffnet, Lesen unverändert (ist schon offen)
+    final changed = applyWidgetHabitToggles(
+      app.store,
+      jsonEncode({'${sport.id}|$day': true, '${wasser.id}|$day': false, '${lesen.id}|$day': false}),
+    );
+    expect(changed, 2);
+    expect(app.store.habitDone(sport.id, day), isTrue);
+    expect(app.store.habitDone(wasser.id, day), isFalse);
+    expect(app.store.habitDone(lesen.id, day), isFalse);
+    // Dasselbe noch einmal ändert nichts (kein Hin-und-her)
+    expect(applyWidgetHabitToggles(app.store, jsonEncode({'${sport.id}|$day': true})), 0);
+
+    // Kaputtes und Unbekanntes wird übersprungen, nichts stürzt ab
+    for (final bad in [null, '', 'kein json', '[1,2]', '{"x":true}', '{"gibts-nicht|$day":true}']) {
+      expect(applyWidgetHabitToggles(app.store, bad), 0, reason: '$bad');
+    }
+    expect(applyWidgetHabitToggles(app.store, jsonEncode({'${lesen.id}|morgen': true, '${lesen.id}|$day': 'ja'})), 0);
+    expect(app.store.habitDone(lesen.id, day), isFalse);
+    await finishApp(tester, app);
+  });
+
   test('„+“ im Widget wird nachgereicht, sobald die App zuhört', () async {
     final w = HomeWidgets();
     var opened = 0;

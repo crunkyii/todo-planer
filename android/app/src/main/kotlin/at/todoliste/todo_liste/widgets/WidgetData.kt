@@ -23,7 +23,7 @@ data class WTask(
 data class WCat(val id: String, val name: String)
 
 /** Eine Gewohnheit mit den erledigten Tagen der letzten zwei Wochen. */
-data class WHabit(val name: String, val color: Int, val days: Set<Int>)
+data class WHabit(val id: String, val name: String, val color: Int, val days: Set<Int>)
 
 /**
  * Zusammenfassung der App-Daten für die Widgets.
@@ -58,9 +58,9 @@ class WidgetData private constructor(
     /** Was heute in der Liste der App steht: Überfälliges und alles, was heute dran ist. */
     fun dueToday(cats: Set<String>): List<WTask> = tasks(cats).filter { it.day <= today }
 
-    /** Überfällig wie in der App: der Tag ist vorbei – oder heute die Uhrzeit. */
+    /** Überfällig wie in der App: erst wenn die Abgabe vorbei ist (ohne Uhrzeit gilt der ganze Tag). */
     fun isLate(t: WTask): Boolean {
-        if (t.day < today) return true
+        if (t.due < today) return true
         val m = t.minutes ?: return false
         val c = Calendar.getInstance()
         return t.due == today && m < c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE)
@@ -107,8 +107,17 @@ class WidgetData private constructor(
         private const val PREFS = "FlutterSharedPreferences"
         private const val KEY = "flutter.widget.v1"
 
+        /** Die Zusammenfassung als JSON-Text, wie die App sie zuletzt geschrieben hat. */
+        fun raw(context: Context): String? =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
+
+        /** Nur für „Gewohnheit im Widget abhaken“: Haken sofort zeigen, bis die App nachzieht. */
+        fun save(context: Context, json: String) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, json).commit()
+        }
+
         fun load(context: Context): WidgetData {
-            val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
+            val raw = raw(context)
             return try {
                 parse(JSONObject(raw ?: "{}"))
             } catch (e: Exception) {
@@ -148,7 +157,7 @@ class WidgetData private constructor(
                     h.optJSONArray("days")?.let { d ->
                         for (j in 0 until d.length()) parseDay(d.optString(j))?.let(days::add)
                     }
-                    habits += WHabit(h.optString("n"), parseColor(h.optString("c")) ?: Color.GRAY, days)
+                    habits += WHabit(h.optString("id"), h.optString("n"), parseColor(h.optString("c")) ?: Color.GRAY, days)
                 }
             }
             val labels = HashMap<String, String>()

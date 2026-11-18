@@ -31,6 +31,7 @@ class _AppShellState extends State<AppShell> {
   final ui = UiState();
   StreamSubscription<SyncEvent>? _sub;
   late final _widgets = context.app.homeWidgets;
+  AppLifecycleListener? _resume;
 
   @override
   void initState() {
@@ -43,7 +44,9 @@ class _AppShellState extends State<AppShell> {
         if (mounted) Sheets(context, ui).task(null);
       });
       WidgetsBinding.instance.scheduleFrame();
-    });
+    }, store: app.store);
+    // Zurück in der App: im Widget abgehakte Gewohnheiten übernehmen.
+    _resume = AppLifecycleListener(onResume: _widgets.applyHabitToggles);
   }
 
   @override
@@ -69,6 +72,7 @@ class _AppShellState extends State<AppShell> {
   void dispose() {
     _sub?.cancel();
     _widgets.onNewTask = null;
+    _resume?.dispose();
     ui.dispose();
     super.dispose();
   }

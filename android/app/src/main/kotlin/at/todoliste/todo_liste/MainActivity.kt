@@ -1,10 +1,12 @@
 package at.todoliste.todo_liste
 
 import android.content.Intent
+import at.todoliste.todo_liste.widgets.HabitToggles
 import at.todoliste.todo_liste.widgets.Widgets
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.lang.ref.WeakReference
 
 class MainActivity : FlutterActivity() {
     // Kanal zur Flutter-App für die Startbildschirm-Widgets (lib/services/home_widgets.dart).
@@ -14,6 +16,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         pendingAction = takeAction(intent)
+        running = WeakReference(this)
         widgetChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "todo_liste/widgets").also {
             it.setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -27,16 +30,34 @@ class MainActivity : FlutterActivity() {
                         result.success(pendingAction)
                         pendingAction = null
                     }
+                    // Im Widget abgehakte Gewohnheiten abholen (und den Merkzettel leeren).
+                    "takeHabitToggles" -> result.success(HabitToggles.take(applicationContext))
                     else -> result.notImplemented()
                 }
             }
         }
     }
 
+    // App wird beendet: Der Kanal führt ins Leere, das Widget soll ihn nicht mehr benutzen.
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        widgetChannel = null
+        if (running?.get() === this) running = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
     // App läuft schon und wird über das Widget nach vorne geholt.
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         takeAction(intent)?.let { widgetChannel?.invokeMethod("action", it) }
+    }
+
+    companion object {
+        private var running: WeakReference<MainActivity>? = null
+
+        /** Im Widget wurde eine Gewohnheit abgehakt: Läuft die App noch, übernimmt sie es sofort. */
+        fun habitsChanged() {
+            running?.get()?.widgetChannel?.invokeMethod("action", "habits")
+        }
     }
 
     /** Liest die Aktion und entfernt sie, damit sie nach einem Neuaufbau nicht noch einmal auslöst. */

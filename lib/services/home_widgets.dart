@@ -34,9 +34,13 @@ class HomeWidgets {
 
   bool get _android => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-  /// Meldet einen „+“-Tipp, der die App gestartet hat, sobald jemand zuhört.
-  Future<void> listen(VoidCallback onNewTask) async {
+  Store? _store;
+
+  /// Meldet einen „+“-Tipp, der die App gestartet hat, sobald jemand zuhört, und übernimmt
+  /// Gewohnheiten, die im Widget abgehakt wurden, in [store].
+  Future<void> listen(VoidCallback onNewTask, {Store? store}) async {
     this.onNewTask = onNewTask;
+    _store = store;
     if (_pendingNewTask) {
       _pendingNewTask = false;
       onNewTask();
@@ -45,11 +49,27 @@ class HomeWidgets {
     _listening = true;
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'action' && call.arguments == 'new_task') _newTask();
+      if (call.method == 'action' && call.arguments == 'habits') await applyHabitToggles();
     });
+    await applyHabitToggles();
     try {
       if (await _channel.invokeMethod<String>('initialAction') == 'new_task') _newTask();
     } on MissingPluginException {
       // Tests und andere Plattformen: kein Widget-Kanal.
+    }
+  }
+
+  /// Holt die im Widget abgehakten Gewohnheiten von Android und trägt sie in die Daten ein
+  /// (beim Start, beim Zurückkommen in die App und sofort, wenn die App im Hintergrund läuft).
+  Future<void> applyHabitToggles() async {
+    final store = _store;
+    if (!_android || store == null) return;
+    try {
+      applyWidgetHabitToggles(store, await _channel.invokeMethod<String>('takeHabitToggles'));
+    } on MissingPluginException {
+      // Tests: kein Widget-Kanal.
+    } on PlatformException catch (e) {
+      debugPrint('Widget-Gewohnheiten nicht übernommen: ${e.code}');
     }
   }
 
@@ -80,6 +100,35 @@ class HomeWidgets {
   }
 }
 
+/// Trägt ein, was im Widget abgehakt wurde. [json] ist der Merkzettel von Android:
+/// `{"<Gewohnheit>|<Tag>": true/false}` – der zuletzt gewünschte Zustand je Gewohnheit und Tag.
+/// Unbekannte Gewohnheiten und kaputte Einträge werden übersprungen. Gibt zurück, wie viele
+/// Tage sich geändert haben.
+int applyWidgetHabitToggles(Store store, String? json) {
+  if (json == null) return 0;
+  final Object? data;
+  try {
+    data = jsonDecode(json);
+  } on FormatException {
+    return 0;
+  }
+  if (data is! Map<String, dynamic>) return 0;
+  final known = {for (final h in store.habits) h.id};
+  var changed = 0;
+  data.forEach((key, done) {
+    final cut = key.lastIndexOf('|');
+    if (cut <= 0 || done is! bool) return;
+    final id = key.substring(0, cut);
+    final day = key.substring(cut + 1);
+    if (!known.contains(id) || !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(day)) return;
+    if (store.habitDone(id, day) != done) {
+      store.toggleHabitDay(id, day);
+      changed++;
+    }
+  });
+  return changed;
+}
+
 /// Alles, was die Widgets brauchen – ohne Datum von „heute“: Das rechnet das Widget selbst,
 /// damit es auch nach Mitternacht stimmt, wenn die App nicht läuft.
 ///
@@ -87,7 +136,7 @@ class HomeWidgets {
 ///   Liste steht (Abgabe minus Vorlauf der Kategorie), `m` Minuten oder null, `c` Farbe,
 ///   `k` Kategorie)
 /// - `cats`: Kategorien (`id`, `n` Name, `c` Farbe) – jedes Widget kann auf einzelne davon eingestellt werden
-/// - `habits`: Gewohnheiten (`n` Name, `c` Farbe, `days` erledigte Tage der letzten 14 Tage)
+/// - `habits`: Gewohnheiten (`id`, `n` Name, `c` Farbe, `days` erledigte Tage der letzten 14 Tage)
 /// - `labels`: Texte in der Sprache der App; `wd` Wochentage Mo–So; `en` für das Datumsformat
 /// - `accent` / `accentDark`: Primärfarbe des gewählten Themes
 Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {required String themeId}) {
@@ -131,7 +180,7 @@ Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {requi
     ],
     'habits': [
       for (final h in store.habits)
-        {'n': h.name, 'c': h.color, 'days': recent.where((d) => store.habitDone(h.id, d)).toList()},
+        {'id': h.id, 'n': h.name, 'c': h.color, 'days': recent.where((d) => store.habitDone(h.id, d)).toList()},
     ],
   };
 }
