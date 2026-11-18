@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_today_name">Heute</string>
+    <string name="widget_today_desc">Überfällige und heute fällige Aufgaben</string>
+    <string name="widget_upcoming_name">Demnächst</string>
+    <string name="widget_upcoming_desc">Alle offenen Aufgaben, nach Fälligkeit sortiert</string>
+    <string name="widget_count_name">Heute offen</string>
+    <string name="widget_count_desc">Wie viele Aufgaben heute fällig sind</string>
+    <string name="widget_habits_name">Gewohnheiten</string>
+    <string name="widget_habits_desc">Deine Gewohnheiten und ob sie heute erledigt sind</string>
+    <string name="widget_new_task">Neue Aufgabe</string>
+</resources>

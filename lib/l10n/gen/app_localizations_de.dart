@@ -327,6 +327,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get nothingDue => 'Nichts fällig.';
 
   @override
+  String get widgetUpcoming => 'Demnächst';
+
+  @override
+  String get widgetNoHabits => 'Noch keine Gewohnheiten.';
+
+  @override
   String get nothingFound => 'Nichts gefunden.';
 
   @override

@@ -1,0 +1,171 @@
+package at.todoliste.todo_liste.widgets
+
+import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Color
+import org.json.JSONObject
+import java.util.Calendar
+
+/** Eine offene Aufgabe, wie die App sie ins Widget schreibt. */
+data class WTask(val title: String, val day: Int, val minutes: Int?, val color: Int)
+
+/** Eine Gewohnheit mit den erledigten Tagen der letzten zwei Wochen. */
+data class WHabit(val name: String, val color: Int, val days: Set<Int>)
+
+/**
+ * Zusammenfassung der App-Daten für die Widgets.
+ *
+ * Die Flutter-App legt sie als JSON in ihren Einstellungen ab (lib/services/home_widgets.dart).
+ * „Heute“ steht absichtlich nicht drin: Das Widget rechnet selbst, damit es auch nach
+ * Mitternacht stimmt, wenn die App nicht läuft.
+ */
+class WidgetData private constructor(
+    val tasks: List<WTask>,
+    val habits: List<WHabit>,
+    private val labels: Map<String, String>,
+    private val weekdays: List<String>,
+    private val english: Boolean,
+    private val accentLight: Int?,
+    private val accentDark: Int?,
+) {
+    val today: Int = todayIndex()
+
+    fun label(key: String, fallback: String): String = labels[key] ?: fallback
+
+    /** Überfällige und heute fällige Aufgaben. */
+    val dueToday: List<WTask> get() = tasks.filter { it.day <= today }
+    val overdueCount: Int get() = tasks.count { it.day < today }
+
+    /** Akzentfarbe des App-Themes, passend zu hell/dunkel des Systems. */
+    fun accent(context: Context): Int {
+        val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        return (if (night) accentDark else accentLight)
+            ?: context.getColor(at.todoliste.todo_liste.R.color.widget_accent)
+    }
+
+    /** „Heute“, „Morgen“, „Gestern“, sonst „Mo 24.11.“ bzw. „Mo 11/24“. */
+    fun dayLabel(day: Int): String = when (day - today) {
+        0 -> label("today", "Heute")
+        1 -> label("tomorrow", "Morgen")
+        -1 -> label("yesterday", "Gestern")
+        else -> {
+            val (_, m, d) = civilFromDays(day)
+            val wd = weekdays.getOrNull(Math.floorMod(day + 3, 7)) ?: ""
+            if (english) "$wd $m/$d" else "$wd $d.$m."
+        }
+    }
+
+    fun timeLabel(minutes: Int): String = "%02d:%02d".format(minutes / 60, minutes % 60)
+
+    /** Zweite Zeile einer Aufgabe: Tag und, falls gesetzt, Uhrzeit. */
+    fun subLabel(t: WTask, withDay: Boolean): String {
+        val time = t.minutes?.let(::timeLabel)
+        return when {
+            t.day < today -> label("overdue", "Überfällig") + " · " + dayLabel(t.day)
+            withDay && time != null -> dayLabel(t.day) + ", " + time
+            withDay -> dayLabel(t.day)
+            else -> time ?: ""
+        }
+    }
+
+    companion object {
+        /** Datei und Schlüssel, unter denen das Flutter-Paket shared_preferences speichert. */
+        private const val PREFS = "FlutterSharedPreferences"
+        private const val KEY = "flutter.widget.v1"
+
+        fun load(context: Context): WidgetData {
+            val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
+            return try {
+                parse(JSONObject(raw ?: "{}"))
+            } catch (e: Exception) {
+                // Kaputte oder alte Daten: leeres Widget statt Absturz.
+                parse(JSONObject())
+            }
+        }
+
+        private fun parse(o: JSONObject): WidgetData {
+            val tasks = ArrayList<WTask>()
+            o.optJSONArray("tasks")?.let { a ->
+                for (i in 0 until a.length()) {
+                    val t = a.getJSONObject(i)
+                    val day = parseDay(t.optString("d")) ?: continue
+                    tasks += WTask(
+                        title = t.optString("t"),
+                        day = day,
+                        minutes = if (t.isNull("m")) null else t.optInt("m"),
+                        color = parseColor(t.optString("c")) ?: Color.GRAY,
+                    )
+                }
+            }
+            val habits = ArrayList<WHabit>()
+            o.optJSONArray("habits")?.let { a ->
+                for (i in 0 until a.length()) {
+                    val h = a.getJSONObject(i)
+                    val days = HashSet<Int>()
+                    h.optJSONArray("days")?.let { d ->
+                        for (j in 0 until d.length()) parseDay(d.optString(j))?.let(days::add)
+                    }
+                    habits += WHabit(h.optString("n"), parseColor(h.optString("c")) ?: Color.GRAY, days)
+                }
+            }
+            val labels = HashMap<String, String>()
+            o.optJSONObject("labels")?.let { l -> l.keys().forEach { k -> labels[k] = l.optString(k) } }
+            val wd = ArrayList<String>()
+            o.optJSONArray("wd")?.let { a -> for (i in 0 until a.length()) wd += a.optString(i) }
+            return WidgetData(
+                tasks = tasks,
+                habits = habits,
+                labels = labels,
+                weekdays = wd,
+                english = o.optBoolean("en", false),
+                accentLight = parseColor(o.optString("accent")),
+                accentDark = parseColor(o.optString("accentDark")),
+            )
+        }
+
+        private fun parseColor(hex: String): Int? = try {
+            if (hex.isEmpty()) null else Color.parseColor(hex)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+
+        /** „2026-11-18“ → fortlaufende Tagesnummer (Tage seit 1.1.1970). */
+        private fun parseDay(iso: String): Int? {
+            val p = iso.split("-")
+            if (p.size != 3) return null
+            val y = p[0].toIntOrNull() ?: return null
+            val m = p[1].toIntOrNull() ?: return null
+            val d = p[2].toIntOrNull() ?: return null
+            return daysFromCivil(y, m, d)
+        }
+
+        private fun todayIndex(): Int {
+            val c = Calendar.getInstance()
+            return daysFromCivil(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH))
+        }
+
+        // Kalenderrechnung ohne Zeitzonen (Algorithmus von Howard Hinnant).
+        private fun daysFromCivil(year: Int, m: Int, d: Int): Int {
+            val y = if (m <= 2) year - 1 else year
+            val era = Math.floorDiv(y, 400)
+            val yoe = y - era * 400
+            val doy = (153 * (m + (if (m > 2) -3 else 9)) + 2) / 5 + d - 1
+            val doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+            return era * 146097 + doe - 719468
+        }
+
+        private fun civilFromDays(days: Int): Triple<Int, Int, Int> {
+            val z = days + 719468
+            val era = Math.floorDiv(z, 146097)
+            val doe = z - era * 146097
+            val yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+            val doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+            val mp = (5 * doy + 2) / 153
+            val d = doy - (153 * mp + 2) / 5 + 1
+            val m = if (mp < 10) mp + 3 else mp - 9
+            val y = yoe + era * 400 + (if (m <= 2) 1 else 0)
+            return Triple(y, m, d)
+        }
+    }
+}

@@ -698,6 +698,18 @@ abstract class AppLocalizations {
   /// **'Nichts fällig.'**
   String get nothingDue;
 
+  /// No description provided for @widgetUpcoming.
+  ///
+  /// In de, this message translates to:
+  /// **'Demnächst'**
+  String get widgetUpcoming;
+
+  /// No description provided for @widgetNoHabits.
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine Gewohnheiten.'**
+  String get widgetNoHabits;
+
   /// No description provided for @nothingFound.
   ///
   /// In de, this message translates to:

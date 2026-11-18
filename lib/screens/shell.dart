@@ -30,12 +30,20 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   final ui = UiState();
   StreamSubscription<SyncEvent>? _sub;
+  late final _widgets = context.app.homeWidgets;
 
   @override
   void initState() {
     super.initState();
     final app = context.app;
     _sub = app.sync.events.listen(_onSync);
+    // „+“ im Startbildschirm-Widget: Sheet für eine neue Aufgabe öffnen.
+    _widgets.listen(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Sheets(context, ui).task(null);
+      });
+      WidgetsBinding.instance.scheduleFrame();
+    });
   }
 
   @override
@@ -60,6 +68,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _sub?.cancel();
+    _widgets.onNewTask = null;
     ui.dispose();
     super.dispose();
   }

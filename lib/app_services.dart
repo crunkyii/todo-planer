@@ -8,6 +8,7 @@ import 'data/settings_store.dart';
 import 'data/store.dart';
 import 'data/sync_service.dart';
 import 'l10n/gen/app_localizations.dart';
+import 'services/home_widgets.dart';
 import 'services/reminders.dart';
 import 'util/dates.dart';
 import 'util/fmt.dart';
@@ -29,6 +30,9 @@ class AppServices extends ChangeNotifier {
     _lifecycle = AppLifecycleListener(onResume: _onResume);
     _scheduleMidnight();
   }
+
+  /// Startbildschirm-Widgets (Android): bekommen nach jeder Änderung die aktuellen Daten.
+  final homeWidgets = HomeWidgets();
 
   late final AppLifecycleListener _lifecycle;
   Timer? _midnight;
@@ -223,6 +227,7 @@ class AppServices extends ChangeNotifier {
     _reminderTimer = Timer(const Duration(milliseconds: 800), () {
       final l = _l;
       if (l == null) return;
+      unawaited(homeWidgets.push(store, l, themeId: settings.theme));
       final f = Fmt(l, l.localeName);
       final items = upcomingReminders(
         store.tasks,

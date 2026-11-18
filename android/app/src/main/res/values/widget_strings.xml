@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Namen in der Widget-Auswahl von Android (richten sich nach der Systemsprache).
+     Die Texte im Widget selbst kommen aus der App (Sprache der App). -->
+<resources>
+    <string name="widget_today_name">Today</string>
+    <string name="widget_today_desc">Overdue tasks and tasks due today</string>
+    <string name="widget_upcoming_name">Upcoming</string>
+    <string name="widget_upcoming_desc">All open tasks, sorted by due date</string>
+    <string name="widget_count_name">Open today</string>
+    <string name="widget_count_desc">How many tasks are due today</string>
+    <string name="widget_habits_name">Habits</string>
+    <string name="widget_habits_desc">Your habits and whether they are done today</string>
+    <string name="widget_new_task">New task</string>
+</resources>

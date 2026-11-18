@@ -132,6 +132,8 @@
   "errTaskTitle": "Bitte gib ein, was zu tun ist.",
   "errPickDate": "Bitte wähle ein Datum.",
   "nothingDue": "Nichts fällig.",
+  "widgetUpcoming": "Demnächst",
+  "widgetNoHabits": "Noch keine Gewohnheiten.",
   "nothingFound": "Nichts gefunden.",
   "noTasks": "Keine Aufgaben.",
   "searchTasks": "Aufgaben durchsuchen",

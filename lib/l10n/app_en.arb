@@ -101,6 +101,8 @@
   "errTaskTitle": "Please enter what needs to be done.",
   "errPickDate": "Please pick a date.",
   "nothingDue": "Nothing due.",
+  "widgetUpcoming": "Upcoming",
+  "widgetNoHabits": "No habits yet.",
   "nothingFound": "Nothing found.",
   "noTasks": "No tasks.",
   "searchTasks": "Search tasks",
