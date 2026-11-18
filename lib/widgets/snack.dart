@@ -81,7 +81,12 @@ class SnackHost extends StatelessWidget {
           bottom: bottom + MediaQuery.paddingOf(context).bottom,
           child: m == null
               ? const SizedBox.shrink()
-              : _Snack(key: ObjectKey(m), msg: m, undoLabel: undoLabel, onUndo: controller.undo),
+              // Eigenes Material: Am Anmelde-Bildschirm liegt die Meldung außerhalb jedes Scaffolds;
+              // ohne Material zeichnet Flutter Text in der Notfall-Schrift (gelb unterstrichen).
+              : Material(
+                  type: MaterialType.transparency,
+                  child: _Snack(key: ObjectKey(m), msg: m, undoLabel: undoLabel, onUndo: controller.undo),
+                ),
         );
       },
     );

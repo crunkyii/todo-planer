@@ -547,6 +547,18 @@ void main() {
       }
     });
 
+    testWidgets('Meldung am Anmelde-Bildschirm hat normale Schrift (nicht gelb unterstrichen)', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices(syncMode: 'cloud', cloudConfig: true);
+      await pumpApp(tester, app);
+      app.snack.show(l.confirmEmailHint);
+      await tester.pumpAndSettle();
+      final style = DefaultTextStyle.of(tester.element(find.text(l.confirmEmailHint))).style;
+      expect(style.decoration, isNot(TextDecoration.underline));
+      expect(style.fontFamily, isNot('monospace'));
+      await finishApp(tester, app);
+    });
+
     testWidgets('Einrichtung lehnt falsche URL, falschen Key und den Secret Key ab', (tester) async {
       for (final lang in ['de', 'en']) {
         final l = l10n(lang);
