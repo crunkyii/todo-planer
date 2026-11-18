@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../util/dates.dart';
 import '../util/task_logic.dart';
+import 'field_merge.dart';
 import 'local_db.dart';
 import 'models.dart';
 
@@ -39,6 +40,29 @@ class Store extends ChangeNotifier {
   /// Merkzettel, zu denen der Server beim Nachladen keine alte erledigte Aufgabe (mehr)
   /// geliefert hat – der nächste Abruf stellt sie richtig; bis dahin nicht noch einmal fragen.
   final Set<String> _olderMissing = {};
+
+  /// Der zuletzt gespeicherte Stand jeder Zeile, die feldweise zusammengeführt wird
+  /// (`Tabelle|ID` → Zeile samt `field_times`). Die Modelle werden direkt geändert – erst der
+  /// Vergleich mit diesem Stand zeigt, welche Felder sich geändert haben.
+  final Map<String, Map<String, Object?>> _saved = {};
+
+  /// Dasselbe für die nachgeladenen älteren Aufgaben und ihre Unteraufgaben in [_older]:
+  /// der Stand vom Server. Getrennt von [_saved], weil diese Zeilen nicht am Gerät liegen.
+  final Map<String, Map<String, Object?>> _olderSaved = {};
+
+  static String _savedKey(TableSpec t, Object? id) => '${t.name}|$id';
+
+  /// Merkt sich [json] (aus `toJson()`) als gespeicherten Stand; die Zeitstempel je Feld
+  /// kommen aus [source], der Zeile aus der Datenbank oder vom Server. [older] = die Zeile
+  /// gehört zu einer nachgeladenen Aufgabe und liegt nicht am Gerät.
+  void _remember(TableSpec t, Map<String, Object?> json, Map<String, Object?> source, {bool older = false}) {
+    if (t.groups.isEmpty) return;
+    final times = validFieldTimes({...json, fieldTimesColumn: source[fieldTimesColumn]});
+    (older ? _olderSaved : _saved)[_savedKey(t, json['id'])] = {
+      ...json,
+      fieldTimesColumn: times == null ? null : encodeFieldTimes(times),
+    };
+  }
 
   /// Jährliche Aufgabe → die Aufgabe fürs nächste Jahr, die beim Abhaken in dieser Sitzung
   /// entstanden ist. Nur diese nimmt „wieder öffnen“ zurück, nie eine selbst angelegte.
@@ -163,28 +187,36 @@ class Store extends ChangeNotifier {
 
   /// Legt eine Zeile – aus der lokalen Datenbank oder vom Server – als Modell im Speicher ab.
   void _ingest(TableSpec t, Map<String, Object?> row) {
+    final Map<String, Object?> json;
     switch (t.name) {
       case 'categories':
         final c = TaskCategory.fromJson(row);
         _cats[c.id] = c;
+        json = c.toJson();
       case 'tasks':
         final x = Task.fromJson(row);
         _tasks[x.id] = x;
+        json = x.toJson();
       case 'subtasks':
         final s = Subtask.fromJson(row);
         _subs[s.id] = s;
+        json = s.toJson();
       case 'habits':
         final h = Habit.fromJson(row);
         _habits[h.id] = h;
+        json = h.toJson();
       case 'habit_logs':
         final l = HabitLog.fromJson(row);
         _logs[l.key] = l;
+        return;
       case 'week_blocks':
         final b = WeekBlock.fromJson(row);
         _blocks[b.id] = b;
+        json = b.toJson();
       default:
         throw ArgumentError.value(t.name, 'table');
     }
+    _remember(t, json, row);
   }
 
   void _clearMemory() {
@@ -194,6 +226,8 @@ class Store extends ChangeNotifier {
     _habits.clear();
     _logs.clear();
     _blocks.clear();
+    _saved.clear();
+    _olderSaved.clear();
     _archived.clear();
     _older.clear();
     _olderMissing.clear();
@@ -243,48 +277,44 @@ class Store extends ChangeNotifier {
   }
 
   /// Speichert ein Modell: im Speicher, in der lokalen Datenbank und – über `dirty` – in der
-  /// Warteschlange für den Upload. Setzt `updatedAt`, weil beim Abgleich der neueste Stand gewinnt.
+  /// Warteschlange für den Upload. Setzt `updatedAt` und stempelt die Felder, die sich
+  /// geändert haben: Beim Abgleich gewinnt je Feld der neuere Wert (siehe `field_merge.dart`).
   void _put(Object model) {
     final now = nowUtc();
-    final TableSpec t;
-    final Map<String, Object?> json;
+    final (TableSpec t, Map<String, Object?> Function() toJson, void Function(DateTime) setAt) = switch (model) {
+      TaskCategory c => (categoriesTable, c.toJson, (at) => c.updatedAt = at),
+      Task x => (tasksTable, x.toJson, (at) => x.updatedAt = at),
+      Subtask s => (subtasksTable, s.toJson, (at) => s.updatedAt = at),
+      Habit h => (habitsTable, h.toJson, (at) => h.updatedAt = at),
+      HabitLog l => (habitLogsTable, l.toJson, (at) => l.updatedAt = at),
+      WeekBlock b => (blocksTable, b.toJson, (at) => b.updatedAt = at),
+      _ => throw ArgumentError(model),
+    };
     switch (model) {
       case TaskCategory c:
-        c.updatedAt = now;
         _cats[c.id] = c;
-        t = categoriesTable;
-        json = c.toJson();
       case Task x:
         _adopt(x.id);
-        x.updatedAt = now;
         _tasks[x.id] = x;
         pendingTaskIds.add(x.id);
-        t = tasksTable;
-        json = x.toJson();
       case Subtask s:
         _adopt(s.taskId);
-        s.updatedAt = now;
         _subs[s.id] = s;
         pendingTaskIds.add(s.taskId);
-        t = subtasksTable;
-        json = s.toJson();
       case Habit h:
-        h.updatedAt = now;
         _habits[h.id] = h;
-        t = habitsTable;
-        json = h.toJson();
       case HabitLog l:
-        l.updatedAt = now;
         _logs[l.key] = l;
-        t = habitLogsTable;
-        json = l.toJson();
       case WeekBlock b:
-        b.updatedAt = now;
         _blocks[b.id] = b;
-        t = blocksTable;
-        json = b.toJson();
-      default:
-        throw ArgumentError(model);
+    }
+    setAt(now);
+    final json = toJson();
+    if (t.groups.isNotEmpty) {
+      final key = _savedKey(t, json['id']);
+      final at = stampLocalChange(t, json, _saved[key], now);
+      if (at != now) setAt(at);
+      _saved[key] = json;
     }
     _track(db.put(t, json, dirty: true));
   }
@@ -302,10 +332,18 @@ class Store extends ChangeNotifier {
     final t = _older.remove(taskId);
     if (t == null) return;
     _tasks[t.id] = t;
-    _track(db.put(tasksTable, t.toJson(), dirty: false));
+    // Den Stand vom Server speichern, nicht das (vielleicht schon geänderte) Modell – die
+    // Änderung selbst schreibt danach `_put` und stempelt nur die geänderten Felder.
+    void restore(TableSpec table, String id, Map<String, Object?> Function() fallback) {
+      final key = _savedKey(table, id);
+      final row = _saved[key] = _olderSaved.remove(key) ?? fallback();
+      _track(db.put(table, row, dirty: false));
+    }
+
+    restore(tasksTable, t.id, t.toJson);
     for (final s in t.subs) {
       _subs[s.id] = s;
-      _track(db.put(subtasksTable, s.toJson(), dirty: false));
+      restore(subtasksTable, s.id, s.toJson);
     }
     _unarchive(t.id);
   }
@@ -768,8 +806,9 @@ class Store extends ChangeNotifier {
 
   // ---------- Sync: Änderungen von Supabase übernehmen ----------
 
-  /// Übernimmt Zeilen vom Server. Der neueste `updated_at` gewinnt; lokale
-  /// Änderungen, die neuer sind, bleiben und werden später hochgeladen.
+  /// Übernimmt Zeilen vom Server. Je Feld gewinnt der neuere Wert (siehe `field_merge.dart`);
+  /// lokale Änderungen, die neuer sind, bleiben und werden später hochgeladen. Zeilen ohne
+  /// Zeitstempel je Feld gewinnen oder verlieren wie früher als Ganzes nach `updated_at`.
   ///
   /// Ältere erledigte Aufgaben (siehe [doneKeepLocal]), die nicht am Gerät liegen, werden
   /// gar nicht erst gespeichert – es bleibt nur ihr Merkzettel für die Statistik. So füllt
@@ -781,6 +820,7 @@ class Store extends ChangeNotifier {
     if (rows.isEmpty) return;
     final now = nowUtc();
     final accepted = <Map<String, Object?>>[];
+    final ahead = <Map<String, Object?>>[];
     final notes = <ArchivedDone>[];
     var olderChanged = false;
     for (final r in rows) {
@@ -788,6 +828,12 @@ class Store extends ChangeNotifier {
         final x = Task.fromJson(r);
         final loaded = _older.remove(x.id);
         olderChanged = olderChanged || loaded != null;
+        if (loaded != null) {
+          _olderSaved.remove(_savedKey(tasksTable, x.id));
+          for (final s in loaded.subs) {
+            _olderSaved.remove(_savedKey(subtasksTable, s.id));
+          }
+        }
         if (x.isOldDone(now)) {
           final a = x.archived;
           if (_archived[x.id] != a) {
@@ -796,21 +842,27 @@ class Store extends ChangeNotifier {
             olderChanged = true;
           }
           // Gerade nachgeladen und angezeigt: den neuen Stand zeigen.
-          if (loaded != null && !x.deleted) _older[x.id] = x..subs = loaded.subs;
+          if (loaded != null && !x.deleted) {
+            _older[x.id] = x..subs = loaded.subs;
+            _remember(t, x.toJson(), r, older: true);
+          }
           continue;
         }
       }
       // Unteraufgaben einer ausgelagerten Aufgabe bleiben ebenfalls online.
       if (t.name == 'subtasks' && _archived.containsKey(r['task_id']) && !_tasks.containsKey(r['task_id'])) continue;
-      if (!isNews(t, r)) continue;
-      final row = {for (final k in t.columns.keys) k: r[k]};
-      accepted.add(row);
-      _ingest(t, row);
-      if (t.name == 'tasks') _unarchive(row['id'] as String);
+      final merged = _merge(t, r);
+      if (merged == null) continue;
+      (merged.ahead ? ahead : accepted).add(merged.row);
+      _ingest(t, merged.row);
+      if (t.name == 'tasks') _unarchive(merged.row['id'] as String);
     }
     if (notes.isNotEmpty) await db.putArchived(notes);
     if (accepted.isNotEmpty) await db.putAll(t, accepted, dirty: false);
-    if (accepted.isEmpty && !olderChanged) return;
+    // Zusammengeführt, aber mit lokalen Änderungen, die der Server noch nicht hat: bleibt
+    // in der Warteschlange.
+    if (ahead.isNotEmpty) await db.putAll(t, ahead, dirty: true);
+    if (accepted.isEmpty && ahead.isEmpty && !olderChanged) return;
     _attachSubs();
     notifyListeners();
   }
@@ -847,10 +899,20 @@ class Store extends ChangeNotifier {
     if (gone.isEmpty) return 0;
     final ids = {for (final t in gone) t.id};
     final notes = [for (final t in gone) t.archived];
+    // Der gespeicherte Stand wandert mit: zu den nachgeladenen, wenn die Aufgabe zu sehen bleibt.
+    void forget(TableSpec table, String id, {required bool keep}) {
+      final row = _saved.remove(_savedKey(table, id));
+      if (keep && row != null) _olderSaved[_savedKey(table, id)] = row;
+    }
+
+    for (final s in _subs.values.where((s) => ids.contains(s.taskId))) {
+      forget(subtasksTable, s.id, keep: !s.deleted && _tasks[s.taskId]?.deleted == false);
+    }
     _tasks.removeWhere((id, _) => ids.contains(id));
     _subs.removeWhere((_, s) => ids.contains(s.taskId));
     for (final (i, t) in gone.indexed) {
       _archived[t.id] = notes[i];
+      forget(tasksTable, t.id, keep: !t.deleted);
       // Bis zum Ende der Sitzung bleibt sie zu sehen – es soll nichts unter der Hand verschwinden.
       if (!t.deleted) _older[t.id] = t;
     }
@@ -868,13 +930,16 @@ class Store extends ChangeNotifier {
     final subsOf = <String, List<Subtask>>{};
     for (final r in subs) {
       final s = Subtask.fromJson(r);
-      if (!s.deleted) (subsOf[s.taskId] ??= []).add(s);
+      if (s.deleted) continue;
+      (subsOf[s.taskId] ??= []).add(s);
+      _remember(subtasksTable, s.toJson(), r, older: true);
     }
     for (final r in tasks) {
       final x = Task.fromJson(r);
       if (x.deleted || !x.isOldDone(now) || _tasks.containsKey(x.id) || !_archived.containsKey(x.id)) continue;
       x.subs = (subsOf[x.id] ?? [])..sort((a, b) => a.position.compareTo(b.position));
       _older[x.id] = x;
+      _remember(tasksTable, x.toJson(), r, older: true);
     }
     _olderMissing.addAll(requested.where((id) => !_older.containsKey(id) && !_tasks.containsKey(id)));
     notifyListeners();
@@ -882,19 +947,19 @@ class Store extends ChangeNotifier {
 
   /// Ob die Server-Zeile [r] etwas Neues bringt: `false`, wenn hier schon derselbe oder ein
   /// neuerer Stand liegt – so auch beim Echo des eigenen Uploads über Realtime.
-  bool isNews(TableSpec t, Map<String, Object?> r) {
-    final updated = DateTime.parse(r['updated_at'] as String).toUtc();
-    final existing = _existingUpdatedAt(t, r);
-    return existing == null || updated.isAfter(existing);
-  }
+  bool isNews(TableSpec t, Map<String, Object?> r) => _merge(t, r) != null;
 
-  DateTime? _existingUpdatedAt(TableSpec t, Map<String, Object?> r) => switch (t.name) {
-    'categories' => _cats[r['id']]?.updatedAt,
-    'tasks' => _tasks[r['id']]?.updatedAt,
-    'subtasks' => _subs[r['id']]?.updatedAt,
-    'habits' => _habits[r['id']]?.updatedAt,
-    'habit_logs' => _logs[HabitLog.keyOf(r['habit_id'] as String, (r['day'] as String).substring(0, 10))]?.updatedAt,
-    'week_blocks' => _blocks[r['id']]?.updatedAt,
-    _ => null,
-  };
+  /// Die Zeile, die nach dem Abruf von [r] hier gelten soll – `null`, wenn [r] nichts Neues
+  /// bringt. `ahead` = sie enthält lokale Änderungen, die der Server noch nicht hat.
+  ({Map<String, Object?> row, bool ahead})? _merge(TableSpec t, Map<String, Object?> r) {
+    Map<String, Object?> columns() => {for (final k in t.columns.keys) k: r[k]};
+    if (t.groups.isEmpty) {
+      // Gewohnheits-Haken: nur ein Feld, die neuere Zeile gewinnt.
+      final existing = _logs[HabitLog.keyOf(r['habit_id'] as String, (r['day'] as String).substring(0, 10))];
+      final newer = existing == null || DateTime.parse(r['updated_at'] as String).toUtc().isAfter(existing.updatedAt);
+      return newer ? (row: columns(), ahead: false) : null;
+    }
+    final local = _saved[_savedKey(t, r['id'])];
+    return local == null ? (row: columns(), ahead: false) : mergeRemote(t, local, r);
+  }
 }

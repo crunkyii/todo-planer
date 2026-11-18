@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'cloud.dart';
+import 'field_merge.dart';
 import 'local_db.dart';
 import 'settings_store.dart';
 import 'store.dart';
@@ -192,9 +194,36 @@ class SyncService extends ChangeNotifier {
     }
   }
 
+  /// Die Zeile, wie Supabase sie erwartet: Wahrheitswerte als `true`/`false`, die Zeitstempel
+  /// je Feld als JSON-Objekt (lokal stehen sie als Text). Kennt der Server die Spalte
+  /// `field_times` noch nicht, bleibt sie weg – dann gilt dort wie früher die ganze Zeile.
   Map<String, Object?> _remote(TableSpec t, Map<String, Object?> row) => {
-    for (final k in t.columns.keys) k: t.bools.contains(k) ? row[k] == 1 || row[k] == true : row[k],
+    for (final k in t.columns.keys)
+      if (k != fieldTimesColumn)
+        k: t.bools.contains(k) ? row[k] == 1 || row[k] == true : row[k]
+      else if (_serverMergesFields)
+        k: switch (row[k]) {
+          final String s => jsonDecode(s),
+          final other => other,
+        },
   };
+
+  /// `false`, sobald der Server die Spalte `field_times` ablehnt (älteres `schema.sql`).
+  bool _serverMergesFields = true;
+
+  /// Der Server kennt eine Spalte nicht: einmal je App-Start melden. Ist es `field_times`,
+  /// geht es ohne diese Spalte weiter, statt die Warteschlange zu blockieren.
+  /// Gibt zurück, ob es sich lohnt, das Hochladen gleich noch einmal zu versuchen.
+  bool _unknownColumn(PostgrestException e) {
+    if (e.code != 'PGRST204') return false; // „Spalte nicht gefunden“
+    if (!_schemaHintShown) {
+      _schemaHintShown = true;
+      _events.add(const SchemaOutdated());
+    }
+    final retry = _serverMergesFields && e.message.contains(fieldTimesColumn);
+    if (retry) _serverMergesFields = false;
+    return retry;
+  }
 
   Future<void> _push() async {
     final db = cloud.client;
@@ -205,7 +234,12 @@ class SyncService extends ChangeNotifier {
         final chunk = rows.sublist(i, i + _pushChunk > rows.length ? rows.length : i + _pushChunk);
         var ok = chunk;
         try {
-          await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
+          try {
+            await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
+          } on PostgrestException catch (e) {
+            if (!_unknownColumn(e)) rethrow;
+            await db.from(t.name).upsert(chunk.map((r) => _remote(t, r)).toList(), onConflict: t.keys.join(','));
+          }
         } on PostgrestException {
           // Lehnt der Server ein Paket ab, Zeile für Zeile versuchen: Eine fehlerhafte Zeile
           // darf nicht die ganze Warteschlange blockieren. Sie bleibt `dirty` und wird gezählt.
@@ -217,11 +251,7 @@ class SyncService extends ChangeNotifier {
             } on PostgrestException catch (e) {
               bad++;
               debugPrint('Zeile in ${t.name} abgelehnt: ${e.code}');
-              // PGRST204 = „Spalte nicht gefunden“. Nur einmal je App-Start melden.
-              if (e.code == 'PGRST204' && !_schemaHintShown) {
-                _schemaHintShown = true;
-                _events.add(const SchemaOutdated());
-              }
+              _unknownColumn(e);
             }
           }
         }

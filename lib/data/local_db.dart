@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
@@ -9,9 +11,10 @@ import 'models.dart';
 /// 1. hier eine `TableSpec` und in [syncTables] (Reihenfolge = Reihenfolge beim Hochladen),
 /// 2. ein Modell mit `toJson()`/`fromJson()` in `models.dart`,
 /// 3. im `Store`: eine eigene Map sowie `_put`, `_ingest` und `_existingUpdatedAt`,
-/// 4. in `supabase/schema.sql`: die Tabelle und ihr Name in der Schleife für Trigger, RLS und Realtime.
+/// 4. in `supabase/schema.sql`: die Tabelle und ihr Name in der Schleife für Trigger, RLS und Realtime
+///    (samt Feld-Gruppen, wenn sie feldweise zusammengeführt werden soll).
 class TableSpec {
-  const TableSpec(this.name, this.keys, this.columns, {this.bools = const {}});
+  const TableSpec(this.name, this.keys, this.columns, {this.bools = const {}, this.groups = const {}});
 
   final String name;
 
@@ -23,7 +26,19 @@ class TableSpec {
 
   /// Spalten, die in Supabase `boolean` sind (lokal stehen sie als 0/1 in SQLite).
   final Set<String> bools;
+
+  /// Feld-Gruppen für das feldweise Zusammenführen (siehe `field_merge.dart`): Name der
+  /// Gruppe → ihre Spalten. Was zusammengehört (Datum und Uhrzeit, erledigt und wann), ist
+  /// eine Gruppe. Leer = die ganze Zeile gewinnt oder verliert als Ganzes.
+  ///
+  /// Dieselben Gruppen stehen in `supabase/schema.sql` beim Anlegen der Trigger – ein Test
+  /// vergleicht beide Stellen.
+  final Map<String, List<String>> groups;
 }
+
+/// Zeitstempel je Feld-Gruppe als JSON (lokal Text, in Supabase `jsonb`). Ohne NOT NULL:
+/// Zeilen von älteren App-Versionen und älteren Servern haben keine.
+const _fieldTimes = {'field_times': 'TEXT'};
 
 const categoriesTable = TableSpec(
   'categories',
@@ -38,8 +53,17 @@ const categoriesTable = TableSpec(
     'position': 'INTEGER NOT NULL',
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
+    ..._fieldTimes,
   },
   bools: {'deleted'},
+  groups: {
+    'name': ['name'],
+    'color': ['color'],
+    'offset': ['offset_days'],
+    'list_from': ['list_from'],
+    'position': ['position'],
+    'deleted': ['deleted'],
+  },
 );
 
 const tasksTable = TableSpec(
@@ -58,8 +82,17 @@ const tasksTable = TableSpec(
     'created_at': 'TEXT NOT NULL',
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
+    ..._fieldTimes,
   },
   bools: {'done', 'deleted'},
+  groups: {
+    'title': ['title'],
+    'notes': ['notes'],
+    'category': ['category_id'],
+    'due': ['due_date', 'due_time'],
+    'done': ['done', 'done_at'],
+    'deleted': ['deleted'],
+  },
 );
 
 const subtasksTable = TableSpec(
@@ -73,8 +106,15 @@ const subtasksTable = TableSpec(
     'position': 'INTEGER NOT NULL',
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
+    ..._fieldTimes,
   },
   bools: {'done', 'deleted'},
+  groups: {
+    'title': ['title'],
+    'done': ['done'],
+    'position': ['position'],
+    'deleted': ['deleted'],
+  },
 );
 
 const habitsTable = TableSpec(
@@ -88,8 +128,15 @@ const habitsTable = TableSpec(
     'created_at': 'TEXT NOT NULL',
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
+    ..._fieldTimes,
   },
   bools: {'deleted'},
+  groups: {
+    'name': ['name'],
+    'color': ['color'],
+    'position': ['position'],
+    'deleted': ['deleted'],
+  },
 );
 
 const habitLogsTable = TableSpec(
@@ -113,8 +160,16 @@ const blocksTable = TableSpec(
     'week_start': 'TEXT',
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
+    ..._fieldTimes,
   },
   bools: {'repeat', 'deleted'},
+  groups: {
+    // Tag, Zeit und Wiederholung beschreiben zusammen, wann der Block ist.
+    'name': ['name'],
+    'color': ['color'],
+    'time': ['day', 'start_min', 'end_min', 'repeat', 'week_start'],
+    'deleted': ['deleted'],
+  },
 );
 
 /// Alle Tabellen. Die Reihenfolge ist wichtig für den Upload: Kategorien vor Aufgaben,
@@ -130,9 +185,10 @@ class LocalDb extends GeneratedDatabase {
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
 
   /// Bei jeder Änderung an den Spalten um eins erhöhen und unten in `onUpgrade` nachziehen.
-  /// 2: `tasks.notes` · 3: `categories.list_from` · 4: Tabelle `done_archive`.
+  /// 2: `tasks.notes` · 3: `categories.list_from` · 4: Tabelle `done_archive` ·
+  /// 5: `field_times` (Zeitstempel je Feld-Gruppe).
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Merkzettel der erledigten Aufgaben, die nur noch online liegen (siehe [ArchivedDone]).
   /// Nur am Gerät – diese Tabelle wird nie abgeglichen.
@@ -156,6 +212,11 @@ class LocalDb extends GeneratedDatabase {
       if (from < 2) await _addColumn('tasks', 'notes', 'TEXT');
       if (from < 3) await _addColumn('categories', 'list_from', 'TEXT');
       if (from < 4) await customStatement(_createArchive);
+      if (from < 5) {
+        for (final t in syncTables.where((t) => t.groups.isNotEmpty)) {
+          await _addColumn(t.name, 'field_times', 'TEXT');
+        }
+      }
     },
   );
 
@@ -166,7 +227,11 @@ class LocalDb extends GeneratedDatabase {
     await customStatement('ALTER TABLE "$table" ADD COLUMN "$column" $type');
   }
 
-  static Object? _toSql(Object? v) => v is bool ? (v ? 1 : 0) : v;
+  static Object? _toSql(Object? v) => switch (v) {
+    final bool b => b ? 1 : 0,
+    final Map<Object?, Object?> m => jsonEncode(m), // `field_times`
+    _ => v,
+  };
 
   /// Alle Zeilen einer Tabelle als Map (Spaltenname → Wert).
   Future<List<Map<String, Object?>>> all(TableSpec t) async {
