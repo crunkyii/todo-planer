@@ -171,3 +171,6 @@ begin
   end loop;
 end;
 $$;
+
+-- Supabase (PostgREST) neue Spalten sofort bekannt machen
+notify pgrst, 'reload schema';
