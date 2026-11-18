@@ -143,7 +143,9 @@ class Task {
   bool get hasTime => dueTime != null;
 
   /// Fälligkeit als lokaler Zeitpunkt (ganztägig = Mitternacht).
-  DateTime get due => dueDate.add(Duration(minutes: dueTime ?? 0));
+  /// Über Stunde/Minute gebaut, nicht mit `add`: Am Tag der Zeitumstellung hat der Tag
+  /// 23 oder 25 Stunden, sonst würde aus 8:00 plötzlich 9:00 bzw. 7:00.
+  DateTime get due => DateTime(dueDate.year, dueDate.month, dueDate.day, (dueTime ?? 0) ~/ 60, (dueTime ?? 0) % 60);
 
   Map<String, Object?> toJson() => {
         'id': id,

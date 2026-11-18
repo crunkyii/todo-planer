@@ -46,6 +46,14 @@ void main() {
       expect(streak((d) => false, from: t), 0);
     });
 
+    test('Fälligkeit stimmt auch am Tag der Zeitumstellung', () {
+      // In Mitteleuropa hat der 28.3.2027 nur 23 Stunden, der 31.10.2027 hat 25.
+      for (final d in [DateTime(2027, 3, 28), DateTime(2027, 10, 31)]) {
+        final due = _task('x', d, time: 8 * 60).due;
+        expect((due.day, due.hour, due.minute), (d.day, 8, 0));
+      }
+    });
+
     test('Uhrzeit-Text', () {
       expect(hmString(8 * 60 + 5), '08:05');
       expect(parseHm('16:30'), 990);
