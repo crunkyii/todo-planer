@@ -117,6 +117,9 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
           ? widget.child
           : Stack(
               clipBehavior: Clip.none,
+              // Der Inhalt bekommt dieselben Maße wie ohne Schimmer – sonst schrumpft er beim Klick
+              // auf seine eigene Größe und springt (z. B. die Schrift in der Navigation links).
+              fit: StackFit.passthrough,
               children: [
                 widget.child,
                 Positioned.fill(

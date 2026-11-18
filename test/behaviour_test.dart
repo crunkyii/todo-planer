@@ -1351,6 +1351,27 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Klick auf einen Tab links: die Schrift bleibt an ihrem Platz', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      final label = find.text(l.statistics).first;
+      final before = tester.getCenter(label);
+      final press = await tester.startGesture(before, kind: PointerDeviceKind.mouse);
+      // Während Schimmer und Feder laufen, darf sie höchstens leicht mitfedern – nicht springen.
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 40));
+        expect((tester.getCenter(label) - before).distance, lessThan(1.5), reason: 'gedrückt, Bild $i');
+      }
+      await press.up();
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 40));
+        expect((tester.getCenter(label) - before).distance, lessThan(1.5), reason: 'losgelassen, Bild $i');
+      }
+      await tester.pumpAndSettle();
+      await finishApp(tester, app);
+    });
+
     testWidgets('Handy im Querformat bleibt beim Handy-Layout', (tester) async {
       final l = l10n('de');
       final app = await makeServices();
