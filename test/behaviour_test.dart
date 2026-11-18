@@ -11,6 +11,7 @@ import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/theme/tokens.dart';
 import 'package:todo_liste/util/dates.dart';
+import 'package:todo_liste/widgets/pickers.dart';
 import 'package:todo_liste/widgets/ui.dart';
 
 import 'fake_supabase.dart';
@@ -186,6 +187,35 @@ void main() {
       expect(find.text('5'), findsWidgets);
       await _tap(tester, find.text('${day.day}').first);
       expect(find.text('T Fünfte'), findsOneWidget);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Wischen über dem Kalender blättert den Monat', (tester) async {
+      useFixedClock(); // November 2026
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.navCalendar));
+      expect(find.text('November 2026'), findsOneWidget);
+      final grid = find.byType(MonthGrid);
+      await tester.drag(grid, const Offset(-150, 0)); // nach links = nächster Monat
+      await tester.pumpAndSettle();
+      expect(find.text('Dezember 2026'), findsOneWidget);
+      await tester.drag(grid, const Offset(150, 0));
+      await tester.pumpAndSettle();
+      await tester.drag(grid, const Offset(150, 0)); // nach rechts = voriger Monat
+      await tester.pumpAndSettle();
+      expect(find.text('Oktober 2026'), findsOneWidget);
+      await tester.drag(grid, const Offset(-20, 0)); // zu kurz: nichts passiert
+      await tester.pumpAndSettle();
+      expect(find.text('Oktober 2026'), findsOneWidget);
+      await tester.fling(grid, const Offset(-60, 0), 2000); // kurz, aber schnell
+      await tester.pumpAndSettle();
+      expect(find.text('November 2026'), findsOneWidget);
+      // Senkrecht scrollen und Tag antippen gehen weiter
+      await tester.drag(grid, const Offset(0, -60));
+      await tester.pumpAndSettle();
+      expect(find.text('November 2026'), findsOneWidget);
       await finishApp(tester, app);
     });
 
