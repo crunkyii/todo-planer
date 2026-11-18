@@ -56,3 +56,6 @@ key.properties
 
 # Nur lokal: der Klick-Prototyp
 /design/
+
+# Signier-Schlüssel fürs Auto-Update – niemals committen
+*.key
