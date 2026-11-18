@@ -8,7 +8,7 @@ Aufgaben, Gewohnheiten, Kalender und Wochenplan in einer App – für Android, W
 
 **Android:** Unter [Releases](https://github.com/crunkyii/todo-planer/releases/latest) die Datei `todo-planer-<Version>.apk` herunterladen und öffnen. Beim ersten Mal fragt Android, ob Apps aus dieser Quelle installiert werden dürfen.
 
-**Windows:** Unter [Releases](https://github.com/crunkyii/todo-planer/releases/latest) die Datei `todo-planer-<Version>-windows.zip` herunterladen, entpacken und `todo_liste.exe` starten.
+**Windows:** Unter [Releases](https://github.com/crunkyii/todo-planer/releases/latest) die Datei `todo-planer-<Version>-setup.exe` herunterladen und ausführen. Der Installer braucht keine Admin-Rechte. Weil er nicht von Microsoft zertifiziert ist, warnt Windows beim ersten Start („Der Computer wurde durch Windows geschützt“) – mit **Weitere Informationen → Trotzdem ausführen** geht es weiter. Neue Versionen holt sich die App danach selbst ([so funktioniert das Update](docs/update.md)).
 
 **Selbst bauen** (auch für Linux): siehe [docs/bauen.md](docs/bauen.md).
 
@@ -24,6 +24,7 @@ Beim ersten Start fragt die App, wo die Aufgaben gespeichert werden sollen: **nu
 - **Startbildschirm-Widgets** für Android
 - **Export** als PDF, Text oder CSV
 - **10 Themes**, hell/dunkel, Deutsch/Englisch
+- **Auto-Update** unter Windows – signiert und geprüft, bevor etwas installiert wird
 - **Offline zuerst**: Alles wird sofort am Gerät gespeichert und später abgeglichen
 
 | Aufgaben | Neue Aufgabe | Kalender |
@@ -45,6 +46,7 @@ Deine Aufgaben bleiben am Gerät – oder in **deiner eigenen** Datenbank, wenn 
 | [Was die App kann](docs/funktionen.md) | Alle Funktionen im Detail |
 | [Auf allen Geräten](docs/sync.md) | Eigene Supabase-Datenbank einrichten, so funktioniert der Abgleich |
 | [Datenschutz](docs/datenschutz.md) | Was gespeichert und übertragen wird |
+| [Installer und Auto-Update](docs/update.md) | Wie das Update unter Windows abläuft und geprüft wird |
 | [Selbst bauen](docs/bauen.md) | Voraussetzungen, Starten, Windows- und Android-Build |
 | [Tests](docs/tests.md) | Was getestet wird und wie man die Tests startet |
 | [Aufbau](docs/aufbau.md) | Architektur, Ordner und Regeln für Änderungen am Code |

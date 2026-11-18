@@ -33,7 +33,7 @@ Der Weg einer Änderung, z. B. „Aufgabe abhaken“: Tipp → `Store.toggleTask
 | `lib/data/` | Modelle, lokale Datenbank (drift, rohes SQL), Store, Einstellungen, Supabase und Sync |
 | `lib/screens/` | Bildschirme: Einrichtung, Anmeldung, Aufgaben, Kalender, Woche, Statistik, Optionen, Widget-Einstellungen |
 | `lib/screens/sheets/` | Die Formulare, die von unten hereinfahren – eines je Datei (Aufgabe, Block, Gewohnheit, Kategorie, Export) |
-| `lib/services/` | Erinnerungen, Export (PDF/Text/CSV), Daten für die Startbildschirm-Widgets, Fehlermeldungen |
+| `lib/services/` | Erinnerungen, Export (PDF/Text/CSV), Daten für die Startbildschirm-Widgets, Fehlermeldungen, Auto-Update |
 | `lib/util/` | Reine Logik ohne Widgets: Datum, Formate, Sortierung, Feiertage, Statistik, Wochenplan-Spuren |
 | `lib/widgets/` | Bausteine: Knöpfe mit Feder-Effekt, Sheets, Menü, Kalender- und Uhrzeit-Auswahl, Meldungen |
 | `lib/theme/` | Farben, Themes, Größen, Animationskurven |
@@ -42,6 +42,7 @@ Der Weg einer Änderung, z. B. „Aufgabe abhaken“: Tipp → `Store.toggleTask
 | `supabase/schema.sql` | Datenbank-Schema mit Row Level Security |
 | `test/`, `integration_test/` | Tests (siehe oben) |
 | `tool/icon/` | Quelle und Erzeuger des App-Symbols |
+| `tool/release/` | Windows-Installer (Inno Setup), Signier-Werkzeug und Release-Skript ([update.md](update.md)) |
 
 Neue Texte immer in **beide** ARB-Dateien eintragen; `flutter pub get` erzeugt daraus den Code.
 

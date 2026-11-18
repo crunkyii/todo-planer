@@ -17,6 +17,7 @@ flutter test
 | `test/behaviour_test.dart`, `test/widget_test.dart` | Die ganze App wird bedient: Formulare, Menüs, Tastatur, Schriftgrößen, Barrierefreiheit |
 | `test/screens_test.dart` | Bildvergleich jedes Tabs (Goldens in `test/goldens/`) |
 | `test/export_test.dart`, `test/home_widgets_test.dart`, `test/widget_config_test.dart` | Export, Daten für die Startbildschirm-Widgets und deren Einstellungen |
+| `test/updater_test.dart` | Auto-Update: Versionsvergleich, `latest.json`, Signaturprüfung (veränderte Datei, fremder Schlüssel, alte Datei unter neuer Nummer) |
 
 Hat sich das Aussehen absichtlich geändert, die Vergleichsbilder neu erzeugen:
 

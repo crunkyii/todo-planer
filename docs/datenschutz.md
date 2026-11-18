@@ -1,6 +1,6 @@
 # Datenschutz
 
-**Kurz: Deine Aufgaben gehören dir. Die App schickt nichts an den Entwickler oder an Dritte.**
+**Kurz: Deine Aufgaben gehören dir. Die App schickt keine Daten an den Entwickler oder an Dritte.**
 
 ## Nur auf diesem Gerät
 
@@ -14,6 +14,10 @@ In diesem Modus gleicht die App mit **deiner eigenen** Supabase-Datenbank ab –
 - Die App nimmt nur den öffentlichen „Publishable Key“ an. Den geheimen Key (`sb_secret_…` / `service_role`) lehnt sie ab.
 - In der Datenbank schützt Row Level Security jede Zeile: Jedes Konto sieht und ändert nur seine eigenen Daten ([`supabase/schema.sql`](../supabase/schema.sql)).
 - Übertragen werden Aufgaben, Unteraufgaben, Notizen, Kategorien, Gewohnheiten, Wochenplan und Einstellungen – sonst nichts.
+
+## Update-Prüfung (nur Windows)
+
+Die mit dem Installer installierte Windows-App fragt beim Start bei GitHub nach, ob es eine neuere Version gibt, und lädt sie von dort, wenn du auf **Installieren** tippst. Dabei wird nur eine Datei abgerufen – die App schickt nichts mit: keine Aufgaben, keine Kennung, kein Konto. GitHub sieht dabei wie jede Website deine IP-Adresse ([Datenschutzerklärung von GitHub](https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement)). Die Android-App und die selbst gebaute App prüfen nicht auf Updates. Details: [update.md](update.md).
 
 ## Was die App nicht macht
 
