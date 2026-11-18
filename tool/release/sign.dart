@@ -1,11 +1,12 @@
-// Signiert den Windows-Installer für das Auto-Update und schreibt `latest.json`.
+// Signiert den Windows-Installer und die Android-APK für das Auto-Update und schreibt `latest.json`.
 //
 //   dart run tool/release/sign.dart keygen
 //       Erzeugt einmalig das Schlüsselpaar. Der private Schlüssel landet außerhalb des Repos
 //       (siehe [keyFile]), der öffentliche wird ausgegeben und gehört in `lib/services/update_manifest.dart`.
 //
-//   dart run tool/release/sign.dart sign <installer.exe> <version>
-//       Schreibt `latest.json` neben den Installer.
+//   dart run tool/release/sign.dart sign <installer.exe> <version> [<app.apk>]
+//       Schreibt `latest.json` neben den Installer. Mit APK bekommt die Datei zusätzlich den Eintrag
+//       `android`; ohne ihn finden Android-Apps in diesem Release kein Update.
 //
 // Der private Schlüssel darf nie ins Repo, in ein Log oder in eine Ausgabe.
 import 'dart:convert';
@@ -48,29 +49,62 @@ Future<SimpleKeyPair> _loadKey() async {
   return _ed.newKeyPairFromSeed(base64Decode(file.readAsStringSync().trim()));
 }
 
-Future<void> _sign(String installerPath, String version) async {
+/// Adresse und Signatur von [file] im Release [version] – so, wie sie in `latest.json` stehen.
+Future<Map<String, String>> _entry(File file, String version, SimpleKeyPair pair) async {
+  final hash = await Sha256().hash(file.readAsBytesSync());
+  final signature = await _ed.sign(signedMessage(version, hash.bytes), keyPair: pair);
+  return {
+    'url': '${releaseDownloadBase}v$version/${file.uri.pathSegments.last}',
+    'signature': base64Encode(signature.bytes),
+  };
+}
+
+/// Prüft [entry] gegen [file], wie es die App nach dem Download macht: mit dem eingebauten Schlüssel.
+Future<void> _verify(UpdateFile? entry, File file, String version) async {
+  final hash = await Sha256().hash(file.readAsBytesSync());
+  final ok =
+      entry != null &&
+      await _ed.verify(
+        signedMessage(version, hash.bytes),
+        signature: Signature(
+          entry.signature,
+          publicKey: SimplePublicKey(base64Decode(updatePublicKey), type: KeyPairType.ed25519),
+        ),
+      );
+  if (!ok) throw StateError('Die Signatur für ${file.path} würde in der App durchfallen.');
+}
+
+File _existing(String path, String ending) {
+  final file = File(path);
+  if (!path.toLowerCase().endsWith(ending)) throw ArgumentError('Erwartet eine $ending-Datei: $path');
+  if (!file.existsSync()) throw ArgumentError('Datei fehlt: $path');
+  return file;
+}
+
+Future<void> _sign(String installerPath, String version, String? apkPath) async {
   if (parseVersion(version) == null) throw ArgumentError('Ungültige Version: $version');
-  final installer = File(installerPath);
-  final name = installer.uri.pathSegments.last;
-  final hash = await Sha256().hash(installer.readAsBytesSync());
+  final installer = _existing(installerPath, '.exe');
+  final apk = apkPath == null ? null : _existing(apkPath, '.apk');
   final pair = await _loadKey();
   // Mit einem anderen Schlüssel als dem in der App würde jede installierte App das Update ablehnen.
   final public = base64Encode((await pair.extractPublicKey()).bytes);
   if (public != updatePublicKey) {
     throw StateError('Der Schlüssel passt nicht zu updatePublicKey in lib/services/update_manifest.dart.');
   }
-  final signature = await _ed.sign(signedMessage(version, hash.bytes), keyPair: pair);
+  // Version, url und signature oben gehören zum Windows-Installer – so lesen es auch ältere Apps.
   final manifest = {
     'version': version,
-    'url': '${releaseDownloadBase}v$version/$name',
-    'signature': base64Encode(signature.bytes),
+    ...await _entry(installer, version, pair),
+    'android': ?(apk == null ? null : await _entry(apk, version, pair)),
   };
   final out = File('${installer.parent.path}${Platform.pathSeparator}latest.json');
   final body = '${const JsonEncoder.withIndent('  ').convert(manifest)}\n';
-  // So liest sie auch die App – was hier nicht durchgeht, käme dort nie an.
-  UpdateManifest.parse(body);
+  // So liest und prüft sie auch die App – was hier nicht durchgeht, käme dort nie an.
+  final parsed = UpdateManifest.parse(body);
+  await _verify(parsed.windows, installer, version);
+  if (apk != null) await _verify(parsed.android, apk, version);
   out.writeAsStringSync(body);
-  stdout.writeln('Geschrieben: ${out.path}');
+  stdout.writeln('Geschrieben: ${out.path}${apk == null ? ' (ohne Android)' : ''}');
 }
 
 Future<void> main(List<String> args) async {
@@ -78,9 +112,11 @@ Future<void> main(List<String> args) async {
     case ['keygen']:
       await _keygen();
     case ['sign', final installer, final version]:
-      await _sign(installer, version);
+      await _sign(installer, version, null);
+    case ['sign', final installer, final version, final apk]:
+      await _sign(installer, version, apk);
     default:
-      stderr.writeln('Aufruf: sign.dart keygen | sign <installer.exe> <version>');
+      stderr.writeln('Aufruf: sign.dart keygen | sign <installer.exe> <version> [<app.apk>]');
       exitCode = 64;
   }
 }

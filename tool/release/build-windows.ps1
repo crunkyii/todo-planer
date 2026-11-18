@@ -1,13 +1,9 @@
-# Baut das Windows-Release: App, Installer und die signierte latest.json fürs Auto-Update.
+# Baut die Windows-App und ihren Installer.
 #
 #   pwsh tool/release/build-windows.ps1
 #
-# Ergebnis in build/dist/:
-#   todo-planer-<Version>-setup.exe   Installer (ohne Admin-Rechte)
-#   latest.json                       zeigt auf den Installer, mit Signatur
-#
-# Braucht Inno Setup 6 und den privaten Signier-Schlüssel (einmalig: dart run tool/release/sign.dart keygen).
-# Beide Dateien gehören an das GitHub-Release mit dem Tag v<Version>.
+# Ergebnis: build/dist/todo-planer-<Version>-setup.exe (Installer ohne Admin-Rechte). Braucht Inno Setup 6.
+# Ein ganzes Release (Installer, APK und signierte latest.json) baut tool/release/build-release.ps1.
 $ErrorActionPreference = 'Stop'
 Set-Location (Resolve-Path "$PSScriptRoot/../..")
 
@@ -36,7 +32,4 @@ Invoke-Step 'Installer bauen' {
   & $iscc /Qp "/DAppVersion=$version" "/DSourceDir=$source" "/DOutputDir=$($dist.FullName)" tool\release\installer.iss
 }
 
-$installer = Join-Path $dist.FullName "todo-planer-$version-setup.exe"
-Invoke-Step 'Signieren' { dart run tool/release/sign.dart sign $installer $version }
-
-Write-Host "Fertig: $installer"
+Write-Host "Fertig: $(Join-Path $dist.FullName "todo-planer-$version-setup.exe")"
