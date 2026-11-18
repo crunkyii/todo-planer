@@ -93,27 +93,29 @@ class _AppShellState extends State<AppShell> {
               listenable: ui,
               builder: (context, _) {
                 final fab = _fab(l);
-                return Stack(children: [
-                  Positioned.fill(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: mq.padding.top),
-                      child: _PageSwitcher(ui: ui, child: _tab()),
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: mq.padding.top),
+                        child: _PageSwitcher(ui: ui, child: _tab()),
+                      ),
                     ),
-                  ),
-                  if (fab != null)
+                    if (fab != null)
+                      Positioned(
+                        right: Sizes.fabRight,
+                        bottom: (low ? 78 : Sizes.fabBottom) + mq.padding.bottom,
+                        child: _Fab(label: fab.label, onTap: fab.onTap, size: low ? 54 : Sizes.fab),
+                      ),
                     Positioned(
-                      right: Sizes.fabRight,
-                      bottom: (low ? 78 : Sizes.fabBottom) + mq.padding.bottom,
-                      child: _Fab(label: fab.label, onTap: fab.onTap, size: low ? 54 : Sizes.fab),
+                      left: Sizes.navGap,
+                      right: Sizes.navGap,
+                      bottom: (low ? 8 : Sizes.navGap) + mq.padding.bottom,
+                      child: _GlassNav(ui: ui, height: low ? 58 : Sizes.navH),
                     ),
-                  Positioned(
-                    left: Sizes.navGap,
-                    right: Sizes.navGap,
-                    bottom: (low ? 8 : Sizes.navGap) + mq.padding.bottom,
-                    child: _GlassNav(ui: ui, height: low ? 58 : Sizes.navH),
-                  ),
-                  SnackHost(controller: app.snack, undoLabel: l.undo, bottom: low ? 76 : Sizes.fabBottom),
-                ]);
+                    SnackHost(controller: app.snack, undoLabel: l.undo, bottom: low ? 76 : Sizes.fabBottom),
+                  ],
+                );
               },
             ),
           ),
@@ -123,12 +125,15 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _tab() => switch (ui.tab) {
-        AppTab.tasks => TasksTab(key: const ValueKey('tasks'), ui: ui),
-        AppTab.calendar => CalendarTab(key: const ValueKey('calendar'), ui: ui),
-        AppTab.week => WeekTab(key: const ValueKey('week'), ui: ui),
-        AppTab.stats => StatsTab(key: const ValueKey('stats'), ui: ui),
-        AppTab.settings => ui.cats ? CategoriesPage(key: const ValueKey('cats'), ui: ui) : SettingsTab(key: const ValueKey('settings'), ui: ui),
-      };
+    AppTab.tasks => TasksTab(key: const ValueKey('tasks'), ui: ui),
+    AppTab.calendar => CalendarTab(key: const ValueKey('calendar'), ui: ui),
+    AppTab.week => WeekTab(key: const ValueKey('week'), ui: ui),
+    AppTab.stats => StatsTab(key: const ValueKey('stats'), ui: ui),
+    AppTab.settings =>
+      ui.cats
+          ? CategoriesPage(key: const ValueKey('cats'), ui: ui)
+          : SettingsTab(key: const ValueKey('settings'), ui: ui),
+  };
 }
 
 /// Seitenwechsel gleitet in Richtung des Tabs (enter-r / enter-l).
@@ -215,45 +220,62 @@ class _GlassNav extends StatelessWidget {
           height: height - 2,
           child: Padding(
             padding: const EdgeInsets.all(3),
-            child: LayoutBuilder(builder: (context, box) {
-              final w = box.maxWidth / tabs.length;
-              return Stack(children: [
-                AnimatedPositioned(
-                  duration: Motion.of(context, Motion.nav),
-                  curve: Motion.springNav,
-                  left: w * idx,
-                  top: 0,
-                  bottom: 0,
-                  width: w,
-                  child: DecoratedBox(decoration: BoxDecoration(color: tok.pc, borderRadius: BorderRadius.circular(Sizes.rNavInd))),
-                ),
-                Row(children: [
-                  for (final t in tabs)
-                    Expanded(
-                      child: Pressable(
-                        onTap: () => ui.goTab(t.$1),
-                        semanticLabel: t.$4,
-                        selected: ui.tab == t.$1,
-                        radius: BorderRadius.circular(Sizes.rNavInd),
-                        excludeChildSemantics: true,
-                        child: SizedBox.expand(
-                          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            AppIcon(t.$3, size: 22, color: ui.tab == t.$1 ? tok.onPc : tok.sub),
-                            const SizedBox(height: 1),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                              child: Text(t.$2,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: Fs.nav, fontWeight: FontWeight.w500, color: ui.tab == t.$1 ? tok.onPc : tok.sub)),
-                            ),
-                          ]),
-                        ),
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final w = box.maxWidth / tabs.length;
+                return Stack(
+                  children: [
+                    AnimatedPositioned(
+                      duration: Motion.of(context, Motion.nav),
+                      curve: Motion.springNav,
+                      left: w * idx,
+                      top: 0,
+                      bottom: 0,
+                      width: w,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: tok.pc, borderRadius: BorderRadius.circular(Sizes.rNavInd)),
                       ),
                     ),
-                ]),
-              ]);
-            }),
+                    Row(
+                      children: [
+                        for (final t in tabs)
+                          Expanded(
+                            child: Pressable(
+                              onTap: () => ui.goTab(t.$1),
+                              semanticLabel: t.$4,
+                              selected: ui.tab == t.$1,
+                              radius: BorderRadius.circular(Sizes.rNavInd),
+                              excludeChildSemantics: true,
+                              child: SizedBox.expand(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    AppIcon(t.$3, size: 22, color: ui.tab == t.$1 ? tok.onPc : tok.sub),
+                                    const SizedBox(height: 1),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                                      child: Text(
+                                        t.$2,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: Fs.nav,
+                                          fontWeight: FontWeight.w500,
+                                          color: ui.tab == t.$1 ? tok.onPc : tok.sub,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),

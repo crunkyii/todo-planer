@@ -15,19 +15,28 @@ import 'package:todo_liste/util/dates.dart';
 import 'package:todo_liste/util/task_logic.dart';
 
 Task _task(String title, DateTime due, {int? time, bool done = false, String cat = 'c'}) => Task(
-      id: newId(),
-      title: title,
-      categoryId: cat,
-      dueDate: due,
-      dueTime: time,
-      done: done,
-      doneAt: done ? nowUtc() : null,
-      createdAt: nowUtc(),
-      updatedAt: nowUtc(),
-    );
+  id: newId(),
+  title: title,
+  categoryId: cat,
+  dueDate: due,
+  dueTime: time,
+  done: done,
+  doneAt: done ? nowUtc() : null,
+  createdAt: nowUtc(),
+  updatedAt: nowUtc(),
+);
 
-WeekBlock _block(String id, int start, int end) =>
-    WeekBlock(id: id, name: id, color: '#3D9BE9', day: 0, start: start, end: end, repeat: true, weekStart: null, updatedAt: nowUtc());
+WeekBlock _block(String id, int start, int end) => WeekBlock(
+  id: id,
+  name: id,
+  color: '#3D9BE9',
+  day: 0,
+  start: start,
+  end: end,
+  repeat: true,
+  weekStart: null,
+  updatedAt: nowUtc(),
+);
 
 void main() {
   group('Datum', () {
@@ -138,12 +147,16 @@ void main() {
 
   test('Erinnerungen nur für offene Aufgaben mit Uhrzeit in der Zukunft', () {
     final now = DateTime(2026, 11, 18, 10);
-    final list = upcomingReminders([
-      _task('später', DateTime(2026, 11, 18), time: 12 * 60),
-      _task('vorbei', DateTime(2026, 11, 18), time: 9 * 60),
-      _task('ohne Zeit', DateTime(2026, 11, 19)),
-      _task('erledigt', DateTime(2026, 11, 19), time: 8 * 60, done: true),
-    ], (t) => t.title, now: now);
+    final list = upcomingReminders(
+      [
+        _task('später', DateTime(2026, 11, 18), time: 12 * 60),
+        _task('vorbei', DateTime(2026, 11, 18), time: 9 * 60),
+        _task('ohne Zeit', DateTime(2026, 11, 19)),
+        _task('erledigt', DateTime(2026, 11, 19), time: 8 * 60, done: true),
+      ],
+      (t) => t.title,
+      now: now,
+    );
     expect(list.map((r) => r.title), ['später']);
   });
 
@@ -151,7 +164,10 @@ void main() {
     final de = lookupAppLocalizations(const Locale('de'));
     test('Netzwerk, Login und unbekannt', () {
       expect(friendlyErrorMessage(de, const SocketException('x')), de.errNetwork);
-      expect(friendlyErrorMessage(de, const AuthException('Invalid login credentials', code: 'invalid_credentials')), de.errWrongLogin);
+      expect(
+        friendlyErrorMessage(de, const AuthException('Invalid login credentials', code: 'invalid_credentials')),
+        de.errWrongLogin,
+      );
       expect(friendlyErrorMessage(de, StateError('x')), de.errUnexpected);
     });
   });

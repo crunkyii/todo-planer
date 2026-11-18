@@ -115,15 +115,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupCloudTitle => 'On all devices';
 
   @override
-  String get setupCloudText =>
-      'Your own free Supabase database. Phone and PC stay in sync, works offline too.';
+  String get setupCloudText => 'Your own free Supabase database. Phone and PC stay in sync, works offline too.';
 
   @override
   String get setupLocalTitle => 'Only on this device';
 
   @override
-  String get setupLocalText =>
-      'No account, no setup. You can change this later in the settings.';
+  String get setupLocalText => 'No account, no setup. You can change this later in the settings.';
 
   @override
   String get languageBoth => 'Sprache · Language';
@@ -150,8 +148,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connecting => 'Connecting …';
 
   @override
-  String get setupStep1 =>
-      'Sign up for free on <b>supabase.com</b> and create a <b>new project</b>.';
+  String get setupStep1 => 'Sign up for free on <b>supabase.com</b> and create a <b>new project</b>.';
 
   @override
   String get setupStep2 =>
@@ -166,8 +163,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'After you have signed up: turn off <b>Authentication → Sign In / Providers</b> → <b>\"Allow new users to sign up\"</b>. Then nobody else can create an account in your database.';
 
   @override
-  String get secretNote =>
-      'Never enter the <b>Secret Key</b> (service_role) – it does not belong in an app.';
+  String get secretNote => 'Never enter the <b>Secret Key</b> (service_role) – it does not belong in an app.';
 
   @override
   String get projectUrl => 'Project URL';
@@ -182,20 +178,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get publishableKeyHint => 'sb_publishable_…';
 
   @override
-  String get errUrl =>
-      'The Project URL looks like this: https://abcdefgh.supabase.co';
+  String get errUrl => 'The Project URL looks like this: https://abcdefgh.supabase.co';
 
   @override
-  String get errKeyFormat =>
-      'The key starts with \"sb_publishable_\" (or \"eyJ\" for older projects).';
+  String get errKeyFormat => 'The key starts with \"sb_publishable_\" (or \"eyJ\" for older projects).';
 
   @override
-  String get errSecretKey =>
-      'That is the secret key. Please use the Publishable Key.';
+  String get errSecretKey => 'That is the secret key. Please use the Publishable Key.';
 
   @override
-  String get errNoConnection =>
-      'No connection. Is the URL correct and was the SQL run?';
+  String get errNoConnection => 'No connection. Is the URL correct and was the SQL run?';
 
   @override
   String connectedTo(String host) {
@@ -239,39 +231,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errWrongLogin => 'Email or password is wrong.';
 
   @override
-  String get accountCreatedHint =>
-      'Account created. Now turn off \"Allow new users to sign up\" in Supabase.';
+  String get accountCreatedHint => 'Account created. Now turn off \"Allow new users to sign up\" in Supabase.';
 
   @override
   String get confirmEmailHint =>
       'Almost done: please confirm your email address with the link in the mail, then sign in.';
 
   @override
-  String get errNetwork =>
-      'No connection to the server. Please check your internet connection.';
+  String get errNetwork => 'No connection to the server. Please check your internet connection.';
 
   @override
-  String get errEmailNotConfirmed =>
-      'Please confirm your email address first (link in the confirmation mail).';
+  String get errEmailNotConfirmed => 'Please confirm your email address first (link in the confirmation mail).';
 
   @override
-  String get errAccountExists =>
-      'There is already an account for this email address. Please sign in.';
+  String get errAccountExists => 'There is already an account for this email address. Please sign in.';
 
   @override
-  String get errWeakPassword =>
-      'The password is too weak. Use at least 6 characters.';
+  String get errWeakPassword => 'The password is too weak. Use at least 6 characters.';
 
   @override
-  String get errRateLimit =>
-      'Too many attempts. Please wait a moment and try again.';
+  String get errRateLimit => 'Too many attempts. Please wait a moment and try again.';
 
   @override
   String get errSignupDisabled => 'Sign-up is turned off in this database.';
 
   @override
-  String get errSessionExpired =>
-      'Your session has expired. Please sign in again.';
+  String get errSessionExpired => 'Your session has expired. Please sign in again.';
 
   @override
   String errAuthGeneric(String message) {
@@ -279,12 +264,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get errNoPermission =>
-      'No permission for this action. Please sign in again.';
+  String get errNoPermission => 'No permission for this action. Please sign in again.';
 
   @override
-  String get errTableMissing =>
-      'Tables are missing in the database. Please run the SQL from the setup again.';
+  String get errTableMissing => 'Tables are missing in the database. Please run the SQL from the setup again.';
 
   @override
   String errDbGeneric(String message) {
@@ -550,12 +533,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String streakDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days',
-      one: '1 day',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count days', one: '1 day');
     return '$_temp0';
   }
 
@@ -600,12 +578,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String offsetDaysBefore(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days before',
-      one: '1 day before',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count days before', one: '1 day before');
     return '$_temp0';
   }
 
@@ -635,12 +608,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String categoriesCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count categories',
-      one: '1 category',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count categories', one: '1 category');
     return '$_temp0';
   }
 
@@ -783,12 +751,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tileStreak(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'days in a row',
-      one: 'day in a row',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'days in a row', one: 'day in a row');
     return '$_temp0';
   }
 

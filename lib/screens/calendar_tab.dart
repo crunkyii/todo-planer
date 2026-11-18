@@ -41,14 +41,25 @@ class CalendarTab extends StatelessWidget {
           return SizedBox(
             height: 9,
             child: cats.length > 4
-                ? Text('${cats.length}',
-                    style: TextStyle(fontSize: 10, height: 0.9, fontWeight: FontWeight.w700, color: selected ? tok.text : tok.sub, fontFeatures: const [FontFeature.tabularFigures()]))
-                : Row(mainAxisSize: MainAxisSize.min, children: [
-                    for (var i = 0; i < cats.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 3),
-                      Dot(tok.item(store.catOf(cats[i]).color).c, size: 5),
+                ? Text(
+                    '${cats.length}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      height: 0.9,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? tok.text : tok.sub,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0; i < cats.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 3),
+                        Dot(tok.item(store.catOf(cats[i]).color).c, size: 5),
+                      ],
                     ],
-                  ]),
+                  ),
           );
         }
 
@@ -59,17 +70,22 @@ class CalendarTab extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 8, 4),
-              child: Row(children: [
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    liveRegion: true,
-                    child: Text(f.monthYear(m), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text)),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      liveRegion: true,
+                      child: Text(
+                        f.monthYear(m),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+                      ),
+                    ),
                   ),
-                ),
-                IconBtn(Ic.left, label: l.prevMonth, onTap: () => move(-1)),
-                IconBtn(Ic.right, label: l.nextMonth, onTap: () => move(1)),
-              ]),
+                  IconBtn(Ic.left, label: l.prevMonth, onTap: () => move(-1)),
+                  IconBtn(Ic.right, label: l.nextMonth, onTap: () => move(1)),
+                ],
+              ),
             ),
             MonthGrid(
               month: m,
@@ -91,10 +107,15 @@ class CalendarTab extends StatelessWidget {
             Container(
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
-              decoration: BoxDecoration(border: Border(top: BorderSide(color: tok.lineSoft))),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: tok.lineSoft)),
+              ),
               child: Semantics(
                 header: true,
-                child: Text(f.longDate(sel), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: tok.text)),
+                child: Text(
+                  f.longDate(sel),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: tok.text),
+                ),
               ),
             ),
             if (selTasks.isEmpty)

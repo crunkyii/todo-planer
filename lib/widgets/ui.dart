@@ -23,17 +23,34 @@ class RichB extends StatelessWidget {
     var i = 0;
     for (final m in re.allMatches(text)) {
       if (m.start > i) spans.add(TextSpan(text: text.substring(i, m.start)));
-      spans.add(TextSpan(text: m.group(1), style: TextStyle(fontWeight: boldWeight, color: style?.color)));
+      spans.add(
+        TextSpan(
+          text: m.group(1),
+          style: TextStyle(fontWeight: boldWeight, color: style?.color),
+        ),
+      );
       i = m.end;
     }
     if (i < text.length) spans.add(TextSpan(text: text.substring(i)));
-    return Text.rich(TextSpan(children: spans), style: style, textAlign: textAlign);
+    return Text.rich(
+      TextSpan(children: spans),
+      style: style,
+      textAlign: textAlign,
+    );
   }
 }
 
 /// Runder Icon-Knopf 44×44 (.icon-btn).
 class IconBtn extends StatelessWidget {
-  const IconBtn(this.icon, {super.key, required this.label, required this.onTap, this.pressed, this.size = 24, this.color});
+  const IconBtn(
+    this.icon, {
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.pressed,
+    this.size = 24,
+    this.color,
+  });
   final Ic icon;
   final String label;
   final VoidCallback? onTap;
@@ -101,7 +118,11 @@ class AppChip extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: padding),
         alignment: Alignment.center,
         decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(height / 2)),
-        child: Text(label, maxLines: 1, style: TextStyle(color: fg, fontSize: fontSize, fontWeight: FontWeight.w500)),
+        child: Text(
+          label,
+          maxLines: 1,
+          style: TextStyle(color: fg, fontSize: fontSize, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }
@@ -109,7 +130,15 @@ class AppChip extends StatelessWidget {
 
 /// Segment-Knöpfe (.seg) – eine Auswahl aus wenigen Optionen.
 class Seg<T> extends StatelessWidget {
-  const Seg({super.key, required this.options, required this.value, required this.onChanged, this.mini = false, this.label, this.wrap = false});
+  const Seg({
+    super.key,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    this.mini = false,
+    this.label,
+    this.wrap = false,
+  });
   final List<(T, String)> options;
   final T? value;
   final ValueChanged<T> onChanged;
@@ -141,9 +170,11 @@ class Seg<T> extends StatelessWidget {
             color: on ? tok.pc : Colors.transparent,
             border: last ? null : Border(right: BorderSide(color: tok.line)),
           ),
-          child: Text(o.$2,
-              maxLines: 1,
-              style: TextStyle(fontSize: mini ? 12.5 : 13, fontWeight: FontWeight.w500, color: on ? tok.onPc : tok.text)),
+          child: Text(
+            o.$2,
+            maxLines: 1,
+            style: TextStyle(fontSize: mini ? 12.5 : 13, fontWeight: FontWeight.w500, color: on ? tok.onPc : tok.text),
+          ),
         ),
       );
     }
@@ -152,17 +183,22 @@ class Seg<T> extends StatelessWidget {
     if (wrap) {
       final rows = <Widget>[];
       for (var i = 0; i < options.length; i += 2) {
-        rows.add(Row(children: [
-          for (var j = i; j < i + 2 && j < options.length; j++)
-            Expanded(child: btn(options[j], last: j == i + 1 || j == options.length - 1)),
-        ]));
+        rows.add(
+          Row(
+            children: [
+              for (var j = i; j < i + 2 && j < options.length; j++)
+                Expanded(child: btn(options[j], last: j == i + 1 || j == options.length - 1)),
+            ],
+          ),
+        );
         if (i + 2 < options.length) rows.add(Divider(height: 1, thickness: 1, color: tok.line));
       }
       body = Column(mainAxisSize: MainAxisSize.min, children: rows);
     } else {
-      body = Row(mainAxisSize: MainAxisSize.min, children: [
-        for (var i = 0; i < options.length; i++) btn(options[i], last: i == options.length - 1),
-      ]);
+      body = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [for (var i = 0; i < options.length; i++) btn(options[i], last: i == options.length - 1)],
+      );
     }
     return Semantics(
       container: true,
@@ -275,10 +311,12 @@ class AppButton extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         Flexible(
-          child: Text(label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: fgc, fontSize: fontSize ?? 14, fontWeight: fontWeight)),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: fgc, fontSize: fontSize ?? 14, fontWeight: fontWeight),
+          ),
         ),
       ],
     );
@@ -335,7 +373,10 @@ class AppField extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: tok.sub)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: tok.sub),
+          ),
           const SizedBox(height: 6),
           AppInput(
             controller: controller,
@@ -401,8 +442,10 @@ class AppInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
-    OutlineInputBorder b(Color c, double w, double r) =>
-        OutlineInputBorder(borderRadius: BorderRadius.circular(r), borderSide: w == 0 ? BorderSide.none : BorderSide(color: c, width: w));
+    OutlineInputBorder b(Color c, double w, double r) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(r),
+      borderSide: w == 0 ? BorderSide.none : BorderSide(color: c, width: w),
+    );
     final r = filled ? (height >= 50 ? Sizes.rSlim : height / 2) : Sizes.rInput;
     return SizedBox(
       height: height,
@@ -448,18 +491,31 @@ class CapsHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: padding,
-        child: Semantics(
-          header: true,
-          child: Text(text.toUpperCase(),
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, letterSpacing: 0.6, color: color ?? context.tok.sub)),
+    padding: padding,
+    child: Semantics(
+      header: true,
+      child: Text(
+        text.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.6,
+          color: color ?? context.tok.sub,
         ),
-      );
+      ),
+    ),
+  );
 }
 
 /// Opake Karte (.card): Fläche, Radius 22, weicher Schatten.
 class AppCard extends StatelessWidget {
-  const AppCard({super.key, required this.child, this.padding = const EdgeInsets.fromLTRB(14, 14, 14, 12), this.margin = const EdgeInsets.fromLTRB(12, 10, 12, 0), this.radius = Sizes.rCardLarge});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.fromLTRB(14, 14, 14, 12),
+    this.margin = const EdgeInsets.fromLTRB(12, 10, 12, 0),
+    this.radius = Sizes.rCardLarge,
+  });
   final Widget child;
   final EdgeInsets padding;
   final EdgeInsets margin;
@@ -471,7 +527,11 @@ class AppCard extends StatelessWidget {
     return Container(
       margin: margin,
       padding: padding,
-      decoration: BoxDecoration(color: tok.card, borderRadius: BorderRadius.circular(radius), boxShadow: tok.cardShadow),
+      decoration: BoxDecoration(
+        color: tok.card,
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: tok.cardShadow,
+      ),
       child: child,
     );
   }
@@ -490,17 +550,22 @@ class TopBar extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 60),
       padding: EdgeInsets.fromLTRB(onBack != null ? 4 : 20, 8, 8, 0),
-      child: Row(children: [
-        if (onBack != null) IconBtn(Ic.back, label: backLabel ?? '', onTap: onBack),
-        if (onBack != null) const SizedBox(width: 4),
-        Expanded(
-          child: Semantics(
-            header: true,
-            child: Text(title, style: TextStyle(fontSize: Fs.title, height: 28 / 22, color: context.tok.text)),
+      child: Row(
+        children: [
+          if (onBack != null) IconBtn(Ic.back, label: backLabel ?? '', onTap: onBack),
+          if (onBack != null) const SizedBox(width: 4),
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: TextStyle(fontSize: Fs.title, height: 28 / 22, color: context.tok.text),
+              ),
+            ),
           ),
-        ),
-        ?trailing,
-      ]),
+          ?trailing,
+        ],
+      ),
     );
   }
 }
@@ -519,11 +584,18 @@ class ErrorBox extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: tok.errC, borderRadius: BorderRadius.circular(12)),
-        child: Row(children: [
-          AppIcon(Ic.alert, size: 22, color: tok.onErrC),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text, style: TextStyle(color: tok.onErrC, fontSize: 14, height: 20 / 14))),
-        ]),
+        child: Row(
+          children: [
+            AppIcon(Ic.alert, size: 22, color: tok.onErrC),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(color: tok.onErrC, fontSize: 14, height: 20 / 14),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -552,19 +624,26 @@ class SetRow extends StatelessWidget {
         children: [
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 120),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (leading != null) ...[leading!, const SizedBox(width: 16)],
-              Flexible(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (leading != null) ...[leading!, const SizedBox(width: 16)],
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(title, style: TextStyle(fontSize: 16, color: tok.text)),
                       if (subtitle != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(subtitle!, style: TextStyle(fontSize: 13, color: tok.sub)),
                         ),
-                    ]),
-              ),
-            ]),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           ?trailing,
         ],
@@ -589,13 +668,23 @@ class Dot extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) =>
-      Container(width: size, height: size, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
 }
 
 /// Abhak-Kreis (.check) bzw. kleines Kästchen (.check.small).
 class CheckMark extends StatelessWidget {
-  const CheckMark({super.key, required this.on, required this.colors, required this.label, required this.onTap, this.small = false});
+  const CheckMark({
+    super.key,
+    required this.on,
+    required this.colors,
+    required this.label,
+    required this.onTap,
+    this.small = false,
+  });
   final bool on;
   final ItemColors colors;
   final String label;
@@ -628,7 +717,9 @@ class CheckMark extends StatelessWidget {
       child: SizedBox(
         width: small ? 36 : 44,
         height: small ? 32 : 44,
-        child: Center(child: _PopIn(key: ValueKey(on), child: box)),
+        child: Center(
+          child: _PopIn(key: ValueKey(on), child: box),
+        ),
       ),
     );
   }
@@ -664,11 +755,21 @@ class BlobBackground extends StatelessWidget {
       decoration: BoxDecoration(color: tok.bg),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: RadialGradient(center: const Alignment(-1, -1), radius: 0.9, colors: [tok.blob1, tok.blob1.withValues(alpha: 0)], stops: const [0, 0.7]),
+          gradient: RadialGradient(
+            center: const Alignment(-1, -1),
+            radius: 0.9,
+            colors: [tok.blob1, tok.blob1.withValues(alpha: 0)],
+            stops: const [0, 0.7],
+          ),
         ),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: RadialGradient(center: const Alignment(1, 0.2), radius: 0.75, colors: [tok.blob2, tok.blob2.withValues(alpha: 0)], stops: const [0, 0.7]),
+            gradient: RadialGradient(
+              center: const Alignment(1, 0.2),
+              radius: 0.75,
+              colors: [tok.blob2, tok.blob2.withValues(alpha: 0)],
+              stops: const [0, 0.7],
+            ),
           ),
           child: child,
         ),
@@ -688,11 +789,17 @@ class EmptyState extends StatelessWidget {
     final tok = context.tok;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 64),
-      child: Column(children: [
-        AppIcon(icon, size: 44, stroke: 1.5, color: tok.sub),
-        const SizedBox(height: 12),
-        Text(text, textAlign: TextAlign.center, style: TextStyle(color: tok.sub, fontSize: 15)),
-      ]),
+      child: Column(
+        children: [
+          AppIcon(icon, size: 44, stroke: 1.5, color: tok.sub),
+          const SizedBox(height: 12),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: tok.sub, fontSize: 15),
+          ),
+        ],
+      ),
     );
   }
 }

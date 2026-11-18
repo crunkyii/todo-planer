@@ -81,63 +81,67 @@ class _LoginScreenState extends State<LoginScreen> {
     final tok = context.tok;
     final app = context.app;
     final host = app.settings.cloud?.host;
-    return Stack(children: [
-      AutofillGroup(
-        child: AuthLayout(children: [
-          LogoTitle(_register ? l.createAccount : l.signIn),
-          AppField(
-            label: l.email,
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            textInputAction: TextInputAction.next,
-          ),
-          AppField(
-            label: l.password,
-            controller: _pw,
-            obscure: !_showPw,
-            autofillHints: [_register ? AutofillHints.newPassword : AutofillHints.password],
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(),
-            suffix: Padding(
-              padding: const EdgeInsets.only(right: 1),
-              child: IconBtn(
-                _showPw ? Ic.eyeoff : Ic.eye,
-                size: 22,
-                label: _showPw ? l.hidePassword : l.showPassword,
-                onTap: () => setState(() => _showPw = !_showPw),
+    return Stack(
+      children: [
+        AutofillGroup(
+          child: AuthLayout(
+            children: [
+              LogoTitle(_register ? l.createAccount : l.signIn),
+              AppField(
+                label: l.email,
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                textInputAction: TextInputAction.next,
               ),
-            ),
-          ),
-          if (_error != null) ErrorBox(_error!),
-          AppButton(label: _register ? l.signUp : l.signIn, big: true, loading: _busy, onTap: _submit),
-          const SizedBox(height: 4),
-          AppButton(
-            label: _register ? l.haveAccount : l.signUp,
-            kind: BtnKind.text,
-            big: true,
-            onTap: () => setState(() {
-              _register = !_register;
-              _error = null;
-            }),
-          ),
-          if (host != null) ...[
-            const SizedBox(height: 8),
-            Center(
-              child: AppButton(
-                label: host,
-                icon: Ic.database,
+              AppField(
+                label: l.password,
+                controller: _pw,
+                obscure: !_showPw,
+                autofillHints: [_register ? AutofillHints.newPassword : AutofillHints.password],
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
+                suffix: Padding(
+                  padding: const EdgeInsets.only(right: 1),
+                  child: IconBtn(
+                    _showPw ? Ic.eyeoff : Ic.eye,
+                    size: 22,
+                    label: _showPw ? l.hidePassword : l.showPassword,
+                    onTap: () => setState(() => _showPw = !_showPw),
+                  ),
+                ),
+              ),
+              if (_error != null) ErrorBox(_error!),
+              AppButton(label: _register ? l.signUp : l.signIn, big: true, loading: _busy, onTap: _submit),
+              const SizedBox(height: 4),
+              AppButton(
+                label: _register ? l.haveAccount : l.signUp,
                 kind: BtnKind.text,
-                color: tok.sub,
-                fontWeight: FontWeight.w400,
-                fontSize: 13,
-                onTap: app.openSetup,
+                big: true,
+                onTap: () => setState(() {
+                  _register = !_register;
+                  _error = null;
+                }),
               ),
-            ),
-          ],
-        ]),
-      ),
-      SnackHost(controller: app.snack, undoLabel: l.undo, bottom: 24),
-    ]);
+              if (host != null) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: AppButton(
+                    label: host,
+                    icon: Ic.database,
+                    kind: BtnKind.text,
+                    color: tok.sub,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 13,
+                    onTap: app.openSetup,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        SnackHost(controller: app.snack, undoLabel: l.undo, bottom: 24),
+      ],
+    );
   }
 }

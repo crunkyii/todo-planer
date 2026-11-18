@@ -24,8 +24,7 @@ const List<AppThemeDef> appThemes = [
   AppThemeDef('graphit', Color(0xFF5B6470), Color(0xFF9AA5B1)),
 ];
 
-AppThemeDef themeOf(String id) =>
-    appThemes.firstWhere((t) => t.id == id, orElse: () => appThemes.first);
+AppThemeDef themeOf(String id) => appThemes.firstWhere((t) => t.id == id, orElse: () => appThemes.first);
 
 /// Die 5 Farbvorgaben (`PRESETS`). Namen kommen aus den ARB-Dateien.
 enum ColorPreset {
@@ -159,31 +158,27 @@ class AppTokens extends ThemeExtension<AppTokens> {
   ItemColors item(String hex) => ItemColors.of(parseHex(hex), dark: dark);
 
   /// Schatten unter schwebenden Elementen (Navigation, Menü, Snackbar).
-  List<BoxShadow> get navShadow =>
-      const [BoxShadow(color: Color(0x29142846), offset: Offset(0, 8), blurRadius: 28)];
-  List<BoxShadow> get popShadow =>
-      const [BoxShadow(color: Color(0x2E000000), offset: Offset(0, 10), blurRadius: 30)];
-  List<BoxShadow> get sheetShadow =>
-      const [BoxShadow(color: Color(0x24000000), offset: Offset(0, -6), blurRadius: 24)];
+  List<BoxShadow> get navShadow => const [BoxShadow(color: Color(0x29142846), offset: Offset(0, 8), blurRadius: 28)];
+  List<BoxShadow> get popShadow => const [BoxShadow(color: Color(0x2E000000), offset: Offset(0, 10), blurRadius: 30)];
+  List<BoxShadow> get sheetShadow => const [BoxShadow(color: Color(0x24000000), offset: Offset(0, -6), blurRadius: 24)];
+
   /// Kleiner Schatten der Mini-Karten in der Theme-Vorschau.
-  List<BoxShadow> get previewShadow =>
-      const [BoxShadow(color: Color(0x14000000), offset: Offset(0, 1), blurRadius: 3)];
-  List<BoxShadow> get previewFabShadow =>
-      const [BoxShadow(color: Color(0x2E000000), offset: Offset(0, 2), blurRadius: 6)];
-  List<BoxShadow> get snackShadow =>
-      const [BoxShadow(color: Color(0x40000000), offset: Offset(0, 4), blurRadius: 12)];
+  List<BoxShadow> get previewShadow => const [BoxShadow(color: Color(0x14000000), offset: Offset(0, 1), blurRadius: 3)];
+  List<BoxShadow> get previewFabShadow => const [
+    BoxShadow(color: Color(0x2E000000), offset: Offset(0, 2), blurRadius: 6),
+  ];
+  List<BoxShadow> get snackShadow => const [BoxShadow(color: Color(0x40000000), offset: Offset(0, 4), blurRadius: 12)];
   List<BoxShadow> get fabShadow => [
-        BoxShadow(color: glow, offset: const Offset(0, 6), blurRadius: 18),
-        const BoxShadow(color: Color(0x2E000000), offset: Offset(0, 2), blurRadius: 6),
-      ];
+    BoxShadow(color: glow, offset: const Offset(0, 6), blurRadius: 18),
+    const BoxShadow(color: Color(0x2E000000), offset: Offset(0, 2), blurRadius: 6),
+  ];
   Color get scrim => const Color(0x610A141E);
 
   @override
   AppTokens copyWith() => this;
 
   @override
-  AppTokens lerp(ThemeExtension<AppTokens>? other, double t) =>
-      other is AppTokens && t >= 0.5 ? other : this;
+  AppTokens lerp(ThemeExtension<AppTokens>? other, double t) => other is AppTokens && t >= 0.5 ? other : this;
 }
 
 /// Radien und Abstände (aus dem CSS des Prototyps).

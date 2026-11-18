@@ -79,7 +79,9 @@ class SnackHost extends StatelessWidget {
           left: 12,
           right: 12,
           bottom: bottom + MediaQuery.paddingOf(context).bottom,
-          child: m == null ? const SizedBox.shrink() : _Snack(key: ObjectKey(m), msg: m, undoLabel: undoLabel, onUndo: controller.undo),
+          child: m == null
+              ? const SizedBox.shrink()
+              : _Snack(key: ObjectKey(m), msg: m, undoLabel: undoLabel, onUndo: controller.undo),
         );
       },
     );
@@ -136,11 +138,20 @@ class _SnackState extends State<_Snack> with TickerProviderStateMixin {
           constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - 48),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-            decoration: BoxDecoration(color: tok.inv, borderRadius: BorderRadius.circular(Sizes.rToast), boxShadow: tok.snackShadow),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (icon != null) ...[icon, const SizedBox(width: 6)],
-              Flexible(child: Text(m.text, style: TextStyle(color: tok.onInv, fontSize: 13.5))),
-            ]),
+            decoration: BoxDecoration(
+              color: tok.inv,
+              borderRadius: BorderRadius.circular(Sizes.rToast),
+              boxShadow: tok.snackShadow,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[icon, const SizedBox(width: 6)],
+                Flexible(
+                  child: Text(m.text, style: TextStyle(color: tok.onInv, fontSize: 13.5)),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -148,22 +159,33 @@ class _SnackState extends State<_Snack> with TickerProviderStateMixin {
       box = Container(
         constraints: const BoxConstraints(minHeight: 48),
         padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
-        decoration: BoxDecoration(color: tok.inv, borderRadius: BorderRadius.circular(Sizes.rSnack), boxShadow: tok.snackShadow),
-        child: Row(children: [
-          if (icon != null) ...[icon, const SizedBox(width: 8)],
-          Expanded(child: Text(m.text, style: TextStyle(color: tok.onInv, fontSize: 14))),
-          Pressable(
-            onTap: widget.onUndo,
-            semanticLabel: widget.undoLabel,
-            excludeChildSemantics: true,
-            child: Container(
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              alignment: Alignment.center,
-              child: Text(widget.undoLabel, style: TextStyle(color: tok.invP, fontWeight: FontWeight.w500, fontSize: 14)),
+        decoration: BoxDecoration(
+          color: tok.inv,
+          borderRadius: BorderRadius.circular(Sizes.rSnack),
+          boxShadow: tok.snackShadow,
+        ),
+        child: Row(
+          children: [
+            if (icon != null) ...[icon, const SizedBox(width: 8)],
+            Expanded(
+              child: Text(m.text, style: TextStyle(color: tok.onInv, fontSize: 14)),
             ),
-          ),
-        ]),
+            Pressable(
+              onTap: widget.onUndo,
+              semanticLabel: widget.undoLabel,
+              excludeChildSemantics: true,
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                alignment: Alignment.center,
+                child: Text(
+                  widget.undoLabel,
+                  style: TextStyle(color: tok.invP, fontWeight: FontWeight.w500, fontSize: 14),
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     }
     final semantic = Semantics(liveRegion: true, container: true, child: box);
@@ -186,7 +208,10 @@ class _SnackState extends State<_Snack> with TickerProviderStateMixin {
         }
         return Opacity(
           opacity: opacity.clamp(0.0, 1.0),
-          child: Transform.translate(offset: Offset(0, dy), child: Transform.scale(scale: scale, child: child)),
+          child: Transform.translate(
+            offset: Offset(0, dy),
+            child: Transform.scale(scale: scale, child: child),
+          ),
         );
       },
       child: semantic,

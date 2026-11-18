@@ -15,7 +15,13 @@ import 'widgets/snack.dart';
 
 /// Alle Dienste der App an einem Ort; über [AppScope] im Widget-Baum erreichbar.
 class AppServices extends ChangeNotifier {
-  AppServices({required this.settings, required this.store, required this.cloud, required this.sync, required this.reminders}) {
+  AppServices({
+    required this.settings,
+    required this.store,
+    required this.cloud,
+    required this.sync,
+    required this.reminders,
+  }) {
     store.onLocalChange = _onLocalChange;
     store.addListener(_scheduleReminders);
     settings.addListener(_onSettingsChanged);
@@ -218,10 +224,14 @@ class AppServices extends ChangeNotifier {
       final l = _l;
       if (l == null) return;
       final f = Fmt(l, l.localeName);
-      final items = upcomingReminders(store.tasks, (t) => l.dayWithTime(store.catOf(t.categoryId).name, f.time(t.dueTime!)));
+      final items = upcomingReminders(
+        store.tasks,
+        (t) => l.dayWithTime(store.catOf(t.categoryId).name, f.time(t.dueTime!)),
+      );
       // Nur neu planen, wenn sich an den Erinnerungen wirklich etwas geändert hat
       // (der Store meldet auch Gewohnheiten, Sync-Status usw.).
-      final sig = '${settings.remind}|${items.map((r) => '${r.id}@${r.at.millisecondsSinceEpoch}:${r.title}:${r.body}').join(',')}';
+      final sig =
+          '${settings.remind}|${items.map((r) => '${r.id}@${r.at.millisecondsSinceEpoch}:${r.title}:${r.body}').join(',')}';
       if (sig == _reminderSig) return;
       _reminderSig = sig;
       reminders.reschedule(items, enabled: settings.remind);

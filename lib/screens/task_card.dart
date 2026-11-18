@@ -30,7 +30,15 @@ void deleteTaskWithUndo(BuildContext context, Task t) {
 
 /// Abschnitts-Überschrift zum Ein-/Ausklappen (.section-h).
 class SectionHead extends StatelessWidget {
-  const SectionHead({super.key, required this.label, required this.count, required this.open, required this.onTap, this.color, this.overdue = false});
+  const SectionHead({
+    super.key,
+    required this.label,
+    required this.count,
+    required this.open,
+    required this.onTap,
+    this.color,
+    this.overdue = false,
+  });
   final String label;
   final int count;
   final bool open;
@@ -54,20 +62,24 @@ class SectionHead extends StatelessWidget {
         excludeChildSemantics: true,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-          child: Row(children: [
-            if (color != null) ...[Dot(color!), const SizedBox(width: 6)],
-            Expanded(
-              child: Text(text.toUpperCase(),
+          child: Row(
+            children: [
+              if (color != null) ...[Dot(color!), const SizedBox(width: 6)],
+              Expanded(
+                child: Text(
+                  text.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: Fs.section, fontWeight: FontWeight.w500, letterSpacing: 0.6, color: fg)),
-            ),
-            AnimatedRotation(
-              turns: open ? 0 : -0.25,
-              duration: Motion.of(context, Motion.fast),
-              child: AppIcon(Ic.down, size: 20, color: fg),
-            ),
-          ]),
+                  style: TextStyle(fontSize: Fs.section, fontWeight: FontWeight.w500, letterSpacing: 0.6, color: fg),
+                ),
+              ),
+              AnimatedRotation(
+                turns: open ? 0 : -0.25,
+                duration: Motion.of(context, Motion.fast),
+                child: AppIcon(Ic.down, size: 20, color: fg),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -130,108 +142,151 @@ class _TaskCardState extends State<TaskCard> {
         border: Border(left: BorderSide(color: cc.c, width: 5)),
         boxShadow: tok.cardShadow,
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          CheckMark(on: t.done, colors: cc, label: t.done ? l.a11yReopen(t.title) : l.a11yDone(t.title), onTap: () => toggleTaskWithToast(context, t)),
-          Expanded(
-            child: Pressable(
-              onTap: () => Sheets(context, widget.ui).task(t),
-              pressScale: 0.985,
-              radius: BorderRadius.circular(Sizes.rCard),
-              semanticLabel: '${t.title}, ${c.name}, $when',
-              excludeChildSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              CheckMark(
+                on: t.done,
+                colors: cc,
+                label: t.done ? l.a11yReopen(t.title) : l.a11yDone(t.title),
+                onTap: () => toggleTaskWithToast(context, t),
+              ),
+              Expanded(
+                child: Pressable(
+                  onTap: () => Sheets(context, widget.ui).task(t),
+                  pressScale: 0.985,
+                  radius: BorderRadius.circular(Sizes.rCard),
+                  semanticLabel: '${t.title}, ${c.name}, $when',
+                  excludeChildSemantics: true,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 10, 12, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t.title,
+                          style: TextStyle(
+                            fontSize: Fs.task,
+                            height: 21 / 15.5,
+                            color: t.done ? tok.sub : tok.text,
+                            decoration: t.done ? TextDecoration.lineThrough : null,
+                            decorationColor: tok.sub,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              when,
+                              style: late ? metaStyle.copyWith(color: tok.err, fontWeight: FontWeight.w500) : metaStyle,
+                            ),
+                            if (t.subs.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AppIcon(Ic.subtasks, size: 14, color: tok.sub),
+                                  const SizedBox(width: 4),
+                                  Text(l.progress(subDone, t.subs.length), style: metaStyle),
+                                ],
+                              ),
+                            if (pending)
+                              Tooltip(
+                                message: l.pendingSyncHint,
+                                child: AppIcon(Ic.cloudoff, size: 14, color: tok.sub),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (t.subs.isNotEmpty)
+            Transform.translate(
+              offset: const Offset(0, -4),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 12, 10),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(t.title,
-                      style: TextStyle(
-                        fontSize: Fs.task,
-                        height: 21 / 15.5,
-                        color: t.done ? tok.sub : tok.text,
-                        decoration: t.done ? TextDecoration.lineThrough : null,
-                        decorationColor: tok.sub,
-                      )),
-                  const SizedBox(height: 4),
-                  Wrap(spacing: 12, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                    Text(when, style: late ? metaStyle.copyWith(color: tok.err, fontWeight: FontWeight.w500) : metaStyle),
-                    if (t.subs.isNotEmpty)
-                      Row(mainAxisSize: MainAxisSize.min, children: [
-                        AppIcon(Ic.subtasks, size: 14, color: tok.sub),
-                        const SizedBox(width: 4),
-                        Text(l.progress(subDone, t.subs.length), style: metaStyle),
-                      ]),
-                    if (pending)
-                      Tooltip(message: l.pendingSyncHint, child: AppIcon(Ic.cloudoff, size: 14, color: tok.sub)),
-                  ]),
-                ]),
+                padding: const EdgeInsets.fromLTRB(32, 0, 12, 2),
+                child: Column(
+                  children: [
+                    for (final s in t.subs)
+                      Row(
+                        children: [
+                          CheckMark(
+                            small: true,
+                            on: s.done,
+                            colors: cc,
+                            label: s.done ? l.a11yReopenSub(s.title) : l.a11yCheckSub(s.title),
+                            onTap: () => store.toggleSub(s),
+                          ),
+                          Expanded(
+                            child: Text(
+                              s.title,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: s.done ? tok.sub : tok.text,
+                                decoration: s.done ? TextDecoration.lineThrough : null,
+                                decorationColor: tok.sub,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ]),
-        if (t.subs.isNotEmpty)
-          Transform.translate(
-            offset: const Offset(0, -4),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(32, 0, 12, 2),
-              child: Column(children: [
-                for (final s in t.subs)
-                  Row(children: [
-                    CheckMark(
-                      small: true,
-                      on: s.done,
-                      colors: cc,
-                      label: s.done ? l.a11yReopenSub(s.title) : l.a11yCheckSub(s.title),
-                      onTap: () => store.toggleSub(s),
-                    ),
-                    Expanded(
-                      child: Text(s.title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: s.done ? tok.sub : tok.text,
-                            decoration: s.done ? TextDecoration.lineThrough : null,
-                            decorationColor: tok.sub,
-                          )),
-                    ),
-                  ]),
-              ]),
-            ),
-          ),
-      ]),
+        ],
+      ),
     );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(Sizes.rCard),
-        child: LayoutBuilder(builder: (context, box) {
-          return Stack(children: [
-            Positioned.fill(
-              child: ExcludeSemantics(
-                child: Container(
-                  color: _dx < 0 ? tok.errC : Colors.transparent,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  child: _dx < 0 ? AppIcon(Ic.trash, size: 22, color: tok.onErrC) : null,
+        child: LayoutBuilder(
+          builder: (context, box) {
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: ExcludeSemantics(
+                    child: Container(
+                      color: _dx < 0 ? tok.errC : Colors.transparent,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      child: _dx < 0 ? AppIcon(Ic.trash, size: 22, color: tok.onErrC) : null,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Semantics(
-              customSemanticsActions: {CustomSemanticsAction(label: l.deleteTask): () => deleteTaskWithUndo(context, t)},
-              child: GestureDetector(
-                onHorizontalDragStart: _gone ? null : (_) => setState(() => _drag = true),
-                onHorizontalDragUpdate: _gone ? null : (d) => setState(() => _dx = (_dx + d.delta.dx).clamp(-box.maxWidth, 0)),
-                onHorizontalDragEnd: _gone ? null : (_) => _end(box.maxWidth),
-                onHorizontalDragCancel: _gone ? null : () => _end(box.maxWidth),
-                child: AnimatedContainer(
-                  duration: _drag ? Duration.zero : Motion.of(context, Motion.springBack),
-                  curve: Motion.springSoft,
-                  transform: Matrix4.translationValues(_dx, 0, 0),
-                  child: card,
+                Semantics(
+                  customSemanticsActions: {
+                    CustomSemanticsAction(label: l.deleteTask): () => deleteTaskWithUndo(context, t),
+                  },
+                  child: GestureDetector(
+                    onHorizontalDragStart: _gone ? null : (_) => setState(() => _drag = true),
+                    onHorizontalDragUpdate: _gone
+                        ? null
+                        : (d) => setState(() => _dx = (_dx + d.delta.dx).clamp(-box.maxWidth, 0)),
+                    onHorizontalDragEnd: _gone ? null : (_) => _end(box.maxWidth),
+                    onHorizontalDragCancel: _gone ? null : () => _end(box.maxWidth),
+                    child: AnimatedContainer(
+                      duration: _drag ? Duration.zero : Motion.of(context, Motion.springBack),
+                      curve: Motion.springSoft,
+                      transform: Matrix4.translationValues(_dx, 0, 0),
+                      child: card,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ]);
-        }),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -265,84 +320,105 @@ class HabitsTaskCard extends StatelessWidget {
           border: Border(left: BorderSide(color: cc.c, width: 5)),
           boxShadow: tok.cardShadow,
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            CheckMark(
-              on: all,
-              colors: cc,
-              label: all ? l.habitsReopenAll : l.habitsCheckAll,
-              onTap: () {
-                if (store.toggleAllHabitsToday()) buzz();
-              },
-            ),
-            Expanded(
-              child: Semantics(
-                expanded: open,
-                child: Pressable(
-                  onTap: () => ui.toggleCollapsed('habits'),
-                  pressScale: 0.985,
-                  radius: BorderRadius.circular(Sizes.rCard),
-                  semanticLabel: '${l.habits}, ${l.daily}, ${l.progress(done, hs.length)}',
-                  excludeChildSemantics: true,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-                    child: Row(children: [
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(l.habits,
-                              style: TextStyle(
-                                fontSize: Fs.task,
-                                height: 21 / 15.5,
-                                color: all ? tok.sub : tok.text,
-                                decoration: all ? TextDecoration.lineThrough : null,
-                                decorationColor: tok.sub,
-                              )),
-                          const SizedBox(height: 4),
-                          Wrap(spacing: 12, children: [
-                            Text(l.daily, style: metaStyle),
-                            Row(mainAxisSize: MainAxisSize.min, children: [
-                              AppIcon(Ic.subtasks, size: 14, color: tok.sub),
-                              const SizedBox(width: 4),
-                              Text(l.progress(done, hs.length), style: metaStyle),
-                            ]),
-                          ]),
-                        ]),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: AnimatedRotation(
-                          turns: open ? 0.5 : 0,
-                          duration: Motion.of(context, const Duration(milliseconds: 400)),
-                          curve: Motion.springSoft,
-                          child: AppIcon(Ic.down, size: 20, color: tok.sub),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                CheckMark(
+                  on: all,
+                  colors: cc,
+                  label: all ? l.habitsReopenAll : l.habitsCheckAll,
+                  onTap: () {
+                    if (store.toggleAllHabitsToday()) buzz();
+                  },
+                ),
+                Expanded(
+                  child: Semantics(
+                    expanded: open,
+                    child: Pressable(
+                      onTap: () => ui.toggleCollapsed('habits'),
+                      pressScale: 0.985,
+                      radius: BorderRadius.circular(Sizes.rCard),
+                      semanticLabel: '${l.habits}, ${l.daily}, ${l.progress(done, hs.length)}',
+                      excludeChildSemantics: true,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l.habits,
+                                    style: TextStyle(
+                                      fontSize: Fs.task,
+                                      height: 21 / 15.5,
+                                      color: all ? tok.sub : tok.text,
+                                      decoration: all ? TextDecoration.lineThrough : null,
+                                      decorationColor: tok.sub,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Wrap(
+                                    spacing: 12,
+                                    children: [
+                                      Text(l.daily, style: metaStyle),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          AppIcon(Ic.subtasks, size: 14, color: tok.sub),
+                                          const SizedBox(width: 4),
+                                          Text(l.progress(done, hs.length), style: metaStyle),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: AnimatedRotation(
+                                turns: open ? 0.5 : 0,
+                                duration: Motion.of(context, const Duration(milliseconds: 400)),
+                                curve: Motion.springSoft,
+                                child: AppIcon(Ic.down, size: 20, color: tok.sub),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ]),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (open)
+              Transform.translate(
+                offset: const Offset(0, -4),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 0, 12, 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final h in hs) _HabitSub(habit: h, day: k, ui: ui),
+                      AppButton(
+                        label: l.habit,
+                        icon: Ic.plus,
+                        kind: BtnKind.text,
+                        height: 34,
+                        padding: 8,
+                        fontSize: 13,
+                        onTap: () => Sheets(context, ui).habit(null),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ]),
-          if (open)
-            Transform.translate(
-              offset: const Offset(0, -4),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(32, 0, 12, 6),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  for (final h in hs) _HabitSub(habit: h, day: k, ui: ui),
-                  AppButton(
-                    label: l.habit,
-                    icon: Ic.plus,
-                    kind: BtnKind.text,
-                    height: 34,
-                    padding: 8,
-                    fontSize: 13,
-                    onTap: () => Sheets(context, ui).habit(null),
-                  ),
-                ]),
-              ),
-            ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -363,48 +439,58 @@ class _HabitSub extends StatelessWidget {
     final on = store.habitDone(h.id, day);
     final st = store.habitStreak(h.id);
     final hc = tok.item(h.color);
-    return Row(children: [
-      CheckMark(
-        small: true,
-        on: on,
-        colors: hc,
-        label: on ? l.a11yHabitReopen(h.name) : l.a11yHabitDoneToday(h.name),
-        onTap: () {
-          if (store.toggleHabitDay(h.id, day)) buzz();
-        },
-      ),
-      Expanded(
-        child: Pressable(
-          onTap: () => Sheets(context, ui).habit(h),
-          pressScale: 0.97,
-          glow: false,
-          semanticLabel: l.editHabit,
-          excludeChildSemantics: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Text(h.name,
+    return Row(
+      children: [
+        CheckMark(
+          small: true,
+          on: on,
+          colors: hc,
+          label: on ? l.a11yHabitReopen(h.name) : l.a11yHabitDoneToday(h.name),
+          onTap: () {
+            if (store.toggleHabitDay(h.id, day)) buzz();
+          },
+        ),
+        Expanded(
+          child: Pressable(
+            onTap: () => Sheets(context, ui).habit(h),
+            pressScale: 0.97,
+            glow: false,
+            semanticLabel: l.editHabit,
+            excludeChildSemantics: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text(
+                h.name,
                 style: TextStyle(
                   fontSize: 14,
                   color: on ? tok.sub : tok.text,
                   decoration: on ? TextDecoration.lineThrough : null,
                   decorationColor: tok.sub,
-                )),
+                ),
+              ),
+            ),
           ),
         ),
-      ),
-      if (st > 0)
-        Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: Semantics(
-            label: l.streakDays(st),
-            excludeSemantics: true,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              AppIcon(Ic.flame, size: 13, stroke: 2, color: hc.c),
-              const SizedBox(width: 3),
-              Text('$st', style: TextStyle(fontSize: 12, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()])),
-            ]),
+        if (st > 0)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Semantics(
+              label: l.streakDays(st),
+              excludeSemantics: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppIcon(Ic.flame, size: 13, stroke: 2, color: hc.c),
+                  const SizedBox(width: 3),
+                  Text(
+                    '$st',
+                    style: TextStyle(fontSize: 12, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()]),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-    ]);
+      ],
+    );
   }
 }

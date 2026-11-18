@@ -93,8 +93,8 @@ class SyncService extends ChangeNotifier {
         .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', callback: (_) => schedule(pullOnly: true))
         // Nach jedem (Neu-)Verbinden des Kanals nachholen, was in der Zwischenzeit passiert ist.
         .subscribe((status, _) {
-      if (status == RealtimeSubscribeStatus.subscribed) schedule(pullOnly: true);
-    });
+          if (status == RealtimeSubscribeStatus.subscribed) schedule(pullOnly: true);
+        });
     await sync();
   }
 
@@ -159,8 +159,8 @@ class SyncService extends ChangeNotifier {
   }
 
   Map<String, Object?> _remote(TableSpec t, Map<String, Object?> row) => {
-        for (final k in t.columns.keys) k: _boolCols.contains(k) ? row[k] == 1 || row[k] == true : row[k],
-      };
+    for (final k in t.columns.keys) k: _boolCols.contains(k) ? row[k] == 1 || row[k] == true : row[k],
+  };
 
   Future<void> _push() async {
     final db = cloud.client;

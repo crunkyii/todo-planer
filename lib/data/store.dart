@@ -50,7 +50,9 @@ class Store extends ChangeNotifier {
     final c = _cats[id];
     if (c != null && !c.deleted) return c;
     final list = categories;
-    return list.isNotEmpty ? list.first : (c ?? TaskCategory(id: id, name: '', color: '#3D9BE9', offset: 0, position: 0, updatedAt: nowUtc()));
+    return list.isNotEmpty
+        ? list.first
+        : (c ?? TaskCategory(id: id, name: '', color: '#3D9BE9', offset: 0, position: 0, updatedAt: nowUtc()));
   }
 
   Task? taskById(String id) => _tasks[id]?.deleted == false ? _tasks[id] : null;
@@ -62,9 +64,9 @@ class Store extends ChangeNotifier {
   /// Erledigt-Einträge für die Statistik: auch gelöschte erledigte Aufgaben zählen,
   /// damit „Erledigte löschen“ die Statistik nicht leert.
   List<({String day, String cat})> doneEntries() => [
-        for (final t in _tasks.values)
-          if (t.done && t.doneAt != null) (day: isoDate(t.doneAt!.toLocal()), cat: t.categoryId),
-      ];
+    for (final t in _tasks.values)
+      if (t.done && t.doneAt != null) (day: isoDate(t.doneAt!.toLocal()), cat: t.categoryId),
+  ];
 
   // ---------- Laden ----------
 
@@ -136,7 +138,10 @@ class Store extends ChangeNotifier {
     if (_cats.values.any((c) => !c.deleted)) return;
     var pos = 0;
     for (final d in defaults) {
-      _put(categoriesTable, TaskCategory(id: newId(), name: d.name, color: d.color, offset: d.offset, position: pos++, updatedAt: nowUtc()));
+      _put(
+        categoriesTable,
+        TaskCategory(id: newId(), name: d.name, color: d.color, offset: d.offset, position: pos++, updatedAt: nowUtc()),
+      );
     }
     _changed();
   }
@@ -226,8 +231,15 @@ class Store extends ChangeNotifier {
   }) {
     final now = nowUtc();
     final t = Task(
-      id: newId(), title: title, categoryId: categoryId, dueDate: sod(dueDate), dueTime: dueTime,
-      done: false, doneAt: null, createdAt: now, updatedAt: now,
+      id: newId(),
+      title: title,
+      categoryId: categoryId,
+      dueDate: sod(dueDate),
+      dueTime: dueTime,
+      done: false,
+      doneAt: null,
+      createdAt: now,
+      updatedAt: now,
     );
     _put(tasksTable, t);
     _writeSubs(t.id, const [], subs);
@@ -260,13 +272,26 @@ class Store extends ChangeNotifier {
       if (i < old.length) {
         final s = old[i];
         if (s.title != next[i].title || s.done != next[i].done || s.position != i) {
-          _put(subtasksTable, s
-            ..title = next[i].title
-            ..done = next[i].done
-            ..position = i);
+          _put(
+            subtasksTable,
+            s
+              ..title = next[i].title
+              ..done = next[i].done
+              ..position = i,
+          );
         }
       } else {
-        _put(subtasksTable, Subtask(id: newId(), taskId: taskId, title: next[i].title, done: next[i].done, position: i, updatedAt: nowUtc()));
+        _put(
+          subtasksTable,
+          Subtask(
+            id: newId(),
+            taskId: taskId,
+            title: next[i].title,
+            done: next[i].done,
+            position: i,
+            updatedAt: nowUtc(),
+          ),
+        );
       }
     }
     for (var i = next.length; i < old.length; i++) {
@@ -334,15 +359,21 @@ class Store extends ChangeNotifier {
 
   void addCategory({required String name, required String color, required int offset}) {
     final pos = _cats.values.fold<int>(-1, (m, c) => c.position > m ? c.position : m) + 1;
-    _put(categoriesTable, TaskCategory(id: newId(), name: name, color: color, offset: offset, position: pos, updatedAt: nowUtc()));
+    _put(
+      categoriesTable,
+      TaskCategory(id: newId(), name: name, color: color, offset: offset, position: pos, updatedAt: nowUtc()),
+    );
     _changed();
   }
 
   void updateCategory(TaskCategory c, {required String name, required String color, required int offset}) {
-    _put(categoriesTable, c
-      ..name = name
-      ..color = color
-      ..offset = offset);
+    _put(
+      categoriesTable,
+      c
+        ..name = name
+        ..color = color
+        ..offset = offset,
+    );
     _changed();
   }
 
@@ -404,9 +435,12 @@ class Store extends ChangeNotifier {
   }
 
   void updateHabit(Habit h, {required String name, required String color}) {
-    _put(habitsTable, h
-      ..name = name
-      ..color = color);
+    _put(
+      habitsTable,
+      h
+        ..name = name
+        ..color = color,
+    );
     _changed();
   }
 
@@ -458,16 +492,27 @@ class Store extends ChangeNotifier {
     required DateTime weekStart,
   }) {
     for (final d in days) {
-      _put(blocksTable, WeekBlock(
-        id: newId(), name: name, color: color, day: d, start: start, end: end, repeat: repeat,
-        weekStart: repeat ? null : isoDate(weekStart), updatedAt: nowUtc(),
-      ));
+      _put(
+        blocksTable,
+        WeekBlock(
+          id: newId(),
+          name: name,
+          color: color,
+          day: d,
+          start: start,
+          end: end,
+          repeat: repeat,
+          weekStart: repeat ? null : isoDate(weekStart),
+          updatedAt: nowUtc(),
+        ),
+      );
     }
     _changed();
     return days.length;
   }
 
-  void updateBlock(WeekBlock b, {
+  void updateBlock(
+    WeekBlock b, {
     required String name,
     required String color,
     required int day,
@@ -476,14 +521,17 @@ class Store extends ChangeNotifier {
     required bool repeat,
     required DateTime weekStart,
   }) {
-    _put(blocksTable, b
-      ..name = name
-      ..color = color
-      ..day = day
-      ..start = start
-      ..end = end
-      ..repeat = repeat
-      ..weekStart = repeat ? null : isoDate(weekStart));
+    _put(
+      blocksTable,
+      b
+        ..name = name
+        ..color = color
+        ..day = day
+        ..start = start
+        ..end = end
+        ..repeat = repeat
+        ..weekStart = repeat ? null : isoDate(weekStart),
+    );
     _changed();
   }
 
@@ -544,12 +592,12 @@ class Store extends ChangeNotifier {
   }
 
   DateTime? _existingUpdatedAt(TableSpec t, Map<String, Object?> r) => switch (t.name) {
-        'categories' => _cats[r['id']]?.updatedAt,
-        'tasks' => _tasks[r['id']]?.updatedAt,
-        'subtasks' => _subs[r['id']]?.updatedAt,
-        'habits' => _habits[r['id']]?.updatedAt,
-        'habit_logs' => _logs['${r['habit_id']}|${(r['day'] as String).substring(0, 10)}']?.updatedAt,
-        'week_blocks' => _blocks[r['id']]?.updatedAt,
-        _ => null,
-      };
+    'categories' => _cats[r['id']]?.updatedAt,
+    'tasks' => _tasks[r['id']]?.updatedAt,
+    'subtasks' => _subs[r['id']]?.updatedAt,
+    'habits' => _habits[r['id']]?.updatedAt,
+    'habit_logs' => _logs['${r['habit_id']}|${(r['day'] as String).substring(0, 10)}']?.updatedAt,
+    'week_blocks' => _blocks[r['id']]?.updatedAt,
+    _ => null,
+  };
 }

@@ -20,10 +20,12 @@ class TasksTab extends StatelessWidget {
     final app = AppScope.of(context);
     return ListenableBuilder(
       listenable: Listenable.merge([app.store, app.sync]),
-      builder: (context, _) => Column(children: [
-        ui.search != null ? _SearchBar(ui: ui) : _ChipBar(ui: ui),
-        Expanded(child: _TaskList(ui: ui)),
-      ]),
+      builder: (context, _) => Column(
+        children: [
+          ui.search != null ? _SearchBar(ui: ui) : _ChipBar(ui: ui),
+          Expanded(child: _TaskList(ui: ui)),
+        ],
+      ),
     );
   }
 }
@@ -39,37 +41,53 @@ class _ChipBar extends StatelessWidget {
     final l = context.l;
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 10, 4, 6),
-      child: Row(children: [
-        Expanded(
-          child: Semantics(
-            container: true,
-            label: l.filterByCategory,
-            child: SizedBox(
-              height: Sizes.chipH + 4,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(16, 2, 4, 2),
-                children: [
-                  AppChip(label: l.all, selected: ui.filter == 'alle', onTap: () => ui.set((s) => s.filter = 'alle')),
-                  for (final c in store.categories) ...[
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              container: true,
+              label: l.filterByCategory,
+              child: SizedBox(
+                height: Sizes.chipH + 4,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 2, 4, 2),
+                  children: [
+                    AppChip(label: l.all, selected: ui.filter == 'alle', onTap: () => ui.set((s) => s.filter = 'alle')),
+                    for (final c in store.categories) ...[
+                      const SizedBox(width: 8),
+                      AppChip(
+                        label: c.name,
+                        selected: ui.filter == c.id,
+                        colors: tok.item(c.color),
+                        onTap: () => ui.set((s) => s.filter = c.id),
+                      ),
+                    ],
                     const SizedBox(width: 8),
-                    AppChip(label: c.name, selected: ui.filter == c.id, colors: tok.item(c.color), onTap: () => ui.set((s) => s.filter = c.id)),
+                    AppChip(
+                      label: l.habits,
+                      selected: ui.filter == 'habits',
+                      colors: tok.item(habitColorHex),
+                      onTap: () => ui.set((s) => s.filter = 'habits'),
+                    ),
                   ],
-                  const SizedBox(width: 8),
-                  AppChip(label: l.habits, selected: ui.filter == 'habits', colors: tok.item(habitColorHex), onTap: () => ui.set((s) => s.filter = 'habits')),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 4),
-        Builder(
-          builder: (btnContext) => IconBtn(Ic.more, label: l.moreOptions, onTap: () {
-            final rect = anchorRect(btnContext);
-            if (rect != null) _openMenuAt(context, rect);
-          }),
-        ),
-      ]),
+          const SizedBox(width: 4),
+          Builder(
+            builder: (btnContext) => IconBtn(
+              Ic.more,
+              label: l.moreOptions,
+              onTap: () {
+                final rect = anchorRect(btnContext);
+                if (rect != null) _openMenuAt(context, rect);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -112,29 +130,41 @@ class _ChipBar extends StatelessWidget {
       case 'search':
         ui.set((s) => s.search = '');
       case 'sort':
-        Navigator.of(context).push(AppMenuRoute(
-          anchor: rect,
-          label: l.sort,
-          builder: (menuContext) => [
-            MenuItemRow(entry: MenuEntry(label: l.sort, icon: Ic.back, onTap: () {
-              Navigator.pop(menuContext);
-              _openMenuAt(context, rect);
-            })),
-            const MenuSep(),
-            for (final o in [(SortMode.date, l.sortByDate), (SortMode.category, l.sortByCategory), (SortMode.name, l.sortByName)])
+        Navigator.of(context).push(
+          AppMenuRoute(
+            anchor: rect,
+            label: l.sort,
+            builder: (menuContext) => [
               MenuItemRow(
                 entry: MenuEntry(
-                  label: o.$2,
-                  radio: true,
-                  checked: ui.sort == o.$1,
+                  label: l.sort,
+                  icon: Ic.back,
                   onTap: () {
                     Navigator.pop(menuContext);
-                    ui.set((s) => s.sort = o.$1);
+                    _openMenuAt(context, rect);
                   },
                 ),
               ),
-          ],
-        ));
+              const MenuSep(),
+              for (final o in [
+                (SortMode.date, l.sortByDate),
+                (SortMode.category, l.sortByCategory),
+                (SortMode.name, l.sortByName),
+              ])
+                MenuItemRow(
+                  entry: MenuEntry(
+                    label: o.$2,
+                    radio: true,
+                    checked: ui.sort == o.$1,
+                    onTap: () {
+                      Navigator.pop(menuContext);
+                      ui.set((s) => s.sort = o.$1);
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
       case 'cats':
         ui.set((s) {
           s.enterDir = 1;
@@ -155,11 +185,13 @@ class _ChipBar extends StatelessWidget {
   }
 
   void _openMenuAt(BuildContext context, Rect rect) {
-    Navigator.of(context).push(AppMenuRoute(
-      anchor: rect,
-      label: context.l.moreOptions,
-      builder: (menuContext) => _mainMenu(context, menuContext, rect),
-    ));
+    Navigator.of(context).push(
+      AppMenuRoute(
+        anchor: rect,
+        label: context.l.moreOptions,
+        builder: (menuContext) => _mainMenu(context, menuContext, rect),
+      ),
+    );
   }
 }
 
@@ -185,25 +217,27 @@ class _SearchBarState extends State<_SearchBar> {
     final l = context.l;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 10, 4, 6),
-      child: Row(children: [
-        IconBtn(Ic.back, label: l.closeSearch, onTap: () => widget.ui.set((s) => s.search = null)),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Semantics(
-            label: l.searchTasks,
-            child: AppInput(
-              controller: _ctrl,
-              hint: l.search,
-              filled: true,
-              height: 40,
-              fontSize: 15,
-              autofocus: true,
-              textInputAction: TextInputAction.search,
-              onChanged: (v) => widget.ui.set((s) => s.search = v),
+      child: Row(
+        children: [
+          IconBtn(Ic.back, label: l.closeSearch, onTap: () => widget.ui.set((s) => s.search = null)),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Semantics(
+              label: l.searchTasks,
+              child: AppInput(
+                controller: _ctrl,
+                hint: l.search,
+                filled: true,
+                height: 40,
+                fontSize: 15,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                onChanged: (v) => widget.ui.set((s) => s.search = v),
+              ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -218,8 +252,12 @@ class _TaskList extends StatelessWidget {
     final l = context.l;
     int off(Task t) => store.catOf(t.categoryId).offset;
     final searching = ui.search != null && ui.search!.trim().isNotEmpty;
-    final list = filterTasks(store.tasks, filter: ui.filter == 'habits' ? 'alle' : ui.filter, hideDone: ui.hideDone, search: ui.search)
-      ..sort((a, b) => byDo(a, b, off));
+    final list = filterTasks(
+      store.tasks,
+      filter: ui.filter == 'habits' ? 'alle' : ui.filter,
+      hideDone: ui.hideDone,
+      search: ui.search,
+    )..sort((a, b) => byDo(a, b, off));
     final showHabits = ui.search == null && (ui.filter == 'alle' || ui.filter == 'habits');
     final children = <Widget>[
       if (showHabits) ...[const SizedBox(height: 8), HabitsTaskCard(ui: ui)],
@@ -244,7 +282,15 @@ class _TaskList extends StatelessWidget {
           if (items.isEmpty) continue;
           final id = 'k-${c.id}';
           final open = !ui.collapsed.contains(id);
-          children.add(SectionHead(label: c.name, count: items.length, open: open, color: tok.item(c.color).c, onTap: () => ui.toggleCollapsed(id)));
+          children.add(
+            SectionHead(
+              label: c.name,
+              count: items.length,
+              open: open,
+              color: tok.item(c.color).c,
+              onTap: () => ui.toggleCollapsed(id),
+            ),
+          );
           if (open) children.addAll(items.map(card));
         }
       } else {
@@ -263,7 +309,15 @@ class _TaskList extends StatelessWidget {
           if (s == Section.done) items = items.reversed.toList();
           final id = s.name;
           final open = !ui.collapsed.contains(id);
-          children.add(SectionHead(label: labels[s]!, count: items.length, open: open, overdue: s == Section.overdue, onTap: () => ui.toggleCollapsed(id)));
+          children.add(
+            SectionHead(
+              label: labels[s]!,
+              count: items.length,
+              open: open,
+              overdue: s == Section.overdue,
+              onTap: () => ui.toggleCollapsed(id),
+            ),
+          );
           if (open) children.addAll(items.map(card));
         }
       }

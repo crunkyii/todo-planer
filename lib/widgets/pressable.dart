@@ -179,7 +179,10 @@ class _GlowPainter extends CustomPainter {
       final opacity = 1 - t;
       final paint = Paint()
         ..shader = RadialGradient(
-          colors: [color.withValues(alpha: color.a * opacity), color.withValues(alpha: 0)],
+          colors: [
+            color.withValues(alpha: color.a * opacity),
+            color.withValues(alpha: 0),
+          ],
           stops: const [0, 0.62],
         ).createShader(Rect.fromCircle(center: g.at, radius: r));
       canvas.drawCircle(g.at, r, paint);

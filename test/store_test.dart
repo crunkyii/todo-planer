@@ -49,7 +49,14 @@ void main() {
   test('Unteraufgaben bearbeiten verwendet vorhandene wieder', () {
     final t = add('Referat', subs: [(title: 'A', done: false), (title: 'B', done: true)]);
     final firstId = t.subs.first.id;
-    store.updateTask(t, title: 'Referat', categoryId: t.categoryId, dueDate: t.dueDate, dueTime: 9 * 60, subs: [(title: 'A2', done: false)]);
+    store.updateTask(
+      t,
+      title: 'Referat',
+      categoryId: t.categoryId,
+      dueDate: t.dueDate,
+      dueTime: 9 * 60,
+      subs: [(title: 'A2', done: false)],
+    );
     expect(t.subs.single.id, firstId);
     expect(t.subs.single.title, 'A2');
     expect(t.dueTime, 540);
@@ -67,7 +74,14 @@ void main() {
     final t = add('Referat', subs: [(title: 'A', done: false), (title: 'B', done: false)]);
     store.deleteTask(t)();
     // B im Bearbeiten-Sheet entfernen, dann erneut löschen und rückgängig machen
-    store.updateTask(t, title: t.title, categoryId: t.categoryId, dueDate: t.dueDate, dueTime: null, subs: [(title: 'A', done: false)]);
+    store.updateTask(
+      t,
+      title: t.title,
+      categoryId: t.categoryId,
+      dueDate: t.dueDate,
+      dueTime: null,
+      subs: [(title: 'A', done: false)],
+    );
     store.deleteTask(t)();
     expect(store.tasks.single.subs.map((s) => s.title), ['A']);
   });
@@ -132,10 +146,18 @@ void main() {
   test('Server-Änderung: neuerer Stand gewinnt', () async {
     final t = add('lokal');
     await store.refreshPending();
-    final older = {...t.toJson(), 'title': 'alt', 'updated_at': t.updatedAt.subtract(const Duration(minutes: 1)).toIso8601String()};
+    final older = {
+      ...t.toJson(),
+      'title': 'alt',
+      'updated_at': t.updatedAt.subtract(const Duration(minutes: 1)).toIso8601String(),
+    };
     await store.applyRemote(tasksTable, [older]);
     expect(store.taskById(t.id)!.title, 'lokal');
-    final newer = {...t.toJson(), 'title': 'vom Handy', 'updated_at': t.updatedAt.add(const Duration(minutes: 1)).toIso8601String()};
+    final newer = {
+      ...t.toJson(),
+      'title': 'vom Handy',
+      'updated_at': t.updatedAt.add(const Duration(minutes: 1)).toIso8601String(),
+    };
     await store.applyRemote(tasksTable, [newer]);
     expect(store.taskById(t.id)!.title, 'vom Handy');
   });

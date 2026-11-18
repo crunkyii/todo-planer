@@ -8,7 +8,15 @@ import 'pressable.dart';
 
 /// Milchglas-Fläche (backdrop-filter: blur + saturate).
 class Glass extends StatelessWidget {
-  const Glass({super.key, required this.child, required this.color, required this.radius, this.blur = 22, this.border, this.shadow = const []});
+  const Glass({
+    super.key,
+    required this.child,
+    required this.color,
+    required this.radius,
+    this.blur = 22,
+    this.border,
+    this.shadow = const [],
+  });
   final Widget child;
   final Color color;
   final BorderRadius radius;
@@ -65,7 +73,10 @@ class AppSheetRoute<T> extends PopupRoute<T> {
     return Align(
       alignment: Alignment.bottomCenter,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: Sizes.maxWidth, maxHeight: (mq.size.height - mq.viewInsets.bottom) * 0.88),
+        constraints: BoxConstraints(
+          maxWidth: Sizes.maxWidth,
+          maxHeight: (mq.size.height - mq.viewInsets.bottom) * 0.88,
+        ),
         child: Padding(
           padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
           child: Semantics(
@@ -94,10 +105,18 @@ class AppSheetRoute<T> extends PopupRoute<T> {
   }
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
     if (Motion.reduced(context)) return child;
     final curved = CurvedAnimation(parent: animation, curve: Motion.sheetUp, reverseCurve: Curves.easeIn);
-    return SlideTransition(position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(curved), child: child);
+    return SlideTransition(
+      position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(curved),
+      child: child,
+    );
   }
 }
 
@@ -148,39 +167,46 @@ class AppMenuRoute extends PopupRoute<void> {
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     final tok = context.tok;
     final width = MediaQuery.sizeOf(context).width;
-    return Stack(children: [
-      Positioned(
-        top: anchor.bottom - 2,
-        right: (width - anchor.right).clamp(8, width),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 188, maxWidth: 240),
-          child: Glass(
-            color: tok.glassStrong,
-            blur: 24,
-            radius: BorderRadius.circular(Sizes.rMenu),
-            border: Border.all(color: tok.glassEdge),
-            shadow: tok.popShadow,
-            child: Material(
-              type: MaterialType.transparency,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: IntrinsicWidth(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: builder(context),
+    return Stack(
+      children: [
+        Positioned(
+          top: anchor.bottom - 2,
+          right: (width - anchor.right).clamp(8, width),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 188, maxWidth: 240),
+            child: Glass(
+              color: tok.glassStrong,
+              blur: 24,
+              radius: BorderRadius.circular(Sizes.rMenu),
+              border: Border.all(color: tok.glassEdge),
+              shadow: tok.popShadow,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: IntrinsicWidth(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: builder(context),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
     if (Motion.reduced(context)) return child;
     final curved = CurvedAnimation(parent: animation, curve: Motion.spring, reverseCurve: Curves.easeIn);
     return FadeTransition(
@@ -213,11 +239,20 @@ class MenuItemRow extends StatelessWidget {
       child: Container(
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(children: [
-          if (entry.icon != null) ...[AppIcon(entry.icon!, size: 20, color: tok.sub), const SizedBox(width: 12)],
-          Expanded(child: Text(entry.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: tok.text))),
-          if (entry.checked) ...[const SizedBox(width: 12), AppIcon(Ic.check, size: 18, stroke: 2.4, color: tok.p)],
-        ]),
+        child: Row(
+          children: [
+            if (entry.icon != null) ...[AppIcon(entry.icon!, size: 20, color: tok.sub), const SizedBox(width: 12)],
+            Expanded(
+              child: Text(
+                entry.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 14, color: tok.text),
+              ),
+            ),
+            if (entry.checked) ...[const SizedBox(width: 12), AppIcon(Ic.check, size: 18, stroke: 2.4, color: tok.p)],
+          ],
+        ),
       ),
     );
   }

@@ -19,29 +19,31 @@ class AuthLayout extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: BlobBackground(
         child: SafeArea(
-          child: Column(children: [
-            ?top,
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, box) => SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(24, low ? 16 : topPadding, 24, low ? 16 : 24),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: box.maxHeight - (low ? 32 : topPadding + 24)),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 380),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: children,
+          child: Column(
+            children: [
+              ?top,
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, box) => SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(24, low ? 16 : topPadding, 24, low ? 16 : 24),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: box.maxHeight - (low ? 32 : topPadding + 24)),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 380),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: children,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
       ),
     );
@@ -58,21 +60,27 @@ class LogoTitle extends StatelessWidget {
     final tok = context.tok;
     final low = MediaQuery.sizeOf(context).height < 640;
     final s = low ? 64.0 : 84.0;
-    return Column(children: [
-      Container(
-        width: s,
-        height: s,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: tok.pc, borderRadius: BorderRadius.circular(low ? 20 : 26)),
-        child: AppIcon(Ic.tasks, size: low ? 36 : 46, stroke: 2, color: tok.onPc),
-      ),
-      Padding(
-        padding: EdgeInsets.fromLTRB(0, low ? 14 : 24, 0, low ? 20 : 32),
-        child: Semantics(
-          header: true,
-          child: Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: low ? 24 : Fs.login, height: 36 / 28, color: tok.text)),
+    return Column(
+      children: [
+        Container(
+          width: s,
+          height: s,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: tok.pc, borderRadius: BorderRadius.circular(low ? 20 : 26)),
+          child: AppIcon(Ic.tasks, size: low ? 36 : 46, stroke: 2, color: tok.onPc),
         ),
-      ),
-    ]);
+        Padding(
+          padding: EdgeInsets.fromLTRB(0, low ? 14 : 24, 0, low ? 20 : 32),
+          child: Semantics(
+            header: true,
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: low ? 24 : Fs.login, height: 36 / 28, color: tok.text),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

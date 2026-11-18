@@ -48,7 +48,10 @@ String friendlyErrorMessage(AppLocalizations l, Object error) {
 }
 
 bool isNetworkError(Object error) {
-  if (error is SocketException || error is TimeoutException || error is HandshakeException || error is AuthRetryableFetchException) {
+  if (error is SocketException ||
+      error is TimeoutException ||
+      error is HandshakeException ||
+      error is AuthRetryableFetchException) {
     return true;
   }
   // http.ClientException ("Failed host lookup", "Connection refused" …)

@@ -67,11 +67,16 @@ class Reminders {
   }
 
   NotificationDetails get _details => NotificationDetails(
-        android: AndroidNotificationDetails('reminders', _channelName,
-            channelDescription: _channelDesc, importance: Importance.high, priority: Priority.high),
-        linux: const LinuxNotificationDetails(),
-        windows: const WindowsNotificationDetails(),
-      );
+    android: AndroidNotificationDetails(
+      'reminders',
+      _channelName,
+      channelDescription: _channelDesc,
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    linux: const LinuxNotificationDetails(),
+    windows: const WindowsNotificationDetails(),
+  );
 
   /// Plant alle Erinnerungen neu. [enabled] = Schalter „Erinnerungen“.
   Future<void> reschedule(List<Reminder> items, {required bool enabled}) async {
@@ -85,7 +90,9 @@ class Reminders {
       if (!enabled || items.isEmpty) return;
       if (Platform.isAndroid && !_asked) {
         _asked = true;
-        await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+        await _plugin
+            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationsPermission();
       }
       for (final r in items) {
         if (_canSchedule) {
@@ -100,7 +107,9 @@ class Reminders {
         } else {
           final wait = r.at.difference(DateTime.now());
           if (wait.inDays > 7) continue;
-          _timers.add(Timer(wait, () => _plugin.show(id: r.id, title: r.title, body: r.body, notificationDetails: _details)));
+          _timers.add(
+            Timer(wait, () => _plugin.show(id: r.id, title: r.title, body: r.body, notificationDetails: _details)),
+          );
         }
       }
     } on Object catch (e) {

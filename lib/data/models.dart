@@ -47,24 +47,24 @@ class TaskCategory {
   bool deleted;
 
   Map<String, Object?> toJson() => {
-        'id': id,
-        'name': name,
-        'color': color,
-        'offset_days': offset,
-        'position': position,
-        'updated_at': _ts(updatedAt),
-        'deleted': deleted,
-      };
+    'id': id,
+    'name': name,
+    'color': color,
+    'offset_days': offset,
+    'position': position,
+    'updated_at': _ts(updatedAt),
+    'deleted': deleted,
+  };
 
   factory TaskCategory.fromJson(Map<String, Object?> j) => TaskCategory(
-        id: j['id'] as String,
-        name: j['name'] as String,
-        color: j['color'] as String,
-        offset: (j['offset_days'] as num).toInt(),
-        position: (j['position'] as num).toInt(),
-        updatedAt: _t(j['updated_at']),
-        deleted: _b(j['deleted']),
-      );
+    id: j['id'] as String,
+    name: j['name'] as String,
+    color: j['color'] as String,
+    offset: (j['offset_days'] as num).toInt(),
+    position: (j['position'] as num).toInt(),
+    updatedAt: _t(j['updated_at']),
+    deleted: _b(j['deleted']),
+  );
 }
 
 class Subtask {
@@ -87,24 +87,24 @@ class Subtask {
   bool deleted;
 
   Map<String, Object?> toJson() => {
-        'id': id,
-        'task_id': taskId,
-        'title': title,
-        'done': done,
-        'position': position,
-        'updated_at': _ts(updatedAt),
-        'deleted': deleted,
-      };
+    'id': id,
+    'task_id': taskId,
+    'title': title,
+    'done': done,
+    'position': position,
+    'updated_at': _ts(updatedAt),
+    'deleted': deleted,
+  };
 
   factory Subtask.fromJson(Map<String, Object?> j) => Subtask(
-        id: j['id'] as String,
-        taskId: j['task_id'] as String,
-        title: j['title'] as String,
-        done: _b(j['done']),
-        position: (j['position'] as num).toInt(),
-        updatedAt: _t(j['updated_at']),
-        deleted: _b(j['deleted']),
-      );
+    id: j['id'] as String,
+    taskId: j['task_id'] as String,
+    title: j['title'] as String,
+    done: _b(j['done']),
+    position: (j['position'] as num).toInt(),
+    updatedAt: _t(j['updated_at']),
+    deleted: _b(j['deleted']),
+  );
 }
 
 class Task {
@@ -148,30 +148,30 @@ class Task {
   DateTime get due => DateTime(dueDate.year, dueDate.month, dueDate.day, (dueTime ?? 0) ~/ 60, (dueTime ?? 0) % 60);
 
   Map<String, Object?> toJson() => {
-        'id': id,
-        'title': title,
-        'category_id': categoryId,
-        'due_date': isoDate(dueDate),
-        'due_time': dueTime == null ? null : hmString(dueTime!),
-        'done': done,
-        'done_at': doneAt == null ? null : _ts(doneAt!),
-        'created_at': _ts(createdAt),
-        'updated_at': _ts(updatedAt),
-        'deleted': deleted,
-      };
+    'id': id,
+    'title': title,
+    'category_id': categoryId,
+    'due_date': isoDate(dueDate),
+    'due_time': dueTime == null ? null : hmString(dueTime!),
+    'done': done,
+    'done_at': doneAt == null ? null : _ts(doneAt!),
+    'created_at': _ts(createdAt),
+    'updated_at': _ts(updatedAt),
+    'deleted': deleted,
+  };
 
   factory Task.fromJson(Map<String, Object?> j) => Task(
-        id: j['id'] as String,
-        title: j['title'] as String,
-        categoryId: j['category_id'] as String,
-        dueDate: parseIsoDate(j['due_date'] as String),
-        dueTime: j['due_time'] == null ? null : parseHm(j['due_time'] as String),
-        done: _b(j['done']),
-        doneAt: _tn(j['done_at']),
-        createdAt: _t(j['created_at']),
-        updatedAt: _t(j['updated_at']),
-        deleted: _b(j['deleted']),
-      );
+    id: j['id'] as String,
+    title: j['title'] as String,
+    categoryId: j['category_id'] as String,
+    dueDate: parseIsoDate(j['due_date'] as String),
+    dueTime: j['due_time'] == null ? null : parseHm(j['due_time'] as String),
+    done: _b(j['done']),
+    doneAt: _tn(j['done_at']),
+    createdAt: _t(j['created_at']),
+    updatedAt: _t(j['updated_at']),
+    deleted: _b(j['deleted']),
+  );
 }
 
 class Habit {
@@ -194,24 +194,24 @@ class Habit {
   bool deleted;
 
   Map<String, Object?> toJson() => {
-        'id': id,
-        'name': name,
-        'color': color,
-        'position': position,
-        'created_at': _ts(createdAt),
-        'updated_at': _ts(updatedAt),
-        'deleted': deleted,
-      };
+    'id': id,
+    'name': name,
+    'color': color,
+    'position': position,
+    'created_at': _ts(createdAt),
+    'updated_at': _ts(updatedAt),
+    'deleted': deleted,
+  };
 
   factory Habit.fromJson(Map<String, Object?> j) => Habit(
-        id: j['id'] as String,
-        name: j['name'] as String,
-        color: j['color'] as String,
-        position: (j['position'] as num).toInt(),
-        createdAt: _t(j['created_at']),
-        updatedAt: _t(j['updated_at']),
-        deleted: _b(j['deleted']),
-      );
+    id: j['id'] as String,
+    name: j['name'] as String,
+    color: j['color'] as String,
+    position: (j['position'] as num).toInt(),
+    createdAt: _t(j['created_at']),
+    updatedAt: _t(j['updated_at']),
+    deleted: _b(j['deleted']),
+  );
 }
 
 /// Ein abgehakter (oder wieder geöffneter) Tag einer Gewohnheit.
@@ -227,19 +227,14 @@ class HabitLog {
 
   String get key => '$habitId|$day';
 
-  Map<String, Object?> toJson() => {
-        'habit_id': habitId,
-        'day': day,
-        'done': done,
-        'updated_at': _ts(updatedAt),
-      };
+  Map<String, Object?> toJson() => {'habit_id': habitId, 'day': day, 'done': done, 'updated_at': _ts(updatedAt)};
 
   factory HabitLog.fromJson(Map<String, Object?> j) => HabitLog(
-        habitId: j['habit_id'] as String,
-        day: (j['day'] as String).substring(0, 10),
-        done: _b(j['done']),
-        updatedAt: _t(j['updated_at']),
-      );
+    habitId: j['habit_id'] as String,
+    day: (j['day'] as String).substring(0, 10),
+    done: _b(j['done']),
+    updatedAt: _t(j['updated_at']),
+  );
 }
 
 /// Ein Block im Wochenplan.
@@ -275,28 +270,28 @@ class WeekBlock {
   bool deleted;
 
   Map<String, Object?> toJson() => {
-        'id': id,
-        'name': name,
-        'color': color,
-        'day': day,
-        'start_min': start,
-        'end_min': end,
-        'repeat': repeat,
-        'week_start': weekStart,
-        'updated_at': _ts(updatedAt),
-        'deleted': deleted,
-      };
+    'id': id,
+    'name': name,
+    'color': color,
+    'day': day,
+    'start_min': start,
+    'end_min': end,
+    'repeat': repeat,
+    'week_start': weekStart,
+    'updated_at': _ts(updatedAt),
+    'deleted': deleted,
+  };
 
   factory WeekBlock.fromJson(Map<String, Object?> j) => WeekBlock(
-        id: j['id'] as String,
-        name: j['name'] as String,
-        color: j['color'] as String,
-        day: (j['day'] as num).toInt(),
-        start: (j['start_min'] as num).toInt(),
-        end: (j['end_min'] as num).toInt(),
-        repeat: _b(j['repeat']),
-        weekStart: (j['week_start'] as String?)?.substring(0, 10),
-        updatedAt: _t(j['updated_at']),
-        deleted: _b(j['deleted']),
-      );
+    id: j['id'] as String,
+    name: j['name'] as String,
+    color: j['color'] as String,
+    day: (j['day'] as num).toInt(),
+    start: (j['start_min'] as num).toInt(),
+    end: (j['end_min'] as num).toInt(),
+    repeat: _b(j['repeat']),
+    weekStart: (j['week_start'] as String?)?.substring(0, 10),
+    updatedAt: _t(j['updated_at']),
+    deleted: _b(j['deleted']),
+  );
 }

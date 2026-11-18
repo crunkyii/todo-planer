@@ -2,9 +2,40 @@ import 'package:material_ui/material_ui.dart';
 
 /// Die Strich-Icons des Prototyps (24×24-Raster, runde Enden), als eigene Zeichnung.
 enum Ic {
-  tasks, calendar, week, settings, plus, back, down, left, right, more, logout, check, clock,
-  trash, eye, eyeoff, alert, send, subtasks, search, sort, tag, hide, sweep, cloudoff, cloudok,
-  sync, database, phone, copy, ext, stats, flame, x,
+  tasks,
+  calendar,
+  week,
+  settings,
+  plus,
+  back,
+  down,
+  left,
+  right,
+  more,
+  logout,
+  check,
+  clock,
+  trash,
+  eye,
+  eyeoff,
+  alert,
+  send,
+  subtasks,
+  search,
+  sort,
+  tag,
+  hide,
+  sweep,
+  cloudoff,
+  cloudok,
+  sync,
+  database,
+  phone,
+  copy,
+  ext,
+  stats,
+  flame,
+  x,
 }
 
 sealed class _Shape {
@@ -33,7 +64,14 @@ class _E extends _Shape {
 }
 
 const Map<Ic, List<_Shape>> _shapes = {
-  Ic.tasks: [_P('M3 6.5l2 2 3.5-3.5'), _P('M3 13.5l2 2 3.5-3.5'), _P('M12 7h9'), _P('M12 14h9'), _P('M12 20h9'), _P('M4 20h4')],
+  Ic.tasks: [
+    _P('M3 6.5l2 2 3.5-3.5'),
+    _P('M3 13.5l2 2 3.5-3.5'),
+    _P('M12 7h9'),
+    _P('M12 14h9'),
+    _P('M12 20h9'),
+    _P('M4 20h4'),
+  ],
   Ic.calendar: [_R(3.5, 5, 17, 15, 2), _P('M3.5 10h17'), _P('M8 3v4'), _P('M16 3v4')],
   Ic.week: [_R(3.5, 4, 17, 16, 2), _P('M3.5 9h17'), _P('M9 9v11'), _P('M15 9v11')],
   Ic.settings: [_P('M4 7h10'), _P('M18 7h2'), _C(16, 7, 2), _P('M4 17h4'), _P('M12 17h8'), _C(10, 17, 2)],
@@ -49,8 +87,10 @@ const Map<Ic, List<_Shape>> _shapes = {
   Ic.trash: [_P('M4 7h16'), _P('M10 11v6'), _P('M14 11v6'), _P('M6 7l1 13h10l1-13'), _P('M9 7V4h6v3')],
   Ic.eye: [_P('M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z'), _C(12, 12, 3)],
   Ic.eyeoff: [
-    _P('M3 3l18 18'), _P('M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1'),
-    _P('M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 5.4-1.6'), _P('M9.9 9.9a3 3 0 0 0 4.2 4.2'),
+    _P('M3 3l18 18'),
+    _P('M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1'),
+    _P('M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 5.4-1.6'),
+    _P('M9.9 9.9a3 3 0 0 0 4.2 4.2'),
   ],
   Ic.alert: [_C(12, 12, 9), _P('M12 7.5v5.5'), _P('M12 16.5v.01')],
   Ic.send: [_P('M5 12h13'), _P('M12 5l7 7-7 7')],
@@ -62,13 +102,24 @@ const Map<Ic, List<_Shape>> _shapes = {
   Ic.sweep: [_P('M4 7h16'), _P('M6 7l1 13h10l1-13'), _P('M9.5 12l2 2 3.5-3.5')],
   Ic.cloudoff: [_P('M3 3l18 18'), _P('M8.5 6.4A6 6 0 0 1 17.7 10 4 4 0 0 1 20 17.3'), _P('M17 18H7a5 5 0 0 1-1.3-9.8')],
   Ic.cloudok: [_P('M7 18.5a5 5 0 0 1-.6-10A6 6 0 0 1 17.7 10.5 4 4 0 0 1 17 18.5z'), _P('M9.5 13.5l2 2 3.5-3.5')],
-  Ic.sync: [_P('M20 11a8 8 0 0 0-14.3-4.3L4 9'), _P('M4 4v5h5'), _P('M4 13a8 8 0 0 0 14.3 4.3L20 15'), _P('M20 20v-5h-5')],
-  Ic.database: [_E(12, 6, 7.5, 3), _P('M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6'), _P('M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3')],
+  Ic.sync: [
+    _P('M20 11a8 8 0 0 0-14.3-4.3L4 9'),
+    _P('M4 4v5h5'),
+    _P('M4 13a8 8 0 0 0 14.3 4.3L20 15'),
+    _P('M20 20v-5h-5'),
+  ],
+  Ic.database: [
+    _E(12, 6, 7.5, 3),
+    _P('M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6'),
+    _P('M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3'),
+  ],
   Ic.phone: [_R(7, 3, 10, 18, 2.5), _P('M11 18h2')],
   Ic.copy: [_R(8, 8, 12, 12, 2), _P('M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3')],
   Ic.ext: [_P('M14 4h6v6'), _P('M20 4l-9 9'), _P('M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5')],
   Ic.stats: [_P('M5 20v-6'), _P('M12 20V5'), _P('M19 20v-10')],
-  Ic.flame: [_P('M12 3c.8 3.6 5 5.6 5 10.2a5 5 0 0 1-10 0c0-2.4 1.3-3.9 2.4-5 .3 1.6 1.1 2.6 2.4 3C11.3 8.4 11 5.6 12 3z')],
+  Ic.flame: [
+    _P('M12 3c.8 3.6 5 5.6 5 10.2a5 5 0 0 1-10 0c0-2.4 1.3-3.9 2.4-5 .3 1.6 1.1 2.6 2.4 3C11.3 8.4 11 5.6 12 3z'),
+  ],
   Ic.x: [_P('M6 6l12 12'), _P('M18 6L6 18')],
 };
 

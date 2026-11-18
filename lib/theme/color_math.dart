@@ -31,8 +31,7 @@ Color mix(Color a, Color b, double t) {
 
 /// Relative Leuchtdichte nach WCAG.
 double luminance(Color c) {
-  double f(double v) =>
-      v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+  double f(double v) => v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
   final r = _ch(c.r) / 255, g = _ch(c.g) / 255, b = _ch(c.b) / 255;
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
 }

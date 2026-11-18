@@ -7,9 +7,7 @@ import 'dates.dart';
 /// Datums- und Zahlenformate in der gewählten Sprache (intl).
 /// Deutsch nutzt österreichische Monatsnamen („Jänner“) wie im Prototyp.
 class Fmt {
-  Fmt(this.l, String lang)
-      : en = lang == 'en',
-        _loc = lang == 'en' ? 'en' : 'de_AT';
+  Fmt(this.l, String lang) : en = lang == 'en', _loc = lang == 'en' ? 'en' : 'de_AT';
 
   final AppLocalizations l;
   final bool en;
@@ -94,6 +92,6 @@ class Fmt {
   String categoryInfo(int offset, int open) => offset == 0
       ? l.catDoSameDay(open)
       : offset == 7
-          ? l.catDoWeekBefore(open)
-          : l.catDoDaysBefore(offset, open);
+      ? l.catDoWeekBefore(open)
+      : l.catDoDaysBefore(offset, open);
 }

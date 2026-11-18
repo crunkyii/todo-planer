@@ -122,8 +122,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get setupLocalTitle => 'Nur auf diesem Gerät';
 
   @override
-  String get setupLocalText =>
-      'Kein Konto, keine Einrichtung. Später in den Optionen umstellbar.';
+  String get setupLocalText => 'Kein Konto, keine Einrichtung. Später in den Optionen umstellbar.';
 
   @override
   String get languageBoth => 'Sprache · Language';
@@ -150,8 +149,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connecting => 'Verbinde …';
 
   @override
-  String get setupStep1 =>
-      'Auf <b>supabase.com</b> kostenlos registrieren und ein <b>neues Projekt</b> anlegen.';
+  String get setupStep1 => 'Auf <b>supabase.com</b> kostenlos registrieren und ein <b>neues Projekt</b> anlegen.';
 
   @override
   String get setupStep2 =>
@@ -166,8 +164,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Nach deiner Registrierung: <b>Authentication → Sign In / Providers</b> → <b>„Allow new users to sign up“</b> ausschalten. Dann kann sich niemand sonst ein Konto in deiner Datenbank anlegen.';
 
   @override
-  String get secretNote =>
-      'Niemals den <b>Secret Key</b> (service_role) eingeben – der gehört nicht in eine App.';
+  String get secretNote => 'Niemals den <b>Secret Key</b> (service_role) eingeben – der gehört nicht in eine App.';
 
   @override
   String get projectUrl => 'Project URL';
@@ -182,20 +179,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get publishableKeyHint => 'sb_publishable_…';
 
   @override
-  String get errUrl =>
-      'Die Project URL sieht so aus: https://abcdefgh.supabase.co';
+  String get errUrl => 'Die Project URL sieht so aus: https://abcdefgh.supabase.co';
 
   @override
-  String get errKeyFormat =>
-      'Der Key beginnt mit „sb_publishable_“ (oder bei älteren Projekten mit „eyJ“).';
+  String get errKeyFormat => 'Der Key beginnt mit „sb_publishable_“ (oder bei älteren Projekten mit „eyJ“).';
 
   @override
-  String get errSecretKey =>
-      'Das ist der geheime Schlüssel. Bitte den Publishable Key nehmen.';
+  String get errSecretKey => 'Das ist der geheime Schlüssel. Bitte den Publishable Key nehmen.';
 
   @override
-  String get errNoConnection =>
-      'Keine Verbindung. Stimmt die URL und wurde das SQL ausgeführt?';
+  String get errNoConnection => 'Keine Verbindung. Stimmt die URL und wurde das SQL ausgeführt?';
 
   @override
   String connectedTo(String host) {
@@ -239,40 +232,32 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errWrongLogin => 'E-Mail oder Passwort ist falsch.';
 
   @override
-  String get accountCreatedHint =>
-      'Konto erstellt. Jetzt in Supabase „Allow new users to sign up“ ausschalten.';
+  String get accountCreatedHint => 'Konto erstellt. Jetzt in Supabase „Allow new users to sign up“ ausschalten.';
 
   @override
   String get confirmEmailHint =>
       'Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link in der Mail und melde dich dann an.';
 
   @override
-  String get errNetwork =>
-      'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.';
+  String get errNetwork => 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.';
 
   @override
-  String get errEmailNotConfirmed =>
-      'Bitte bestätige zuerst deine E-Mail-Adresse (Link in der Bestätigungs-Mail).';
+  String get errEmailNotConfirmed => 'Bitte bestätige zuerst deine E-Mail-Adresse (Link in der Bestätigungs-Mail).';
 
   @override
-  String get errAccountExists =>
-      'Für diese E-Mail-Adresse gibt es bereits ein Konto. Bitte melde dich an.';
+  String get errAccountExists => 'Für diese E-Mail-Adresse gibt es bereits ein Konto. Bitte melde dich an.';
 
   @override
-  String get errWeakPassword =>
-      'Das Passwort ist zu schwach. Verwende mindestens 6 Zeichen.';
+  String get errWeakPassword => 'Das Passwort ist zu schwach. Verwende mindestens 6 Zeichen.';
 
   @override
-  String get errRateLimit =>
-      'Zu viele Versuche. Bitte warte kurz und versuche es dann erneut.';
+  String get errRateLimit => 'Zu viele Versuche. Bitte warte kurz und versuche es dann erneut.';
 
   @override
-  String get errSignupDisabled =>
-      'Registrierung ist in dieser Datenbank ausgeschaltet.';
+  String get errSignupDisabled => 'Registrierung ist in dieser Datenbank ausgeschaltet.';
 
   @override
-  String get errSessionExpired =>
-      'Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.';
+  String get errSessionExpired => 'Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.';
 
   @override
   String errAuthGeneric(String message) {
@@ -280,8 +265,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get errNoPermission =>
-      'Keine Berechtigung für diese Aktion. Bitte melde dich erneut an.';
+  String get errNoPermission => 'Keine Berechtigung für diese Aktion. Bitte melde dich erneut an.';
 
   @override
   String get errTableMissing =>
@@ -551,12 +535,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String streakDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Tage',
-      one: '1 Tag',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Tage', one: '1 Tag');
     return '$_temp0';
   }
 
@@ -601,12 +580,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String offsetDaysBefore(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Tage vorher',
-      one: '1 Tag vorher',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Tage vorher', one: '1 Tag vorher');
     return '$_temp0';
   }
 
@@ -636,12 +610,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String categoriesCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Kategorien',
-      one: '1 Kategorie',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Kategorien', one: '1 Kategorie');
     return '$_temp0';
   }
 
@@ -784,12 +753,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String tileStreak(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Tage Serie',
-      one: 'Tag Serie',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Tage Serie', one: 'Tag Serie');
     return '$_temp0';
   }
 
@@ -948,8 +912,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get savedOnDevice => 'Am Gerät gespeichert';
 
   @override
-  String get savedOnDeviceLater =>
-      'Am Gerät gespeichert – wird später synchronisiert';
+  String get savedOnDeviceLater => 'Am Gerät gespeichert – wird später synchronisiert';
 
   @override
   String get noSyncOtherDevices => 'Kein Abgleich mit anderen Geräten';

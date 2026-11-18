@@ -92,7 +92,9 @@ class SettingsStore extends ChangeNotifier {
     raster = _clampRaster((s['raster'] as num?)?.toInt() ?? raster);
     dayStart = ((s['day_start'] as num?)?.toInt() ?? dayStart).clamp(4, 10);
     dayEnd = ((s['day_end'] as num?)?.toInt() ?? dayEnd).clamp(16, 24);
-    remind = s['remind'] is bool ? s['remind'] as bool : (s['remind'] == 1 ? true : (s['remind'] == 0 ? false : remind));
+    remind = s['remind'] is bool
+        ? s['remind'] as bool
+        : (s['remind'] == 1 ? true : (s['remind'] == 0 ? false : remind));
     final u = s['updated_at'] as String?;
     if (u != null) updatedAt = DateTime.parse(u).toUtc();
     if (s['dirty'] is bool) dirty = s['dirty'] as bool;
@@ -102,26 +104,22 @@ class SettingsStore extends ChangeNotifier {
 
   /// Einstellungen als Zeile der Tabelle `settings`.
   Map<String, Object?> toRow() => {
-        'lang': lang,
-        'theme': theme,
-        'mode': mode.name,
-        'raster': raster,
-        'day_start': dayStart,
-        'day_end': dayEnd,
-        'remind': remind,
-        'updated_at': updatedAt.toIso8601String(),
-      };
+    'lang': lang,
+    'theme': theme,
+    'mode': mode.name,
+    'raster': raster,
+    'day_start': dayStart,
+    'day_end': dayEnd,
+    'remind': remind,
+    'updated_at': updatedAt.toIso8601String(),
+  };
 
-  Future<void> _saveSettings() =>
-      _prefs.setString(_kSettings, jsonEncode({...toRow(), 'dirty': dirty}));
+  Future<void> _saveSettings() => _prefs.setString(_kSettings, jsonEncode({...toRow(), 'dirty': dirty}));
 
-  Future<void> _saveSync() => _prefs.setString(_kSync, jsonEncode({
-        'mode': syncMode.name,
-        'url': cloud?.url,
-        'key': cloud?.key,
-        'owner': owner,
-        'cursor': pullCursor,
-      }));
+  Future<void> _saveSync() => _prefs.setString(
+    _kSync,
+    jsonEncode({'mode': syncMode.name, 'url': cloud?.url, 'key': cloud?.key, 'owner': owner, 'cursor': pullCursor}),
+  );
 
   /// Ändert Benutzer-Einstellungen und merkt sie für den Upload vor.
   void update(void Function(SettingsStore s) change) {
