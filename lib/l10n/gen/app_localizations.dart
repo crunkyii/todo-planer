@@ -1802,6 +1802,228 @@ abstract class AppLocalizations {
   /// **'Öffnen'**
   String get notifOpen;
 
+  /// No description provided for @yearly.
+  ///
+  /// In de, this message translates to:
+  /// **'Jährlich'**
+  String get yearly;
+
+  /// No description provided for @yearlyHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Wiederholt sich jedes Jahr'**
+  String get yearlyHint;
+
+  /// No description provided for @doneYearly.
+  ///
+  /// In de, this message translates to:
+  /// **'Erledigt – nächstes Jahr wieder'**
+  String get doneYearly;
+
+  /// No description provided for @holidayLine.
+  ///
+  /// In de, this message translates to:
+  /// **'Feiertag: {name}'**
+  String holidayLine(String name);
+
+  /// No description provided for @hNewYear.
+  ///
+  /// In de, this message translates to:
+  /// **'Neujahr'**
+  String get hNewYear;
+
+  /// No description provided for @hEpiphany.
+  ///
+  /// In de, this message translates to:
+  /// **'Heilige Drei Könige'**
+  String get hEpiphany;
+
+  /// No description provided for @hEasterMonday.
+  ///
+  /// In de, this message translates to:
+  /// **'Ostermontag'**
+  String get hEasterMonday;
+
+  /// No description provided for @hLabourDay.
+  ///
+  /// In de, this message translates to:
+  /// **'Staatsfeiertag'**
+  String get hLabourDay;
+
+  /// No description provided for @hAscension.
+  ///
+  /// In de, this message translates to:
+  /// **'Christi Himmelfahrt'**
+  String get hAscension;
+
+  /// No description provided for @hWhitMonday.
+  ///
+  /// In de, this message translates to:
+  /// **'Pfingstmontag'**
+  String get hWhitMonday;
+
+  /// No description provided for @hCorpusChristi.
+  ///
+  /// In de, this message translates to:
+  /// **'Fronleichnam'**
+  String get hCorpusChristi;
+
+  /// No description provided for @hAssumption.
+  ///
+  /// In de, this message translates to:
+  /// **'Mariä Himmelfahrt'**
+  String get hAssumption;
+
+  /// No description provided for @hNationalDay.
+  ///
+  /// In de, this message translates to:
+  /// **'Nationalfeiertag'**
+  String get hNationalDay;
+
+  /// No description provided for @hAllSaints.
+  ///
+  /// In de, this message translates to:
+  /// **'Allerheiligen'**
+  String get hAllSaints;
+
+  /// No description provided for @hImmaculate.
+  ///
+  /// In de, this message translates to:
+  /// **'Mariä Empfängnis'**
+  String get hImmaculate;
+
+  /// No description provided for @hChristmas.
+  ///
+  /// In de, this message translates to:
+  /// **'Christtag'**
+  String get hChristmas;
+
+  /// No description provided for @hStStephen.
+  ///
+  /// In de, this message translates to:
+  /// **'Stefanitag'**
+  String get hStStephen;
+
+  /// No description provided for @yes.
+  ///
+  /// In de, this message translates to:
+  /// **'Ja'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In de, this message translates to:
+  /// **'Nein'**
+  String get no;
+
+  /// No description provided for @exportData.
+  ///
+  /// In de, this message translates to:
+  /// **'Daten exportieren'**
+  String get exportData;
+
+  /// No description provided for @exportSub.
+  ///
+  /// In de, this message translates to:
+  /// **'Als PDF, Text oder Tabelle speichern'**
+  String get exportSub;
+
+  /// No description provided for @exportPdfSub.
+  ///
+  /// In de, this message translates to:
+  /// **'Zum Lesen und Drucken'**
+  String get exportPdfSub;
+
+  /// No description provided for @exportTxtSub.
+  ///
+  /// In de, this message translates to:
+  /// **'Einfacher Text'**
+  String get exportTxtSub;
+
+  /// No description provided for @exportCsvSub.
+  ///
+  /// In de, this message translates to:
+  /// **'Tabelle für Excel'**
+  String get exportCsvSub;
+
+  /// No description provided for @exportSaved.
+  ///
+  /// In de, this message translates to:
+  /// **'Export gespeichert'**
+  String get exportSaved;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In de, this message translates to:
+  /// **'Export fehlgeschlagen'**
+  String get exportFailed;
+
+  /// No description provided for @colTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Titel'**
+  String get colTitle;
+
+  /// No description provided for @colCategory.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie'**
+  String get colCategory;
+
+  /// No description provided for @colDue.
+  ///
+  /// In de, this message translates to:
+  /// **'Abgabe'**
+  String get colDue;
+
+  /// No description provided for @colDaysDone.
+  ///
+  /// In de, this message translates to:
+  /// **'Tage erledigt'**
+  String get colDaysDone;
+
+  /// No description provided for @colLastDone.
+  ///
+  /// In de, this message translates to:
+  /// **'Zuletzt erledigt'**
+  String get colLastDone;
+
+  /// No description provided for @colDay.
+  ///
+  /// In de, this message translates to:
+  /// **'Tag'**
+  String get colDay;
+
+  /// No description provided for @colFrom.
+  ///
+  /// In de, this message translates to:
+  /// **'Von'**
+  String get colFrom;
+
+  /// No description provided for @colTo.
+  ///
+  /// In de, this message translates to:
+  /// **'Bis'**
+  String get colTo;
+
+  /// No description provided for @colLeadDays.
+  ///
+  /// In de, this message translates to:
+  /// **'Vorlauf (Tage)'**
+  String get colLeadDays;
+
+  /// No description provided for @exportStamp.
+  ///
+  /// In de, this message translates to:
+  /// **'Stand: {date}'**
+  String exportStamp(String date);
+
+  /// No description provided for @exportWeekOf.
+  ///
+  /// In de, this message translates to:
+  /// **'Nur Woche ab {date}'**
+  String exportWeekOf(String date);
+
   /// No description provided for @langDe.
   ///
   /// In de, this message translates to:

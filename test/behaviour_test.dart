@@ -8,11 +8,13 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/screens/shell.dart';
+import 'package:todo_liste/services/export.dart';
 import 'package:todo_liste/screens/week_tab.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/theme/tokens.dart';
 import 'package:todo_liste/util/dates.dart';
 import 'package:todo_liste/util/fmt.dart';
+import 'package:todo_liste/util/task_logic.dart';
 import 'package:todo_liste/widgets/overlays.dart';
 import 'package:todo_liste/widgets/pickers.dart';
 import 'package:todo_liste/widgets/ui.dart';
@@ -639,6 +641,69 @@ void main() {
       expect(find.bySemanticsLabel(l.categoryLabel(termin.name)), findsWidgets);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Geburtstag: Hinweis beim Tippen, „Jährlich“ auf der Karte, Abhaken legt nächstes Jahr an', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.newTask).last);
+      await tester.enterText(find.byType(TextField).first, 'Einkaufen');
+      await tester.pump();
+      expect(find.text(l.yearlyHint), findsNothing);
+      await tester.enterText(find.byType(TextField).first, "Peter's Geburtstag");
+      await tester.pump();
+      expect(find.text(l.yearlyHint), findsOneWidget);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.text(l.yearly), findsOneWidget);
+      final t = app.store.tasks.single;
+      await _tap(tester, find.bySemanticsLabel(l.a11yDone(t.title)));
+      expect(find.text(l.doneYearly), findsOneWidget);
+      expect(app.store.tasks, hasLength(2));
+      expect(app.store.tasks.firstWhere((x) => !x.done).dueDate, nextYear(t.dueDate));
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Kalender zeigt den Feiertag des gewählten Tags', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await goTab(tester, l.navCalendar);
+      expect(find.textContaining(l.hAllSaints), findsNothing);
+      await _tap(tester, find.bySemanticsLabel(RegExp(l.hAllSaints)));
+      expect(find.text(l.holidayLine(l.hAllSaints)), findsOneWidget);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Export: Auswahl in den Einstellungen speichert die Datei im gewählten Format', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      final saved = <(String, int, String)>[];
+      final real = saveExportFile;
+      saveExportFile = (name, bytes, mime) async {
+        saved.add((name, bytes.length, mime));
+        return true;
+      };
+      addTearDown(() => saveExportFile = real);
+      await pumpApp(tester, app);
+      await goTab(tester, l.navSettings);
+      await tester.scrollUntilVisible(find.text(l.exportData), 200, scrollable: find.byType(Scrollable).last);
+      await _tap(tester, find.text(l.exportData));
+      expect(find.text(l.exportCsvSub), findsOneWidget);
+      await _tap(tester, find.text('CSV'));
+      expect(saved.single.$1, 'todo-liste-2026-11-18.csv');
+      expect(saved.single.$2, greaterThan(100));
+      expect(saved.single.$3, 'text/csv');
+      expect(find.text(l.exportSaved), findsOneWidget);
+      expect(find.text(l.exportCsvSub), findsNothing);
       await finishApp(tester, app);
     });
 

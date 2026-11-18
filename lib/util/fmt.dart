@@ -42,6 +42,9 @@ class Fmt {
   /// „18. Nov.“ / „Nov 18“
   String dayMon(DateTime d) => en ? DateFormat('MMM d', _loc).format(d) : DateFormat('d. MMM', _loc).format(d);
 
+  /// „18.11.2026“ / „11/18/2026“ – das ganze Datum mit Jahr (Export).
+  String fullDate(DateTime d) => en ? DateFormat.yMd(_loc).format(d) : '${pad2(d.day)}.${pad2(d.month)}.${d.year}';
+
   /// „18. NOV.“ / „NOV 18“ – das Datum neben „Heute“ im Startbildschirm-Widget.
   String widgetDate(DateTime d) => dayMon(d).toUpperCase();
 

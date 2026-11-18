@@ -688,6 +688,64 @@
   "notifChannelName": "Erinnerungen",
   "notifChannelDesc": "Erinnert an Aufgaben mit Uhrzeit",
   "notifOpen": "Öffnen",
+  "yearly": "Jährlich",
+  "yearlyHint": "Wiederholt sich jedes Jahr",
+  "doneYearly": "Erledigt – nächstes Jahr wieder",
+  "holidayLine": "Feiertag: {name}",
+  "@holidayLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "hNewYear": "Neujahr",
+  "hEpiphany": "Heilige Drei Könige",
+  "hEasterMonday": "Ostermontag",
+  "hLabourDay": "Staatsfeiertag",
+  "hAscension": "Christi Himmelfahrt",
+  "hWhitMonday": "Pfingstmontag",
+  "hCorpusChristi": "Fronleichnam",
+  "hAssumption": "Mariä Himmelfahrt",
+  "hNationalDay": "Nationalfeiertag",
+  "hAllSaints": "Allerheiligen",
+  "hImmaculate": "Mariä Empfängnis",
+  "hChristmas": "Christtag",
+  "hStStephen": "Stefanitag",
+  "yes": "Ja",
+  "no": "Nein",
+  "exportData": "Daten exportieren",
+  "exportSub": "Als PDF, Text oder Tabelle speichern",
+  "exportPdfSub": "Zum Lesen und Drucken",
+  "exportTxtSub": "Einfacher Text",
+  "exportCsvSub": "Tabelle für Excel",
+  "exportSaved": "Export gespeichert",
+  "exportFailed": "Export fehlgeschlagen",
+  "colTitle": "Titel",
+  "colCategory": "Kategorie",
+  "colDue": "Abgabe",
+  "colDaysDone": "Tage erledigt",
+  "colLastDone": "Zuletzt erledigt",
+  "colDay": "Tag",
+  "colFrom": "Von",
+  "colTo": "Bis",
+  "colLeadDays": "Vorlauf (Tage)",
+  "exportStamp": "Stand: {date}",
+  "@exportStamp": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "exportWeekOf": "Nur Woche ab {date}",
+  "@exportWeekOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "langDe": "Deutsch",
   "langEn": "English"
 }

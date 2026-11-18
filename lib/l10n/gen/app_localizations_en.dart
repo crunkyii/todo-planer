@@ -983,6 +983,123 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifOpen => 'Open';
 
   @override
+  String get yearly => 'Yearly';
+
+  @override
+  String get yearlyHint => 'Repeats every year';
+
+  @override
+  String get doneYearly => 'Done – back next year';
+
+  @override
+  String holidayLine(String name) {
+    return 'Public holiday: $name';
+  }
+
+  @override
+  String get hNewYear => 'New Year\'s Day';
+
+  @override
+  String get hEpiphany => 'Epiphany';
+
+  @override
+  String get hEasterMonday => 'Easter Monday';
+
+  @override
+  String get hLabourDay => 'Labour Day';
+
+  @override
+  String get hAscension => 'Ascension Day';
+
+  @override
+  String get hWhitMonday => 'Whit Monday';
+
+  @override
+  String get hCorpusChristi => 'Corpus Christi';
+
+  @override
+  String get hAssumption => 'Assumption Day';
+
+  @override
+  String get hNationalDay => 'National Day';
+
+  @override
+  String get hAllSaints => 'All Saints\' Day';
+
+  @override
+  String get hImmaculate => 'Immaculate Conception';
+
+  @override
+  String get hChristmas => 'Christmas Day';
+
+  @override
+  String get hStStephen => 'St. Stephen\'s Day';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get exportData => 'Export data';
+
+  @override
+  String get exportSub => 'Save as PDF, text or spreadsheet';
+
+  @override
+  String get exportPdfSub => 'For reading and printing';
+
+  @override
+  String get exportTxtSub => 'Plain text';
+
+  @override
+  String get exportCsvSub => 'Spreadsheet for Excel';
+
+  @override
+  String get exportSaved => 'Export saved';
+
+  @override
+  String get exportFailed => 'Export failed';
+
+  @override
+  String get colTitle => 'Title';
+
+  @override
+  String get colCategory => 'Category';
+
+  @override
+  String get colDue => 'Due';
+
+  @override
+  String get colDaysDone => 'Days done';
+
+  @override
+  String get colLastDone => 'Last done';
+
+  @override
+  String get colDay => 'Day';
+
+  @override
+  String get colFrom => 'From';
+
+  @override
+  String get colTo => 'To';
+
+  @override
+  String get colLeadDays => 'Lead time (days)';
+
+  @override
+  String exportStamp(String date) {
+    return 'As of $date';
+  }
+
+  @override
+  String exportWeekOf(String date) {
+    return 'Only week of $date';
+  }
+
+  @override
   String get langDe => 'Deutsch';
 
   @override

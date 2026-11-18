@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../util/dates.dart';
+import '../util/task_logic.dart';
 import 'local_db.dart';
 import 'models.dart';
 
@@ -25,6 +26,10 @@ class Store extends ChangeNotifier {
   final Map<String, Habit> _habits = {};
   final Map<String, HabitLog> _logs = {};
   final Map<String, WeekBlock> _blocks = {};
+
+  /// Jährliche Aufgabe → die Aufgabe fürs nächste Jahr, die beim Abhaken in dieser Sitzung
+  /// entstanden ist. Nur diese nimmt „wieder öffnen“ zurück, nie eine selbst angelegte.
+  final Map<String, String> _yearlyCopies = {};
 
   /// Aufgaben mit Änderungen, die noch nicht hochgeladen sind (Wolken-Symbol offline).
   final Set<String> pendingTaskIds = {};
@@ -60,6 +65,12 @@ class Store extends ChangeNotifier {
   WeekBlock? blockById(String id) => _blocks[id]?.deleted == false ? _blocks[id] : null;
 
   bool habitDone(String habitId, String day) => _logs['$habitId|$day']?.done ?? false;
+
+  /// Alle Tage (`JJJJ-MM-TT`, aufsteigend), an denen die Gewohnheit erledigt wurde.
+  List<String> habitDoneDays(String habitId) => [
+    for (final g in _logs.values)
+      if (g.habitId == habitId && g.done) g.day,
+  ]..sort();
 
   /// Erledigt-Einträge für die Statistik: auch gelöschte erledigte Aufgaben zählen,
   /// damit „Erledigte löschen“ die Statistik nicht leert.
@@ -303,7 +314,50 @@ class Store extends ChangeNotifier {
     t.done = !t.done;
     t.doneAt = t.done ? nowUtc() : null;
     _put(tasksTable, t);
+    if (isYearly(t.title)) _yearlyFollowUp(t);
     _changed();
+  }
+
+  /// Geburtstag & Co.: Beim Abhaken entsteht dieselbe Aufgabe für das nächste Jahr – außer es
+  /// gibt sie schon. Wird gleich wieder geöffnet (Versehen), verschwindet die eben angelegte,
+  /// sofern sie noch unverändert ist; eine selbst angelegte oder bearbeitete bleibt immer stehen.
+  void _yearlyFollowUp(Task t) {
+    final next = nextYearly(t.dueDate, today());
+    if (!t.done) {
+      final made = _tasks[_yearlyCopies.remove(t.id)];
+      final untouched =
+          made != null &&
+          !made.deleted &&
+          !made.done &&
+          made.title == t.title &&
+          made.categoryId == t.categoryId &&
+          made.dueTime == t.dueTime &&
+          sameDay(made.dueDate, next) &&
+          made.subs.length == t.subs.length &&
+          made.subs.every((s) => !s.done);
+      if (untouched) _deleteTask(made);
+      return;
+    }
+    final exists = _tasks.values.any(
+      (o) => !o.deleted && !o.done && o.id != t.id && o.title == t.title && sameDay(o.dueDate, next),
+    );
+    if (!exists) {
+      final now = nowUtc();
+      final n = Task(
+        id: newId(),
+        title: t.title,
+        categoryId: t.categoryId,
+        dueDate: next,
+        dueTime: t.dueTime,
+        done: false,
+        doneAt: null,
+        createdAt: now,
+        updatedAt: now,
+      );
+      _put(tasksTable, n);
+      _writeSubs(n.id, const [], [for (final s in t.subs) (title: s.title, done: false)]);
+      _yearlyCopies[t.id] = n.id;
+    }
   }
 
   void toggleSub(Subtask s) {

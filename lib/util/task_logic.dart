@@ -1,6 +1,47 @@
 import '../data/models.dart';
 import 'dates.dart';
 
+/// Wörter, bei denen sich eine Aufgabe jedes Jahr wiederholt (Deutsch und Englisch).
+const yearlyWords = [
+  'geburtstag',
+  'jahrestag',
+  'hochzeitstag',
+  'namenstag',
+  'todestag',
+  'jubiläum',
+  'jubilaeum',
+  'birthday',
+  'bday',
+  'anniversary',
+];
+
+// Das ganze Wort samt Vorsilbe („Kindergeburtstag“), aber nicht mitten in einem längeren
+// („Geburtstagsgeschenk kaufen“ ist kein Geburtstag).
+final _yearlyRe = RegExp('\\p{L}*(?:${yearlyWords.join('|')})(?!\\p{L})', caseSensitive: false, unicode: true);
+
+/// Wo im Titel das Wort steht, das die Aufgabe jährlich macht – `null`, wenn keines vorkommt.
+({int start, int end})? yearlyMatch(String title) {
+  final m = _yearlyRe.firstMatch(title);
+  return m == null ? null : (start: m.start, end: m.end);
+}
+
+/// „Peters Geburtstag“, „Hochzeitstag“ … wiederholen sich jedes Jahr.
+bool isYearly(String title) => _yearlyRe.hasMatch(title);
+
+/// Der nächste Jahrestag von [due], der nicht vor [from] liegt – auch wenn man erst Jahre
+/// später abhakt, ist die neue Aufgabe nie schon überfällig.
+DateTime nextYearly(DateTime due, DateTime from) {
+  var d = nextYear(due);
+  while (d.isBefore(sod(from))) {
+    d = nextYear(d);
+  }
+  return d;
+}
+
+/// Derselbe Tag im nächsten Jahr (29. Februar → 28. Februar, danach bleibt es der 28.).
+DateTime nextYear(DateTime d) =>
+    d.month == 2 && d.day == 29 ? DateTime(d.year + 1, 2, 28) : DateTime(d.year + 1, d.month, d.day);
+
 /// Abschnitte der Aufgabenliste in fester Reihenfolge.
 enum Section { overdue, today, tomorrow, week, later, done }
 

@@ -19,7 +19,8 @@ void toggleTaskWithToast(BuildContext context, Task t) {
   final l = context.l;
   app.store.toggleTask(t);
   if (t.done) buzz();
-  app.snack.show(t.done ? l.done : l.reopened, icon: t.done ? Ic.check : null);
+  final done = isYearly(t.title) ? l.doneYearly : l.done;
+  app.snack.show(t.done ? done : l.reopened, icon: t.done ? Ic.check : null);
 }
 
 void deleteTaskWithUndo(BuildContext context, Task t) {
@@ -158,7 +159,7 @@ class _TaskCardState extends State<TaskCard> {
                   onTap: () => Sheets(context, widget.ui).task(t),
                   pressScale: 0.985,
                   radius: BorderRadius.circular(Sizes.rCard),
-                  semanticLabel: '${t.title}, ${c.name}, $when',
+                  semanticLabel: '${t.title}, ${c.name}, $when${isYearly(t.title) ? ', ${l.yearly}' : ''}',
                   excludeChildSemantics: true,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(0, 10, 12, 10),
@@ -192,6 +193,15 @@ class _TaskCardState extends State<TaskCard> {
                                   AppIcon(Ic.subtasks, size: 14, color: tok.sub),
                                   const SizedBox(width: 4),
                                   Text(l.progress(subDone, t.subs.length), style: metaStyle),
+                                ],
+                              ),
+                            if (isYearly(t.title))
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AppIcon(Ic.sync, size: 14, color: tok.sub),
+                                  const SizedBox(width: 4),
+                                  Text(l.yearly, style: metaStyle),
                                 ],
                               ),
                             if (pending)

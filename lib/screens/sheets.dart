@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
 import '../data/models.dart';
+import '../services/export.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
@@ -65,6 +66,11 @@ class Sheets {
     );
   }
 
+  /// Alle Daten als PDF, Text oder Tabelle speichern.
+  void export() {
+    showAppSheet<void>(context, label: context.l.exportData, builder: (_) => const _ExportSheet());
+  }
+
   void category(TaskCategory? c) {
     final l = context.l;
     showAppSheet<void>(
@@ -84,6 +90,71 @@ void _savedToast(BuildContext context, {required bool isNew}) {
     app.snack.show(isNew ? l.savedOnDeviceLater : l.savedOnDevice, icon: Ic.cloudoff);
   } else {
     app.snack.show(isNew ? l.added : l.saved);
+  }
+}
+
+/// Auswahl des Dateiformats für den Export; ein Tipp öffnet „Speichern unter“.
+class _ExportSheet extends StatefulWidget {
+  const _ExportSheet();
+
+  @override
+  State<_ExportSheet> createState() => _ExportSheetState();
+}
+
+class _ExportSheetState extends State<_ExportSheet> {
+  bool _busy = false;
+
+  Future<void> _export(ExportFormat format) async {
+    if (_busy) return;
+    final app = context.app;
+    final l = context.l;
+    final nav = Navigator.of(context);
+    setState(() => _busy = true);
+    try {
+      final f = Fmt.of(context);
+      final bytes = await exportBytes(buildExport(app.store, l, f), format, english: f.en);
+      final saved = await saveExportFile(exportFileName(format), bytes, format.mime);
+      if (!saved) return; // abgebrochen: Auswahl bleibt offen
+      if (mounted) nav.pop();
+      app.snack.show(l.exportSaved, icon: Ic.check);
+    } on Object catch (e) {
+      // Auch Programmfehler (z. B. aus der PDF-Bibliothek) melden statt still zu scheitern.
+      debugPrint('Export fehlgeschlagen: ${e.runtimeType}');
+      app.snack.show(l.exportFailed, icon: Ic.alert);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l;
+    final tok = context.tok;
+    Widget row(ExportFormat f, String sub) => SetRow(
+      title: f.ext.toUpperCase(),
+      subtitle: sub,
+      trailing: AppIcon(Ic.right, color: tok.sub),
+      onTap: () => _export(f),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SheetTitle(l.exportData),
+        Opacity(
+          opacity: _busy ? 0.5 : 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              row(ExportFormat.pdf, l.exportPdfSub),
+              row(ExportFormat.txt, l.exportTxtSub),
+              row(ExportFormat.csv, l.exportCsvSub),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -272,6 +343,30 @@ class _SubEdit {
   final bool done;
 }
 
+/// Eingabefeld für den Titel: Das Wort, das die Aufgabe jährlich macht („Geburtstag“),
+/// wird farbig hinterlegt – so sieht man sofort, dass die Wiederholung aktiv ist.
+class _TitleController extends TextEditingController {
+  _TitleController({super.text});
+
+  @override
+  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
+    final m = yearlyMatch(text);
+    if (m == null) return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
+    final tok = context.tok;
+    return TextSpan(
+      style: style,
+      children: [
+        TextSpan(text: text.substring(0, m.start)),
+        TextSpan(
+          text: text.substring(m.start, m.end),
+          style: TextStyle(color: tok.p, fontWeight: FontWeight.w600, backgroundColor: tok.p.withValues(alpha: 0.16)),
+        ),
+        TextSpan(text: text.substring(m.end)),
+      ],
+    );
+  }
+}
+
 class _TaskSheet extends StatefulWidget {
   const _TaskSheet({required this.task, required this.preset, required this.ui});
   final Task? task;
@@ -294,6 +389,13 @@ class _TaskSheetState extends State<_TaskSheet> {
   late bool _subsOpen;
   String? _dt; // 'cal' | 'time'
   String? _error;
+  bool _yearly = false;
+
+  // Hinweis „Wiederholt sich jedes Jahr“ ein-/ausblenden, sobald das Wort getippt ist.
+  void _titleChanged() {
+    final y = isYearly(_title.text);
+    if (y != _yearly) setState(() => _yearly = y);
+  }
 
   @override
   void initState() {
@@ -301,7 +403,8 @@ class _TaskSheetState extends State<_TaskSheet> {
     final store = context.app.store;
     final t = widget.task;
     final cats = store.categories;
-    _title = TextEditingController(text: t?.title ?? '');
+    _title = _TitleController(text: t?.title ?? '')..addListener(_titleChanged);
+    _yearly = isYearly(_title.text);
     final f = widget.ui.filter;
     _cat =
         t?.categoryId ??
@@ -407,6 +510,25 @@ class _TaskSheetState extends State<_TaskSheet> {
             style: TextStyle(fontSize: 12.5, color: tok.sub, fontFeatures: const [FontFeature.tabularFigures()]),
           ),
         ),
+        if (_yearly)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+            child: Semantics(
+              liveRegion: true,
+              child: Row(
+                children: [
+                  AppIcon(Ic.sync, size: 15, color: tok.p),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      l.yearlyHint,
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: tok.p),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         if (_catOpen)
           Padding(
             padding: const EdgeInsets.only(top: 10),
