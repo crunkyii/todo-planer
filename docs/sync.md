@@ -18,6 +18,20 @@ Auf weiteren Geräten: gleiche URL und gleichen Key eingeben und mit demselben K
 - Über Supabase Realtime bekommen andere Geräte Änderungen sofort mit.
 - Offline zeigt die App eine kurze Meldung und ein Wolken-Symbol bei Aufgaben, die noch warten.
 
+## Ältere erledigte Aufgaben liegen nur online
+
+Damit die Daten am Gerät klein bleiben, behält die App erledigte Aufgaben nur **7 Tage** lokal. Danach liegen sie (samt Unteraufgaben) nur noch in deiner Supabase-Datenbank.
+
+- Das gilt nur im Modus „Auf allen Geräten“ mit angemeldetem Konto. Im Modus „Nur auf diesem Gerät“ bleibt alles am Gerät.
+- Vom Gerät genommen wird eine Aufgabe erst, wenn sie hochgeladen ist. Was noch in der Warteschlange steht, bleibt liegen.
+- Das ist **kein Löschen**: In Supabase ändert sich dabei nichts.
+- Im Abschnitt „Erledigt“ und im Kalender steht ein Knopf **„… ältere erledigte Aufgaben laden“**. Er holt sie seitenweise vom Server – nur zum Anzeigen, nicht zurück in den Gerätespeicher. Offline steht dort der Hinweis, dass sie nur online sichtbar sind. Auch die Suche findet ältere erst, nachdem sie geladen sind.
+- Hakst du eine solche Aufgabe wieder auf oder bearbeitest sie, liegt sie wieder ganz normal am Gerät und wird abgeglichen.
+- **Statistik und Heatmap stimmen auch offline**: Am Gerät bleibt pro ausgelagerter Aufgabe ein kleiner Merkzettel (Tag des Abhakens, Kategorie, Abgabetag – kein Titel, keine Notiz). Daraus zählt die Statistik. Dieser Merkzettel wird nicht abgeglichen.
+- Auf einem neuen Gerät werden ältere erledigte Aufgaben gar nicht erst gespeichert; beim ersten Abgleich entstehen nur die Merkzettel.
+- Der Export enthält online auch die älteren. Offline fehlen sie – das steht dann im Export und in der Meldung.
+- „Erledigte löschen“ löscht die erledigten Aufgaben, die gerade zu sehen sind (auch nachgeladene). Ältere, die nicht geladen sind, bleiben online liegen.
+
 ## Nach einem Update der App
 
 Bringt eine neue Version neue Spalten mit, zeigt die App den Hinweis „Die Datenbank ist älter als die App“. Dann [`supabase/schema.sql`](../supabase/schema.sql) noch einmal komplett im SQL Editor ausführen – bestehende Daten bleiben erhalten.
