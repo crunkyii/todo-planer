@@ -24,7 +24,7 @@ class HabitToggleReceiver : BroadcastReceiver() {
         val habitId = intent.getStringExtra(Widgets.EXTRA_HABIT)?.takeIf { it.isNotEmpty() } ?: return
         val app = context.applicationContext
         if (!HabitToggles.toggleToday(app, habitId)) return
-        Widgets.updateAll(app)
+        Widgets.habitToggled(app)
         MainActivity.habitsChanged()
     }
 }

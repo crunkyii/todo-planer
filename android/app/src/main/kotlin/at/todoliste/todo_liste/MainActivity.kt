@@ -20,9 +20,9 @@ class MainActivity : FlutterActivity() {
         widgetChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "todo_liste/widgets").also {
             it.setMethodCallHandler { call, result ->
                 when (call.method) {
-                    // Die App hat neue Daten geschrieben: Widgets neu zeichnen.
+                    // Die App hat neue Daten geschrieben: Widgets neu zeichnen (nur wenn sich etwas geändert hat).
                     "update" -> {
-                        Widgets.updateAll(applicationContext)
+                        Widgets.updateAll(applicationContext, onlyIfChanged = true)
                         result.success(null)
                     }
                     // Wurde die App über „+“ im Widget gestartet?

@@ -6,4 +6,6 @@
     <color name="widget_sub">#5B6672</color>
     <color name="widget_accent">#2E78B7</color>
     <color name="widget_overdue">#C62828</color>
+    <!-- Splash beim Tippen: mittleres Grau, auf hellem und dunklem Widget sichtbar -->
+    <color name="widget_ripple">#38909090</color>
 </resources>

@@ -50,6 +50,17 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
+            <!-- Nur Gewohnheiten: der Zähler als Liste mit einer Zeile (ändert sich ohne Neuaufbau). -->
+            <ListView
+                android:id="@+id/count_list"
+                android:layout_width="40dp"
+                android:layout_height="match_parent"
+                android:divider="@null"
+                android:listSelector="@android:color/transparent"
+                android:overScrollMode="never"
+                android:scrollbars="none"
+                android:visibility="gone" />
+
             <ImageView
                 android:id="@+id/plus"
                 android:layout_width="40dp"
@@ -70,6 +81,7 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:divider="@null"
+                android:listSelector="@android:color/transparent"
                 android:paddingBottom="10dp" />
 
             <TextView

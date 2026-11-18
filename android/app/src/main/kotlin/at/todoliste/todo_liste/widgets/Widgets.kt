@@ -13,6 +13,8 @@ import android.view.View
 import android.widget.RemoteViews
 import at.todoliste.todo_liste.MainActivity
 import at.todoliste.todo_liste.R
+import org.json.JSONException
+import org.json.JSONObject
 
 /** Welche Liste ein Listen-Widget zeigt. */
 enum class ListMode { TODAY, UPCOMING, HABITS }
@@ -24,6 +26,7 @@ object Widgets {
     const val EXTRA_MODE = "mode"
     const val EXTRA_ID = "widget_id"
     const val EXTRA_HABIT = "habit_id"
+    const val EXTRA_COUNT = "count_only"
 
     private val listWidgets = mapOf(
         TodayWidget::class.java to ListMode.TODAY,
@@ -31,7 +34,25 @@ object Widgets {
         HabitsWidget::class.java to ListMode.HABITS,
     )
 
-    fun updateAll(context: Context) {
+    /** Die Daten, mit denen die Widgets zuletzt gezeichnet wurden (einheitlich geschrieben). */
+    private var drawn: String? = null
+
+    /** Gleicher Inhalt = gleicher Text, egal ob die App oder das Widget das JSON geschrieben hat. */
+    private fun normalized(raw: String?): String? = try {
+        raw?.let { JSONObject(it).toString() }
+    } catch (e: JSONException) {
+        raw
+    }
+
+    /**
+     * Zeichnet alle Widgets neu. Der Startbildschirm baut ein Widget dabei komplett neu auf
+     * (bei Samsung flackert die Liste kurz) – darum mit [onlyIfChanged] nichts tun, wenn die
+     * Daten schon so angezeigt werden (z. B. nachdem im Widget selbst abgehakt wurde).
+     */
+    fun updateAll(context: Context, onlyIfChanged: Boolean = false) {
+        val now = normalized(WidgetData.raw(context))
+        if (onlyIfChanged && now != null && now == drawn) return
+        drawn = now
         val mgr = AppWidgetManager.getInstance(context)
         val data = WidgetData.load(context)
         for ((cls, mode) in listWidgets) {
@@ -61,6 +82,28 @@ object Widgets {
         if (at == null) alarm.cancel(refresh) else alarm.setWindow(AlarmManager.RTC, at, 10 * 60_000L, refresh)
     }
 
+    /**
+     * Im Widget wurde eine Gewohnheit abgehakt: nur die Zeilen und den Zähler der
+     * Gewohnheiten-Widgets neu füllen. Das Widget selbst bleibt stehen, nichts flackert, und
+     * die Tipp-Animation (Kreis wächst, Splash) läuft ungestört zu Ende.
+     *
+     * Der Zähler „1/2“ ist dafür eine eigene Liste mit einer Zeile: Jede andere Änderung an der
+     * Kopfzeile (auch updateAppWidget nur für den Text) lässt den Samsung-Startbildschirm das
+     * ganze Widget neu aufbauen – dann ist die Liste kurz leer.
+     */
+    fun habitToggled(context: Context) {
+        val mgr = AppWidgetManager.getInstance(context)
+        val ids = mgr.getAppWidgetIds(ComponentName(context, HabitsWidget::class.java))
+        @Suppress("DEPRECATION")
+        mgr.notifyAppWidgetViewDataChanged(ids, R.id.list)
+        @Suppress("DEPRECATION")
+        mgr.notifyAppWidgetViewDataChanged(ids, R.id.count_list)
+        drawn = normalized(WidgetData.raw(context))
+    }
+
+    fun habitCount(data: WidgetData): String =
+        "${data.habits.count { data.today in it.days }}/${data.habits.size}"
+
     fun updateList(context: Context, mgr: AppWidgetManager, id: Int, mode: ListMode, data: WidgetData) {
         val v = RemoteViews(context.packageName, R.layout.widget_list)
         val cfg = WidgetConfig.load(context, id)
@@ -78,7 +121,7 @@ object Widgets {
             )
             ListMode.HABITS -> Triple(
                 data.label("habits", "Gewohnheiten"),
-                "${data.habits.count { data.today in it.days }}/${data.habits.size}",
+                habitCount(data),
                 data.label("noHabits", "Noch keine Gewohnheiten."),
             )
         }
@@ -102,6 +145,21 @@ object Widgets {
         v.setRemoteAdapter(R.id.list, service)
         v.setEmptyView(R.id.list, R.id.empty)
 
+        // Gewohnheiten: Zähler als eigene kleine Liste (siehe habitToggled).
+        val habits = mode == ListMode.HABITS
+        v.setViewVisibility(R.id.count, if (habits) View.GONE else View.VISIBLE)
+        v.setViewVisibility(R.id.count_list, if (habits) View.VISIBLE else View.GONE)
+        if (habits) {
+            val counter = Intent(context, WidgetListService::class.java)
+                .putExtra(EXTRA_MODE, mode.name)
+                .putExtra(EXTRA_ID, id)
+                .putExtra(EXTRA_COUNT, true)
+                .setData(Uri.parse("todoliste://widget/${mode.name}/$id/count"))
+            @Suppress("DEPRECATION")
+            v.setRemoteAdapter(R.id.count_list, counter)
+            v.setPendingIntentTemplate(R.id.count_list, openApp(context, null, mutable = true))
+        }
+
         v.setOnClickPendingIntent(R.id.header, openApp(context, null))
         v.setOnClickPendingIntent(R.id.empty, openApp(context, null))
         v.setOnClickPendingIntent(R.id.plus, openApp(context, ACTION_NEW_TASK))
@@ -114,6 +172,8 @@ object Widgets {
         mgr.updateAppWidget(id, v)
         @Suppress("DEPRECATION")
         mgr.notifyAppWidgetViewDataChanged(id, R.id.list)
+        @Suppress("DEPRECATION")
+        if (habits) mgr.notifyAppWidgetViewDataChanged(id, R.id.count_list)
     }
 
     fun updateCount(context: Context, mgr: AppWidgetManager, id: Int, data: WidgetData) {
