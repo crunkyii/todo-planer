@@ -527,7 +527,10 @@ class _TaskSheetState extends State<_TaskSheet> {
                       ],
                     ),
                   ),
-                AppButton(label: l.subtask, icon: Ic.plus, kind: BtnKind.text, padding: 8, onTap: _addSub),
+                // Gehört zum Eingeben: Die Tastatur bleibt offen und springt ins neue Feld.
+                TextFieldTapRegion(
+                  child: AppButton(label: l.subtask, icon: Ic.plus, kind: BtnKind.text, padding: 8, onTap: _addSub),
+                ),
               ],
             ),
           ),

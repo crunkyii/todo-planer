@@ -556,6 +556,99 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Tippen neben ein Textfeld nimmt Fokus und Tastatur weg – in jedem Formular', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      bool editing() =>
+          tester.binding.focusManager.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>() != null;
+      Future<void> type(String text, {int field = 0}) async {
+        await tester.tap(find.byType(TextField).at(field));
+        await tester.enterText(find.byType(TextField).at(field), text);
+        await tester.pumpAndSettle();
+        expect(editing(), isTrue, reason: 'Feld ist beim Tippen ausgewählt');
+      }
+
+      Future<void> closeSheet() async {
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+      }
+
+      var app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+
+      // Block (der gemeldete Fall): Name eingeben, dann „Bis“ antippen
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      await _tap(tester, find.bySemanticsLabel(l.newBlock).last);
+      await type('Schule');
+      await _tap(tester, find.text(l.to));
+      expect(editing(), isFalse, reason: 'Block: „Bis“ angetippt');
+      expect(find.byKey(const ValueKey('bis')), findsOneWidget, reason: 'das Zeitrad geht trotzdem auf');
+      await closeSheet();
+
+      // Aufgabe: Titel, dann eine Kategorie antippen
+      await _tap(tester, find.bySemanticsLabel(l.navTasks));
+      await _tap(tester, find.bySemanticsLabel(l.newTask).last);
+      await type('Titel');
+      await _tap(tester, find.bySemanticsLabel(l.dateAndTime)); // Kalender-Knopf im Sheet
+      expect(editing(), isFalse, reason: 'Aufgabe: Datum & Uhrzeit angetippt');
+      await _tap(tester, find.bySemanticsLabel(l.dateAndTime)); // wieder zuklappen
+
+      // Unteraufgaben: „+ Unteraufgabe“ gehört zum Tippen – das neue Feld ist gleich ausgewählt
+      await _tap(tester, find.bySemanticsLabel(l.subtasks));
+      await type('Eins', field: 1);
+      await tester.ensureVisible(find.text(l.subtask).last);
+      await _tap(tester, find.text(l.subtask).last);
+      expect(editing(), isTrue, reason: 'nach „+ Unteraufgabe“ wird weitergetippt');
+      expect(find.byType(TextField), findsNWidgets(3));
+      await closeSheet();
+
+      // Gewohnheit
+      await _tap(tester, find.text(l.habit));
+      await type('Lesen');
+      await _tap(tester, find.text(l.color));
+      expect(editing(), isFalse, reason: 'Gewohnheit: daneben getippt');
+      await closeSheet();
+
+      // Suche: Treffer antippen bzw. Liste anfassen
+      await _tap(tester, find.bySemanticsLabel(l.moreOptions));
+      await _tap(tester, find.text(l.search));
+      await type('Müll');
+      await tester.tapAt(const Offset(200, 600));
+      await tester.pumpAndSettle();
+      expect(editing(), isFalse, reason: 'Suche: daneben getippt');
+      await closeSheet();
+      await _tap(tester, find.bySemanticsLabel(l.closeSearch));
+
+      // Kategorie
+      await _tap(tester, find.bySemanticsLabel(l.settings));
+      await _tap(tester, find.text(l.categories).last);
+      await _tap(tester, find.bySemanticsLabel(l.newCategory).last);
+      await type('Referat');
+      await _tap(tester, find.text(l.color));
+      expect(editing(), isFalse, reason: 'Kategorie: daneben getippt');
+      await finishApp(tester, app);
+
+      // Anmeldung
+      app = await makeServices(syncMode: 'cloud', cloudConfig: true);
+      await pumpApp(tester, app);
+      await type('ich@beispiel.at');
+      await _tap(tester, find.text(l.signIn).first); // Überschrift
+      expect(editing(), isFalse, reason: 'Anmeldung: daneben getippt');
+      await finishApp(tester, app);
+
+      // Einrichtung
+      app = await makeServices(syncMode: null);
+      await pumpApp(tester, app);
+      await _tap(tester, find.text(l.setupCloudTitle));
+      await tester.ensureVisible(find.byType(TextField).first);
+      await tester.pumpAndSettle();
+      await type('https://abcdefgh.supabase.co');
+      await _tap(tester, find.text(l.publishableKey).first); // Beschriftung des anderen Felds
+      expect(editing(), isFalse, reason: 'Einrichtung: daneben getippt');
+      await finishApp(tester, app);
+    });
+
     testWidgets('Tastatur: Esc schließt das Sheet, Enter speichert', (tester) async {
       final l = l10n('de');
       final app = await makeServices();

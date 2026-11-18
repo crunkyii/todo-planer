@@ -459,6 +459,11 @@ class AppInput extends StatelessWidget {
         onSubmitted: onSubmitted,
         onChanged: onChanged,
         textInputAction: textInputAction,
+        // Tippen neben das Feld (anderer Knopf, freie Fläche, Scrollen): Fokus und Tastatur weg.
+        // Standard am Handy wäre „bleibt offen“ – dann blieb der Cursor im Namensfeld stehen,
+        // während man z. B. schon die Uhrzeit einstellte. Was zum Feld gehört (z. B. der Knopf
+        // „+ Unteraufgabe“), wird mit TextFieldTapRegion ausgenommen.
+        onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
         maxLength: maxLength,
         maxLengthEnforcement: MaxLengthEnforcement.enforced,
         autocorrect: !obscure,
