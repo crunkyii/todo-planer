@@ -14,9 +14,22 @@ Auf weiteren Geräten: gleiche URL und gleichen Key eingeben und mit demselben K
 ## So funktioniert der Abgleich
 
 - Jede Änderung landet zuerst in der lokalen Datenbank (drift/SQLite) und in einer Warteschlange.
-- Sobald das Gerät online ist, werden Änderungen hochgeladen; die neueste Änderung gewinnt.
+- Sobald das Gerät online ist, werden Änderungen hochgeladen.
+- Ändern zwei Geräte dieselbe Aufgabe, gelten beide Änderungen, solange es verschiedene Felder sind (siehe unten). Beim selben Feld gewinnt die neuere Änderung.
 - Über Supabase Realtime bekommen andere Geräte Änderungen sofort mit.
 - Offline zeigt die App eine kurze Meldung und ein Wolken-Symbol bei Aufgaben, die noch warten.
+
+## Zwei Geräte ändern dieselbe Aufgabe
+
+Beispiel: Du änderst offline am Handy den **Titel** und am PC das **Datum** derselben Aufgabe. Früher gewann die ganze Zeile mit der neueren Änderung, die andere ging verloren. Jetzt bleiben beide.
+
+- Die App merkt sich je Feld, wann es zuletzt geändert wurde (Spalte `field_times`, ein kleines JSON wie `{"title": "…", "due": "…"}`).
+- Beim Abgleich gewinnt **je Feld** der neuere Wert – am Gerät (`lib/data/field_merge.dart`) und in der Datenbank (Trigger `sync_guard` in [`supabase/schema.sql`](../supabase/schema.sql)) mit derselben Regel. In welcher Reihenfolge die Geräte hochladen, ist egal.
+- Was zusammengehört, zählt als ein Feld: **Datum und Uhrzeit**, **erledigt und der Zeitpunkt des Abhakens**, beim Wochenplan **Tag, Zeit und Wiederholung**.
+- Das gilt für Aufgaben, Unteraufgaben, Kategorien, Gewohnheiten und Wochenblöcke. Die Haken der Gewohnheiten und die Einstellungen haben nur einen Stand – dort gewinnt wie bisher der neuere.
+- **Löschen gegen Bearbeiten:** Löscht ein Gerät die Aufgabe und das andere ändert sie, bleibt sie gelöscht. Die Änderung ist trotzdem gespeichert – machst du das Löschen rückgängig, ist sie da.
+- **Ältere App-Versionen und alte Zeilen** haben keine Zeitstempel je Feld. Dann gilt wie früher: Die ganze Zeile mit der neueren Änderung gewinnt.
+- Die Uhren der Geräte sollten ungefähr stimmen – „neuer“ heißt: laut Uhr des Geräts, das geändert hat.
 
 ## Ältere erledigte Aufgaben liegen nur online
 
@@ -35,6 +48,8 @@ Damit die Daten am Gerät klein bleiben, behält die App erledigte Aufgaben nur 
 ## Nach einem Update der App
 
 Bringt eine neue Version neue Spalten mit, zeigt die App den Hinweis „Die Datenbank ist älter als die App“. Dann [`supabase/schema.sql`](../supabase/schema.sql) noch einmal komplett im SQL Editor ausführen – bestehende Daten bleiben erhalten.
+
+Für das feldweise Zusammenführen (Spalte `field_times`) gilt: Bis das Skript ausgeführt ist, gleicht die App weiter ab, aber wie früher mit der ganzen Zeile.
 
 
 ---

@@ -13,7 +13,7 @@ In diesem Modus gleicht die App mit **deiner eigenen** Supabase-Datenbank ab –
 - Adresse und Key der Datenbank gibst du in der App ein; sie werden nur am Gerät gespeichert und stehen nirgends im Code.
 - Die App nimmt nur den öffentlichen „Publishable Key“ an. Den geheimen Key (`sb_secret_…` / `service_role`) lehnt sie ab.
 - In der Datenbank schützt Row Level Security jede Zeile: Jedes Konto sieht und ändert nur seine eigenen Daten ([`supabase/schema.sql`](../supabase/schema.sql)).
-- Übertragen werden Aufgaben, Unteraufgaben, Notizen, Kategorien, Gewohnheiten, Wochenplan und Einstellungen – sonst nichts.
+- Übertragen werden Aufgaben, Unteraufgaben, Notizen, Kategorien, Gewohnheiten, Wochenplan und Einstellungen – sonst nichts. Dazu gehört je Eintrag, wann welches Feld zuletzt geändert wurde (damit Änderungen von zwei Geräten zusammenpassen).
 - Erledigte Aufgaben, die vor mehr als 7 Tagen abgehakt wurden, liegen nur noch in deiner Datenbank und nicht mehr am Gerät. Am Gerät bleibt dafür nur ein Merkzettel für die Statistik (Tag, Kategorie, Abgabetag – ohne Titel und Notiz). Details: [sync.md](sync.md).
 
 ## Update-Prüfung (nur Windows)
