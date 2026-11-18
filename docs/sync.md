@@ -29,7 +29,8 @@ Beispiel: Du änderst offline am Handy den **Titel** und am PC das **Datum** der
 - Das gilt für Aufgaben, Unteraufgaben, Kategorien, Gewohnheiten und Wochenblöcke. Die Haken der Gewohnheiten und die Einstellungen haben nur einen Stand – dort gewinnt wie bisher der neuere.
 - **Löschen gegen Bearbeiten:** Löscht ein Gerät die Aufgabe und das andere ändert sie, bleibt sie gelöscht. Die Änderung ist trotzdem gespeichert – machst du das Löschen rückgängig, ist sie da.
 - **Ältere App-Versionen und alte Zeilen** haben keine Zeitstempel je Feld. Dann gilt wie früher: Die ganze Zeile mit der neueren Änderung gewinnt.
-- Die Uhren der Geräte sollten ungefähr stimmen – „neuer“ heißt: laut Uhr des Geräts, das geändert hat.
+- Die Uhren der Geräte sollten ungefähr stimmen – „neuer“ heißt: laut Uhr des Geräts, das geändert hat. Haben zwei Änderungen am selben Feld exakt denselben Zeitpunkt, gilt die, die zuerst in der Datenbank war.
+- **Alle Geräte aktualisieren:** Eine ältere App-Version bekommt eine eingemischte ältere Änderung an einem anderen Feld nicht mit und kann sie bei ihrer nächsten Änderung an derselben Aufgabe überschreiben.
 
 ## Ältere erledigte Aufgaben liegen nur online
 

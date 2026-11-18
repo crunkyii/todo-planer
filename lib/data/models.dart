@@ -4,7 +4,8 @@ import '../util/dates.dart';
 
 /// Datenmodelle der App. Jedes Modell hat `toJson()` mit denselben Spaltennamen
 /// wie in Supabase (`supabase/schema.sql`) und in der lokalen Datenbank.
-/// `updatedAt` (UTC) entscheidet bei Konflikten: der neueste Stand gewinnt.
+/// `updatedAt` (UTC) ist die letzte Änderung; bei Konflikten gewinnt je Feld der neuere Wert
+/// (siehe `field_merge.dart`).
 /// `deleted` ist ein Grabstein, damit Löschungen auf andere Geräte kommen.
 
 final _rnd = Random.secure();

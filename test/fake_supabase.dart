@@ -164,6 +164,7 @@ class FakeSupabase {
     if (newTimes == null || oldTimes == null) {
       // Wie früher: Ein älterer Stand darf einen neueren nicht überschreiben
       if (newAt.isBefore(oldAt)) return;
+      if (groups.isNotEmpty && newTimes == null && newAt.isAtSameMomentAs(oldAt)) return;
       if (groups.isNotEmpty && newTimes == null && knowsFieldTimes) neu[fieldTimesColumn] = null;
     } else {
       // Je Gruppe gewinnt der neuere Wert

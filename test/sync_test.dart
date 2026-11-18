@@ -416,6 +416,38 @@ void main() {
       expect(b.store.olderWaiting(), 1);
     });
 
+    test('Unteraufgabe einer ausgelagerten Aufgabe abhaken, nachdem der Abruf sie noch einmal brachte', () async {
+      final a = await device();
+      final t = oldDone(a, 'alt', subs: [(title: 'Teil', done: true)]);
+      await a.sync.sync(); // ausgelagert, bleibt bis zum Ende der Sitzung zu sehen
+      await a.sync.sync(); // der Abruf bringt die Zeile im Überlappungsfenster noch einmal
+      final sub = a.store.tasksWithOlder.single.subs.single;
+      await tick();
+      a.store.toggleSub(sub);
+      await a.sync.sync();
+
+      expect(server.rows('subtasks').single['done'], false);
+      expect(a.store.taskById(t.id)!.subs.single.done, false);
+      expect(await a.pending(), 0);
+      final b = await device();
+      await b.sync.sync();
+      expect(await b.sync.loadOlderDone(), isTrue);
+      expect(b.store.taskById(t.id)!.subs.single.done, false);
+    });
+
+    test('Kategorie gelöscht: ihre älteren erledigten Aufgaben zählen zur Ersatz-Kategorie', () async {
+      final a = await device();
+      final first = cat(a);
+      a.store.addCategory(name: 'Zweite', color: '#F07A5F', offset: 0);
+      oldDone(a, 'alt');
+      await a.sync.sync();
+      final b = await device();
+      await b.sync.sync();
+      final other = b.store.categories.firstWhere((c) => c.id != first);
+      b.store.deleteCategory(b.store.categories.firstWhere((c) => c.id == first));
+      expect(b.store.olderWaiting(categoryId: other.id), 1);
+    });
+
     test('Offline oder Server nicht erreichbar: Nachladen meldet den Fehler, nichts geht verloren', () async {
       final a = await device();
       oldDone(a, 'alt');
@@ -807,6 +839,37 @@ void main() {
       await a.sync.sync();
       expect(serverTask(t.id)['title'], 'mit falscher Uhr');
       expect(await a.pending(), 0);
+    });
+
+    test('Exakt gleicher Zeitpunkt im selben Feld: Es gilt der Stand, der zuerst am Server war', () async {
+      final (a, b, ta, tb) = await pair();
+      // Beide Uhren gehen nach: Beide Änderungen bekommen denselben Zeitpunkt knapp nach dem Stand.
+      clock = () => DateTime.now().subtract(const Duration(hours: 1));
+      addTearDown(() => clock = DateTime.now);
+      edit(a, ta, title: 'von A');
+      edit(b, tb, title: 'von B', notes: 'Notiz von B');
+      expect(tb.updatedAt, ta.updatedAt);
+      await settle(a, b);
+      await b.sync.sync();
+
+      expect(serverTask(ta.id)['title'], 'von A');
+      for (final d in [a, b]) {
+        expect(d.store.taskById(ta.id)!.title, 'von A');
+        expect(d.store.taskById(ta.id)!.notes, 'Notiz von B', reason: 'die Notiz hat nur B geändert');
+        expect(await d.pending(), 0);
+        final again = Store(d.store.db);
+        await again.load();
+        expect(again.taskById(ta.id)!.title, 'von A');
+      }
+    });
+
+    test('Derselbe Stand noch einmal ohne Zeitstempel (ältere App): die Zeitstempel am Server bleiben', () async {
+      final a = await device();
+      final t = add(a, 'Start');
+      await a.sync.sync();
+      final row = serverTask(t.id);
+      server.put('tasks', {'id': t.id, 'title': 'Start', 'updated_at': row['updated_at'], 'field_times': null});
+      expect(serverTask(t.id)['field_times'], isA<Map<String, Object?>>());
     });
 
     test('Die Feld-Gruppen in schema.sql sind dieselben wie in der App', () {

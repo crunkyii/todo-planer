@@ -4,7 +4,7 @@
 --
 -- Jede Tabelle hat:
 --   user_id    – wem die Zeile gehört (wird automatisch auf den angemeldeten User gesetzt)
---   updated_at – Zeitpunkt der letzten Änderung am Gerät; bei Konflikten gewinnt der neueste
+--   updated_at – Zeitpunkt der letzten Änderung am Gerät
 --   field_times – wann welches Feld zuletzt geändert wurde (JSON, z. B. {"title": "…", "due": "…"}).
 --                 Damit gewinnt bei Konflikten je Feld der neuere Wert statt der ganzen Zeile.
 --   synced_at  – wann die Zeile beim Server angekommen ist (die App lädt nur Neues herunter)
@@ -203,6 +203,11 @@ begin
     if new_times is null or old_times is null then
       -- Wie früher: Ein älterer Stand darf einen neueren nicht überschreiben
       if new.updated_at < old.updated_at then
+        return null;
+      end if;
+      -- Derselbe Stand noch einmal, aber ohne Zeitstempel je Feld (ältere App-Version):
+      -- nichts ändern, sonst gingen die vorhandenen Zeitstempel verloren
+      if grps is not null and new_times is null and new.updated_at = old.updated_at then
         return null;
       end if;
       -- Die neue Zeile gilt als Ganzes. Passen ihre Zeitstempel nicht zu ihr (ältere

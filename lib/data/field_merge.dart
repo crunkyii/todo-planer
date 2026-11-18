@@ -45,6 +45,7 @@ Map<String, String> encodeFieldTimes(Map<String, DateTime> times) => {
 
 /// Führt die Server-Zeile [remote] in die lokale Zeile [local] ein.
 ///
+/// [remote] muss dieselbe Schreibweise der Werte haben wie [local] (über das Modell gelesen).
 /// Gibt `null` zurück, wenn [remote] nichts Neues bringt. Sonst die zusammengeführte Zeile
 /// und ob sie etwas enthält, das der Server noch nicht hat ([ahead]) – dann muss sie (wieder)
 /// hochgeladen werden.
@@ -67,7 +68,10 @@ Map<String, String> encodeFieldTimes(Map<String, DateTime> times) => {
   var won = false, ahead = false;
   for (final MapEntry(key: group, value: columns) in t.groups.entries) {
     final l = localTimes[group] ?? localAt, r = remoteTimes[group] ?? remoteAt;
-    if (r.isAfter(l)) {
+    // Bei exakt gleichem Zeitstempel und verschiedenem Wert gilt der Stand am Server (der
+    // zuerst dort war) – sonst behielte jedes Gerät für immer seinen eigenen Wert.
+    final tie = l.isAtSameMomentAs(r) && columns.any((c) => local[c] != remote[c]);
+    if (r.isAfter(l) || tie) {
       won = true;
       for (final c in columns) {
         row[c] = remote[c];

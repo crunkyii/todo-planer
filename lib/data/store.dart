@@ -93,7 +93,7 @@ class Store extends ChangeNotifier {
 
   bool _waiting(ArchivedDone a, String? categoryId, String? dueDay) =>
       a.due != null &&
-      (categoryId == null || a.cat == categoryId) &&
+      (categoryId == null || catOf(a.cat).id == categoryId) &&
       (dueDay == null || a.due == dueDay) &&
       !_tasks.containsKey(a.id) &&
       !_older.containsKey(a.id) &&
@@ -829,9 +829,17 @@ class Store extends ChangeNotifier {
     for (final r in rows) {
       if (t.name == 'tasks' && !_tasks.containsKey(r['id'])) {
         final x = Task.fromJson(r);
-        final loaded = _older.remove(x.id);
+        final loaded = _older[x.id];
         olderChanged = olderChanged || loaded != null;
-        if (loaded != null) {
+        final stays = x.isOldDone(now) && !x.deleted;
+        if (loaded != null && stays) {
+          // Gerade nachgeladen und angezeigt: den neuen Stand zeigen. Die Unteraufgaben und
+          // ihr gemerkter Stand bleiben – sonst bekäme eine Änderung daran keinen Zeitstempel.
+          _older[x.id] = x..subs = loaded.subs;
+          _remember(t, x.toJson(), r, older: true);
+        } else if (loaded != null) {
+          // Gelöscht oder nicht mehr „alt erledigt“: Sie ist keine Nachgeladene mehr.
+          _older.remove(x.id);
           _olderSaved.remove(_savedKey(tasksTable, x.id));
           for (final s in loaded.subs) {
             _olderSaved.remove(_savedKey(subtasksTable, s.id));
@@ -844,11 +852,6 @@ class Store extends ChangeNotifier {
             notes.add(a);
             olderChanged = true;
           }
-          // Gerade nachgeladen und angezeigt: den neuen Stand zeigen.
-          if (loaded != null && !x.deleted) {
-            _older[x.id] = x..subs = loaded.subs;
-            _remember(t, x.toJson(), r, older: true);
-          }
           continue;
         }
       }
@@ -860,11 +863,15 @@ class Store extends ChangeNotifier {
       _ingest(t, merged.row);
       if (t.name == 'tasks') _unarchive(merged.row['id'] as String);
     }
-    if (notes.isNotEmpty) await db.putArchived(notes);
-    if (accepted.isNotEmpty) await db.putAll(t, accepted, dirty: false);
-    // Zusammengeführt, aber mit lokalen Änderungen, die der Server noch nicht hat: bleibt
-    // in der Warteschlange.
-    if (ahead.isNotEmpty) await db.putAll(t, ahead, dirty: true);
+    // Alle Schreibvorgänge sofort abschicken (ohne `await` dazwischen): Ändert der Nutzer
+    // währenddessen eine dieser Zeilen, landet seine Änderung sicher danach in der Datenbank.
+    await [
+      if (notes.isNotEmpty) db.putArchived(notes),
+      if (accepted.isNotEmpty) db.putAll(t, accepted, dirty: false),
+      // Zusammengeführt, aber mit lokalen Änderungen, die der Server noch nicht hat: bleibt
+      // in der Warteschlange.
+      if (ahead.isNotEmpty) db.putAll(t, ahead, dirty: true),
+    ].wait;
     if (accepted.isEmpty && ahead.isEmpty && !olderChanged) return;
     _attachSubs();
     notifyListeners();
@@ -972,6 +979,16 @@ class Store extends ChangeNotifier {
       return newer ? (row: columns(), ahead: false) : null;
     }
     final local = _saved[_savedKey(t, r['id'])];
-    return local == null ? (row: columns(), ahead: false) : mergeRemote(t, local, r);
+    if (local == null) return (row: columns(), ahead: false);
+    // Über das Modell gelesen, damit die Werte so aussehen wie die gespeicherten (z. B. Uhrzeit).
+    final same = switch (t.name) {
+      'categories' => TaskCategory.fromJson(r).toJson(),
+      'tasks' => Task.fromJson(r).toJson(),
+      'subtasks' => Subtask.fromJson(r).toJson(),
+      'habits' => Habit.fromJson(r).toJson(),
+      'week_blocks' => WeekBlock.fromJson(r).toJson(),
+      _ => r,
+    };
+    return mergeRemote(t, local, {...same, fieldTimesColumn: r[fieldTimesColumn]});
   }
 }
