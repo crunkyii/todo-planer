@@ -88,6 +88,19 @@ void main() {
     expect(t.categoryId, cats.last.id);
   });
 
+  test('Gleichnamige Kategorien werden zusammengeführt', () {
+    // Wie nach dem ersten Abgleich zweier Geräte: „Hausübung“ gibt es doppelt.
+    store.addCategory(name: 'hausübung ', color: '#000000', offset: 0);
+    final dup = store.categories.firstWhere((c) => c.name == 'hausübung ');
+    final t = store.addTask(title: 't', categoryId: dup.id, dueDate: today(), dueTime: null, subs: const []);
+    final keep = [dup, store.categories.first]..sort((a, b) => a.id.compareTo(b.id));
+
+    store.mergeDuplicateCategories();
+    expect(store.categories, hasLength(2));
+    expect(store.categories.where((c) => c.id == keep.first.id), hasLength(1));
+    expect(t.categoryId, keep.first.id);
+  });
+
   test('Gewohnheiten: alle abhaken und Serie', () {
     store.addHabit(name: 'Wasser', color: '#3D9BE9');
     store.addHabit(name: 'Lesen', color: '#F5B83D');

@@ -362,6 +362,29 @@ class Store extends ChangeNotifier {
     );
   }
 
+  /// Führt Kategorien mit gleichem Namen zusammen (z. B. die Standard-Kategorien zweier
+  /// Geräte nach dem ersten Abgleich). Behalten wird die mit der kleinsten ID – so
+  /// entscheiden alle Geräte gleich und löschen nie beide.
+  void mergeDuplicateCategories() {
+    final byName = <String, List<TaskCategory>>{};
+    for (final c in categories) {
+      (byName[c.name.trim().toLowerCase()] ??= []).add(c);
+    }
+    var changed = false;
+    for (final group in byName.values.where((g) => g.length > 1)) {
+      group.sort((a, b) => a.id.compareTo(b.id));
+      final keep = group.first;
+      for (final dup in group.skip(1)) {
+        for (final t in _tasks.values.where((t) => t.categoryId == dup.id).toList()) {
+          _put(tasksTable, t..categoryId = keep.id);
+        }
+        _put(categoriesTable, dup..deleted = true);
+        changed = true;
+      }
+    }
+    if (changed) _changed();
+  }
+
   int openCount(String catId) => tasks.where((t) => t.categoryId == catId && !t.done).length;
 
   // Gewohnheiten

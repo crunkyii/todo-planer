@@ -89,11 +89,20 @@ class AppServices extends ChangeNotifier {
     }
     // Nicht darauf warten, damit der Start bei langsamem Netz nicht hängt. Standard-
     // Kategorien erst nach dem ersten Abgleich – sonst entstehen sie auf jedem Gerät doppelt.
+    _firstSyncDone = false;
     unawaited(sync.attach().then(
-      (_) => _ensureDefaults(),
+      (_) {
+        _firstSyncDone = true;
+        // Gleichnamige Kategorien (z. B. Standard-Kategorien von zwei Geräten) zusammenführen.
+        store.mergeDuplicateCategories();
+        _ensureDefaults();
+      },
       onError: (Object e) => debugPrint('Abgleich nach dem Anmelden fehlgeschlagen: ${e.runtimeType}'),
     ));
   }
+
+  /// Erst nach dem ersten Abgleich wissen wir, ob das Konto schon Kategorien hat.
+  bool _firstSyncDone = false;
 
   /// Die App braucht mindestens eine Kategorie. Beim allerersten Start werden die
   /// Standard-Kategorien in der gewählten Sprache angelegt (danach sind es eigene Einträge).
@@ -113,8 +122,15 @@ class AppServices extends ChangeNotifier {
     final changed = _l?.localeName != l.localeName;
     _l = l;
     reminders.setTexts(channelName: l.notifChannelName, channelDesc: l.notifChannelDesc);
-    if (settings.syncMode == SyncMode.local || (signedIn && !sync.syncing)) _ensureDefaults();
+    if (settings.syncMode == SyncMode.local || (signedIn && _firstSyncDone)) _ensureDefaults();
     if (changed) _scheduleReminders();
+  }
+
+  /// Die App braucht mindestens eine Kategorie, um eine Aufgabe anzulegen – notfalls
+  /// sofort (auch vor dem ersten Abgleich; Doppelte werden danach zusammengeführt).
+  void ensureCategoriesNow(AppLocalizations l) {
+    _l = l;
+    _ensureDefaults();
   }
 
   Future<void> chooseLocal() async {
