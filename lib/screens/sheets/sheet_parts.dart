@@ -77,8 +77,19 @@ class SheetActions extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          if (onDelete != null) AppButton(label: l.delete, icon: Ic.trash, kind: BtnKind.danger, onTap: onDelete),
-          const Spacer(),
+          // Auf schmalen Handys passen die drei Knöpfe nicht nebeneinander: Dann wird nur
+          // „Löschen“ etwas kleiner, Abbrechen und Speichern bleiben ganz.
+          Expanded(
+            child: onDelete == null
+                ? const SizedBox()
+                : Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: AppButton(label: l.delete, icon: Ic.trash, kind: BtnKind.danger, onTap: onDelete),
+                    ),
+                  ),
+          ),
           AppButton(label: l.cancel, kind: BtnKind.text, onTap: () => Navigator.pop(context)),
           const SizedBox(width: 8),
           AppButton(label: l.save, onTap: onSave),

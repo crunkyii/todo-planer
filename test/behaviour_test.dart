@@ -70,6 +70,21 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Kategorie bearbeiten: Löschen, Abbrechen und Speichern passen auf ein schmales Handy', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      app.store
+        ..addCategory(name: 'Termin', color: '#AABBCC', offset: 0)
+        ..addCategory(name: 'Test', color: '#AABBCC', offset: 0);
+      await pumpApp(tester, app, size: const Size(340, 760));
+      await _tap(tester, find.bySemanticsLabel(l.settings).last);
+      await _tap(tester, find.textContaining(l.categories).first);
+      await _tap(tester, find.text('Termin').first);
+      expect(find.text(l.save), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
     testWidgets('Notiz: Symbol öffnet das Feld, die Karte zeigt den Anfang, die Suche findet sie', (tester) async {
       final l = l10n('de');
       final app = await makeServices();
