@@ -665,9 +665,7 @@ class Store extends ChangeNotifier {
     if (rows.isEmpty) return;
     final accepted = <Map<String, Object?>>[];
     for (final r in rows) {
-      final updated = DateTime.parse(r['updated_at'] as String).toUtc();
-      final existing = _existingUpdatedAt(t, r);
-      if (existing != null && !updated.isAfter(existing)) continue;
+      if (!isNews(t, r)) continue;
       final row = {for (final k in t.columns.keys) k: r[k]};
       accepted.add(row);
       _ingest(t, row);
@@ -676,6 +674,14 @@ class Store extends ChangeNotifier {
     await db.putAll(t, accepted, dirty: false);
     _attachSubs();
     notifyListeners();
+  }
+
+  /// Ob die Server-Zeile [r] etwas Neues bringt: `false`, wenn hier schon derselbe oder ein
+  /// neuerer Stand liegt – so auch beim Echo des eigenen Uploads über Realtime.
+  bool isNews(TableSpec t, Map<String, Object?> r) {
+    final updated = DateTime.parse(r['updated_at'] as String).toUtc();
+    final existing = _existingUpdatedAt(t, r);
+    return existing == null || updated.isAfter(existing);
   }
 
   DateTime? _existingUpdatedAt(TableSpec t, Map<String, Object?> r) => switch (t.name) {

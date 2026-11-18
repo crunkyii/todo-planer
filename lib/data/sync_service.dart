@@ -99,12 +99,25 @@ class SyncService extends ChangeNotifier {
     await _channel?.unsubscribe();
     _channel = cloud.client
         .channel('todo-sync')
-        .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', callback: (_) => schedule(remote: true))
+        .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', callback: _onRemoteChange)
         // Nach jedem (Neu-)Verbinden des Kanals nachholen, was in der Zwischenzeit passiert ist.
         .subscribe((status, _) {
           if (status == RealtimeSubscribeStatus.subscribed) schedule(remote: true);
         });
     await sync();
+  }
+
+  /// Realtime meldet jede Änderung – auch den eigenen Upload. Abgeglichen wird nur, wenn die
+  /// Zeile hier fehlt oder älter ist; sonst liefe nach jeder eigenen Änderung ein zweiter
+  /// voller Durchgang. Im Zweifel (unbekannte Tabelle, unlesbare Zeile) wird abgeglichen.
+  void _onRemoteChange(PostgresChangePayload change) {
+    try {
+      final table = syncTables.where((t) => t.name == change.table).firstOrNull;
+      if (table != null && change.newRecord.isNotEmpty && !store.isNews(table, change.newRecord)) return;
+    } on Object {
+      // Zeile ohne lesbaren Zeitstempel: lieber einmal zu oft abgleichen.
+    }
+    schedule(remote: true);
   }
 
   Future<void> detach() async {

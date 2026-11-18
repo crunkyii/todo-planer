@@ -174,6 +174,14 @@ void main() {
     expect(store.taskById(t.id)!.title, 'vom Handy');
   });
 
+  test('isNews: Echo des eigenen Uploads ist nichts Neues, ein späterer Stand schon', () {
+    final t = add('eigene');
+    expect(store.isNews(tasksTable, t.toJson()), isFalse);
+    final later = {...t.toJson(), 'updated_at': t.updatedAt.add(const Duration(seconds: 1)).toIso8601String()};
+    expect(store.isNews(tasksTable, later), isTrue);
+    expect(store.isNews(tasksTable, {...t.toJson(), 'id': 'unbekannt'}), isTrue);
+  });
+
   test('Warteschlange: markClean nur bei unverändertem Stand', () async {
     final t = add('sync');
     await store.refreshPending();
