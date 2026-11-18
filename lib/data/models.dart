@@ -18,7 +18,7 @@ String newId() {
   return '${h.substring(0, 8)}-${h.substring(8, 12)}-${h.substring(12, 16)}-${h.substring(16, 20)}-${h.substring(20)}';
 }
 
-DateTime nowUtc() => DateTime.now().toUtc();
+DateTime nowUtc() => clock().toUtc();
 
 bool _b(Object? v) => v == true || v == 1;
 DateTime _t(Object? v) => DateTime.parse(v as String).toUtc();
