@@ -1442,5 +1442,53 @@ void main() {
       expect(find.textContaining('online'), findsOneWidget);
       await finishApp(tester, app);
     });
+    testWidgets('Ältere erledigte Aufgaben: online ein Knopf zum Nachladen, offline ein Hinweis', (tester) async {
+      final l = l10n('de');
+      final conn = FakeConnectivity();
+      final app = await makeServices(
+        syncMode: 'cloud',
+        cloudConfig: true,
+        cloud: FakeCloud('http://localhost:1'),
+        sync: (store, settings, c) => SyncService(store: store, settings: settings, cloud: c, connectivity: conn),
+      );
+      await app.sync.start();
+      seedDemo(app.store, l);
+      // Wie beim Abruf vom Server: eine vor zehn Tagen abgehakte Aufgabe, die nicht am Gerät liegt.
+      final at = nowUtc().subtract(const Duration(days: 10));
+      final old = Task(
+        id: newId(),
+        title: 'Lange her',
+        categoryId: app.store.categories.first.id,
+        dueDate: today(),
+        dueTime: null,
+        done: true,
+        doneAt: at,
+        createdAt: at,
+        updatedAt: at,
+      );
+      await tester.runAsync(() => app.store.applyRemote(tasksTable, [old.toJson()]));
+      await pumpApp(tester, app);
+
+      expect(find.text('Lange her'), findsNothing);
+      // „Erledigt“ ist zugeklappt: Der Knopf steht erst da, wenn man den Abschnitt aufmacht.
+      expect(find.text(l.olderDoneLoad(1)), findsNothing);
+      final head = find.bySemanticsLabel(l.sectionCount(l.done, app.store.tasks.where((t) => t.done).length));
+      await tester.scrollUntilVisible(head, 300, scrollable: find.byType(Scrollable).last);
+      await _tap(tester, head);
+      await tester.scrollUntilVisible(find.text(l.olderDoneLoad(1)), 300, scrollable: find.byType(Scrollable).last);
+      expect(find.bySemanticsLabel(l.olderDoneLoad(1)), findsOneWidget);
+
+      conn.set(false);
+      await tester.pumpAndSettle();
+      expect(find.text(l.olderDoneOffline(1)), findsOneWidget);
+      expect(find.text(l.olderDoneLoad(1)), findsNothing);
+
+      // Im Kalender steht der Hinweis beim Abgabetag.
+      await tester.pump(const Duration(seconds: 6));
+      await goTab(tester, l.navCalendar);
+      await tester.scrollUntilVisible(find.text(l.olderDoneOffline(1)), 300, scrollable: find.byType(Scrollable).last);
+      expect(find.text(l.olderDoneOffline(1)), findsOneWidget);
+      await finishApp(tester, app);
+    });
   });
 }

@@ -800,5 +800,30 @@
   "updateInstalling": "Wird installiert – die App startet gleich neu",
   "updateFailed": "Das hat nicht geklappt – hier klicken, um es noch einmal zu versuchen",
   "langDe": "Deutsch",
-  "langEn": "English"
+  "langEn": "English",
+  "olderDoneLoad": "{count, plural, =1{1 ältere erledigte Aufgabe laden} other{{count} ältere erledigte Aufgaben laden}}",
+  "@olderDoneLoad": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "olderDoneOffline": "{count, plural, =1{1 ältere erledigte Aufgabe ist nur online sichtbar} other{{count} ältere erledigte Aufgaben sind nur online sichtbar}}",
+  "@olderDoneOffline": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "olderDoneFailed": "Ältere Aufgaben konnten nicht geladen werden",
+  "exportOlderMissing": "{count, plural, =1{Ohne 1 ältere erledigte Aufgabe – die gibt es nur online} other{Ohne {count} ältere erledigte Aufgaben – die gibt es nur online}}",
+  "@exportOlderMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -2143,6 +2143,30 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'English'**
   String get langEn;
+
+  /// No description provided for @olderDoneLoad.
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 ältere erledigte Aufgabe laden} other{{count} ältere erledigte Aufgaben laden}}'**
+  String olderDoneLoad(int count);
+
+  /// No description provided for @olderDoneOffline.
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 ältere erledigte Aufgabe ist nur online sichtbar} other{{count} ältere erledigte Aufgaben sind nur online sichtbar}}'**
+  String olderDoneOffline(int count);
+
+  /// No description provided for @olderDoneFailed.
+  ///
+  /// In de, this message translates to:
+  /// **'Ältere Aufgaben konnten nicht geladen werden'**
+  String get olderDoneFailed;
+
+  /// No description provided for @exportOlderMissing.
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{Ohne 1 ältere erledigte Aufgabe – die gibt es nur online} other{Ohne {count} ältere erledigte Aufgaben – die gibt es nur online}}'**
+  String exportOlderMissing(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

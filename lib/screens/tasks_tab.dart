@@ -9,6 +9,7 @@ import '../widgets/app_icon.dart';
 import '../widgets/overlays.dart';
 import '../widgets/layout.dart';
 import '../widgets/ui.dart';
+import 'older_done.dart';
 import 'task_card.dart';
 import 'ui_state.dart';
 
@@ -273,7 +274,7 @@ class _TaskList extends StatelessWidget {
     final filter = ui.filterIn(store.categories);
     final now = clock();
     final all = filterTasks(
-      store.tasks,
+      store.tasksWithOlder,
       filter: filter == filterHabits ? filterAll : filter,
       hideDone: ui.hideDone,
       search: ui.search,
@@ -291,9 +292,13 @@ class _TaskList extends StatelessWidget {
       if (showHabits) ...[const SizedBox(height: 8), HabitsTaskCard(ui: ui)],
     ];
     TaskCard card(Task t) => TaskCard(key: ValueKey(t.id), task: t, ui: ui);
+    // Ältere erledigte liegen nur online: Knopf zum Nachladen bzw. Hinweis am Ende der Liste –
+    // außer der Abschnitt „Erledigt“ ist zugeklappt oder Erledigte sind ausgeblendet.
+    final olderCat = filter == filterAll || filter == filterHabits ? null : filter;
+    var showOlder = filter != filterHabits && !ui.hideDone && store.olderWaiting(categoryId: olderCat) > 0;
 
     if (filter != filterHabits) {
-      if (list.isEmpty) {
+      if (list.isEmpty && !showOlder) {
         children.add(EmptyState(icon: searching ? Ic.search : Ic.tasks, text: searching ? l.nothingFound : l.noTasks));
       } else if (ui.search != null || ui.sort == SortMode.name) {
         if (ui.sort == SortMode.name) {
@@ -332,10 +337,12 @@ class _TaskList extends StatelessWidget {
         };
         for (final s in Section.values) {
           var items = list.where((t) => sectionOf(t, off(t), now: now) == s).toList();
-          if (items.isEmpty) continue;
+          // „Erledigt“ steht auch leer da, solange es ältere zum Nachladen gibt.
+          if (items.isEmpty && !(s == Section.done && showOlder)) continue;
           if (s == Section.done) items = items.reversed.toList();
           final id = s.name;
           final open = !ui.collapsed.contains(id);
+          if (s == Section.done && !open) showOlder = false;
           children.add(
             SectionHead(
               label: labels[s]!,
@@ -361,6 +368,7 @@ class _TaskList extends StatelessWidget {
         ),
       );
     }
+    if (showOlder) children.add(OlderDoneHint(categoryId: olderCat));
     return ListView(
       padding: EdgeInsets.only(bottom: ShellLayout.bottomOf(context)),
       children: children,

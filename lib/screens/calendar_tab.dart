@@ -10,6 +10,7 @@ import '../widgets/pickers.dart';
 import '../widgets/swipe.dart';
 import '../widgets/layout.dart';
 import '../widgets/ui.dart';
+import 'older_done.dart';
 import 'task_card.dart';
 import 'ui_state.dart';
 
@@ -30,7 +31,7 @@ class CalendarTab extends StatelessWidget {
         final f = Fmt.of(context);
         final m = ui.calMonth;
         final sel = ui.calSel;
-        final tasks = store.tasks;
+        final tasks = store.tasksWithOlder;
         final selHoliday = holidayOn(sel);
         final selTasks = tasks.where((t) => sameDay(t.dueDate, sel)).toList()..sort((a, b) => a.due.compareTo(b.due));
 
@@ -152,6 +153,7 @@ class CalendarTab extends StatelessWidget {
                 )
               else
                 for (final t in selTasks) TaskCard(key: ValueKey(t.id), task: t, ui: ui),
+              OlderDoneHint(dueDay: isoDate(sel)),
             ];
             final bottom = EdgeInsets.only(bottom: ShellLayout.bottomOf(context));
             if (!wide) return ListView(padding: bottom, children: [...month, ...day]);

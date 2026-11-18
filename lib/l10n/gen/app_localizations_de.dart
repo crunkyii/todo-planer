@@ -1184,4 +1184,40 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get langEn => 'English';
+
+  @override
+  String olderDoneLoad(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ältere erledigte Aufgaben laden',
+      one: '1 ältere erledigte Aufgabe laden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String olderDoneOffline(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ältere erledigte Aufgaben sind nur online sichtbar',
+      one: '1 ältere erledigte Aufgabe ist nur online sichtbar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get olderDoneFailed => 'Ältere Aufgaben konnten nicht geladen werden';
+
+  @override
+  String exportOlderMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ohne $count ältere erledigte Aufgaben – die gibt es nur online',
+      one: 'Ohne 1 ältere erledigte Aufgabe – die gibt es nur online',
+    );
+    return '$_temp0';
+  }
 }

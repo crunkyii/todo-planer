@@ -341,5 +341,9 @@
   "updateInstalling": "Installing – the app will restart shortly",
   "updateFailed": "That did not work – click here to try again",
   "langDe": "Deutsch",
-  "langEn": "English"
+  "langEn": "English",
+  "olderDoneLoad": "{count, plural, =1{Load 1 older completed task} other{Load {count} older completed tasks}}",
+  "olderDoneOffline": "{count, plural, =1{1 older completed task is only visible online} other{{count} older completed tasks are only visible online}}",
+  "olderDoneFailed": "Could not load older tasks",
+  "exportOlderMissing": "{count, plural, =1{Without 1 older completed task – only available online} other{Without {count} older completed tasks – only available online}}"
 }
