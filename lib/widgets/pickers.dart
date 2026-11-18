@@ -334,6 +334,7 @@ class DayCell extends StatelessWidget {
     this.circle = 34,
     this.below,
     this.semanticLabel,
+    this.holiday = false,
   });
   final DateTime day;
   final bool other;
@@ -344,11 +345,14 @@ class DayCell extends StatelessWidget {
   final Widget? below;
   final String? semanticLabel;
 
+  /// Feiertag: Die Zahl ist rot (wie im Wandkalender).
+  final bool holiday;
+
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
     final isToday = sameDay(day, clock());
-    final numColor = selected ? tok.onP : (isToday ? tok.p : tok.text);
+    final numColor = selected ? tok.onP : (holiday ? tok.err : (isToday ? tok.p : tok.text));
     final cellBody = SizedBox(
       height: height,
       child: Opacity(
@@ -370,7 +374,8 @@ class DayCell extends StatelessWidget {
                 '${day.day}',
                 style: TextStyle(
                   fontSize: 14,
-                  color: other && !selected ? tok.sub : numColor,
+                  color: other && !selected && !holiday ? tok.sub : numColor,
+                  fontWeight: holiday ? FontWeight.w600 : null,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),

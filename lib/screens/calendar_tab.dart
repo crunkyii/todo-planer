@@ -4,6 +4,7 @@ import '../app_services.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
+import '../util/holidays.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pickers.dart';
 import '../widgets/swipe.dart';
@@ -29,6 +30,7 @@ class CalendarTab extends StatelessWidget {
         final m = ui.calMonth;
         final sel = ui.calSel;
         final tasks = store.tasks;
+        final selHoliday = holidayOn(sel);
         final selTasks = tasks.where((t) => sameDay(t.dueDate, sel)).toList()..sort((a, b) => a.due.compareTo(b.due));
 
         // Ein Durchlauf: offene Kategorien je Tag (statt pro Zelle alle Aufgaben zu durchsuchen).
@@ -95,11 +97,13 @@ class CalendarTab extends StatelessWidget {
                 month: m,
                 cell: (d, other) {
                   final isSel = sameDay(d, sel);
+                  final holiday = holidayOn(d);
                   return DayCell(
                     day: d,
                     other: other,
                     selected: isSel,
-                    semanticLabel: f.dayMonth(d),
+                    holiday: holiday != null,
+                    semanticLabel: holiday == null ? f.dayMonth(d) : '${f.dayMonth(d)}, ${holidayName(l, holiday)}',
                     below: dots(d, isSel),
                     onTap: () => ui.set((s) {
                       s.calSel = d;
@@ -115,12 +119,25 @@ class CalendarTab extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: tok.lineSoft)),
               ),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  f.longDate(sel),
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: tok.text),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      f.longDate(sel),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: tok.text),
+                    ),
+                  ),
+                  if (selHoliday != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        l.holidayLine(holidayName(l, selHoliday)),
+                        style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: tok.err),
+                      ),
+                    ),
+                ],
               ),
             ),
             if (selTasks.isEmpty)
