@@ -1168,7 +1168,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateInstalling => 'Installing – the app will restart shortly';
 
   @override
-  String get updateFailed => 'Update failed – tap to try again';
+  String get updateFailed => 'That did not work – click here to try again';
 
   @override
   String get langDe => 'Deutsch';

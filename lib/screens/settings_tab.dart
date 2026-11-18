@@ -204,7 +204,7 @@ class _UpdateRow extends StatelessWidget {
       child: SetRow(
         title: l.updates,
         subtitle: status,
-        onTap: updater.busy || available ? null : updater.check,
+        onTap: updater.busy || available ? null : () => updater.check(),
         trailing: available ? AppButton(label: l.updateInstall, kind: BtnKind.tonal, onTap: updater.install) : null,
       ),
     );

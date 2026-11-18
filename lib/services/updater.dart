@@ -25,7 +25,7 @@ class Updater extends ChangeNotifier {
   }) : _client = client ?? http.Client(),
        _manifestUrl = manifestUrl ?? latestManifestUrl,
        _publicKey = SimplePublicKey(base64Decode(publicKey), type: KeyPairType.ed25519),
-       _tempDir = tempDir ?? (() => Directory.systemTemp.createTemp('todo-planer-update-')),
+       _tempDir = tempDir ?? (() => Directory.systemTemp.createTemp(_tempPrefix)),
        _launch = launch ?? _runInstaller;
 
   /// Updater für dieses Gerät. Nur die mit dem Installer installierte Windows-App aktualisiert sich
@@ -34,7 +34,23 @@ class Updater extends ChangeNotifier {
     final exe = File(Platform.resolvedExecutable);
     final installed =
         Platform.isWindows && File('${exe.parent.path}${Platform.pathSeparator}unins000.exe').existsSync();
+    if (installed) _removeOldDownloads();
     return Updater(currentVersion: currentVersion, supported: installed);
+  }
+
+  static const _tempPrefix = 'todo-planer-update-';
+
+  /// Räumt die Installer früherer Updates weg (sie liegen nach dem Neustart noch im Temp-Ordner).
+  static void _removeOldDownloads() {
+    try {
+      for (final e in Directory.systemTemp.listSync()) {
+        if (e is Directory && e.uri.pathSegments.lastWhere((s) => s.isNotEmpty).startsWith(_tempPrefix)) {
+          e.deleteSync(recursive: true);
+        }
+      }
+    } on FileSystemException {
+      // Gesperrt oder schon weg – dann eben beim nächsten Start.
+    }
   }
 
   /// Größer wird weder `latest.json` noch der Installer angenommen.
@@ -63,13 +79,18 @@ class Updater extends ChangeNotifier {
 
   bool get busy => state == UpdateState.checking || state == UpdateState.downloading || state == UpdateState.installing;
 
+  bool _disposed = false;
+
   void _set(UpdateState s) {
+    // Eine Antwort kann noch eintreffen, nachdem die App geschlossen wurde.
+    if (_disposed) return;
     state = s;
     notifyListeners();
   }
 
-  /// Fragt nach einer neueren Version. Fehler (offline, kaputte Datei) enden in [UpdateState.failed].
-  Future<void> check() async {
+  /// Fragt nach einer neueren Version. Fehler (offline, kaputte Datei) enden in [UpdateState.failed] –
+  /// bei [silent] (Prüfung von selbst beim Start) ohne Meldung wieder in [UpdateState.idle].
+  Future<void> check({bool silent = false}) async {
     if (!supported || busy) return;
     _set(UpdateState.checking);
     try {
@@ -84,7 +105,7 @@ class Updater extends ChangeNotifier {
       }
     } on Object catch (e) {
       debugPrint('Update-Prüfung fehlgeschlagen: ${e.runtimeType}');
-      _set(UpdateState.failed);
+      _set(silent ? UpdateState.idle : UpdateState.failed);
     }
   }
 
@@ -118,7 +139,7 @@ class Updater extends ChangeNotifier {
     // Nur ganze Prozent melden, sonst zeichnet die Oberfläche bei jedem Datenpaket neu.
     if ((p * 100).floor() == (progress * 100).floor()) return;
     progress = p;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   /// Lädt [url] in den Speicher und bricht ab, sobald mehr als [limit] Bytes kommen.
@@ -148,6 +169,7 @@ class Updater extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _client.close();
     super.dispose();
   }

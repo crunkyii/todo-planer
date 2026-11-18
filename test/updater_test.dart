@@ -71,6 +71,9 @@ void main() {
       expect(isNewer('1.2.x', '1.0.0'), isFalse);
       expect(isNewer('9.9.9', 'unbekannt'), isFalse);
       expect(parseVersion('1.-2.3'), isNull);
+      expect(parseVersion(r'1.2.3+..\x'), isNull);
+      expect(parseVersion('1.2.3\n'), isNull);
+      expect(parseVersion('1.2.3+4'), [1, 2, 3]);
     });
   });
 
@@ -83,6 +86,12 @@ void main() {
         'http://github.com/crunkyii/todo-planer/releases/download/v1/setup.exe',
         'https://github.com/crunkyii/todo-planer/releases/download/../../../other/setup.exe',
         'https://github.com/crunkyii/todo-planer-evil/releases/download/v1/setup.exe',
+        // „%2e%2e“ löst Uri.parse zu „..“ auf – der Pfad landet dann in einem fremden Repository.
+        '$releaseDownloadBase%2e%2e/%2e%2e/%2e%2e/%2e%2e/evil/repo/releases/download/v1/setup.exe',
+        '${releaseDownloadBase}v1/setup.exe?x=1',
+        '${releaseDownloadBase}v1/setup.exe#x',
+        'https://github.com:444/crunkyii/todo-planer/releases/download/v1/setup.exe',
+        'https://github.com@evil.test/crunkyii/todo-planer/releases/download/v1/setup.exe',
       ]) {
         expect(
           () => UpdateManifest.parse(jsonEncode({'version': '1.1.0', 'url': url, 'signature': sig})),
@@ -136,6 +145,28 @@ void main() {
       await t.updater.install();
       expect(t.requests, isEmpty);
       expect(t.updater.state, UpdateState.idle);
+    });
+
+    test('Prüfung von selbst beim Start scheitert leise', () async {
+      final t = _make();
+      await t.updater.check(silent: true);
+      expect(t.updater.state, UpdateState.idle);
+    });
+
+    test('Antwort nach dem Schließen der App wirft nicht', () async {
+      final t = _make(manifest: await _manifestBody());
+      final running = t.updater.check();
+      t.updater.dispose();
+      await running;
+    });
+
+    test('nach einem Fehler geht es beim nächsten Versuch weiter', () async {
+      final t = _make(manifest: await _manifestBody(), installer: utf8.encode('kaputt'));
+      await t.updater.check();
+      await t.updater.install();
+      expect(t.updater.state, UpdateState.failed);
+      await t.updater.check();
+      expect(t.updater.state, UpdateState.available);
     });
 
     test('zu große latest.json wird abgebrochen', () async {

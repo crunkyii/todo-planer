@@ -1177,7 +1177,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get updateInstalling => 'Wird installiert – die App startet gleich neu';
 
   @override
-  String get updateFailed => 'Update fehlgeschlagen – tippen, um es noch einmal zu versuchen';
+  String get updateFailed => 'Das hat nicht geklappt – hier klicken, um es noch einmal zu versuchen';
 
   @override
   String get langDe => 'Deutsch';

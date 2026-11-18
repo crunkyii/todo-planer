@@ -339,7 +339,7 @@
   "updateInstall": "Install",
   "updateDownloading": "Downloading … {percent} %",
   "updateInstalling": "Installing – the app will restart shortly",
-  "updateFailed": "Update failed – tap to try again",
+  "updateFailed": "That did not work – click here to try again",
   "langDe": "Deutsch",
   "langEn": "English"
 }

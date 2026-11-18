@@ -798,7 +798,7 @@
     }
   },
   "updateInstalling": "Wird installiert – die App startet gleich neu",
-  "updateFailed": "Update fehlgeschlagen – tippen, um es noch einmal zu versuchen",
+  "updateFailed": "Das hat nicht geklappt – hier klicken, um es noch einmal zu versuchen",
   "langDe": "Deutsch",
   "langEn": "English"
 }

@@ -2,7 +2,7 @@
 //
 //   dart run tool/release/sign.dart keygen
 //       Erzeugt einmalig das Schlüsselpaar. Der private Schlüssel landet außerhalb des Repos
-//       (siehe [keyFile]), der öffentliche wird ausgegeben und gehört in `lib/services/updater.dart`.
+//       (siehe [keyFile]), der öffentliche wird ausgegeben und gehört in `lib/services/update_manifest.dart`.
 //
 //   dart run tool/release/sign.dart sign <installer.exe> <version>
 //       Schreibt `latest.json` neben den Installer.
@@ -54,6 +54,11 @@ Future<void> _sign(String installerPath, String version) async {
   final name = installer.uri.pathSegments.last;
   final hash = await Sha256().hash(installer.readAsBytesSync());
   final pair = await _loadKey();
+  // Mit einem anderen Schlüssel als dem in der App würde jede installierte App das Update ablehnen.
+  final public = base64Encode((await pair.extractPublicKey()).bytes);
+  if (public != updatePublicKey) {
+    throw StateError('Der Schlüssel passt nicht zu updatePublicKey in lib/services/update_manifest.dart.');
+  }
   final signature = await _ed.sign(signedMessage(version, hash.bytes), keyPair: pair);
   final manifest = {
     'version': version,
@@ -61,9 +66,11 @@ Future<void> _sign(String installerPath, String version) async {
     'signature': base64Encode(signature.bytes),
   };
   final out = File('${installer.parent.path}${Platform.pathSeparator}latest.json');
-  out.writeAsStringSync('${const JsonEncoder.withIndent('  ').convert(manifest)}\n');
+  final body = '${const JsonEncoder.withIndent('  ').convert(manifest)}\n';
+  // So liest sie auch die App – was hier nicht durchgeht, käme dort nie an.
+  UpdateManifest.parse(body);
+  out.writeAsStringSync(body);
   stdout.writeln('Geschrieben: ${out.path}');
-  stdout.writeln('Öffentlicher Schlüssel: ${base64Encode((await pair.extractPublicKey()).bytes)}');
 }
 
 Future<void> main(List<String> args) async {

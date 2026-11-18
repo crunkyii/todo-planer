@@ -2129,7 +2129,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateFailed.
   ///
   /// In de, this message translates to:
-  /// **'Update fehlgeschlagen – tippen, um es noch einmal zu versuchen'**
+  /// **'Das hat nicht geklappt – hier klicken, um es noch einmal zu versuchen'**
   String get updateFailed;
 
   /// No description provided for @langDe.

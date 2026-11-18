@@ -92,7 +92,7 @@ class AppServices extends ChangeNotifier {
 
   /// Startet Supabase, falls eine Datenbank eingerichtet ist.
   Future<void> boot() async {
-    unawaited(updater?.check());
+    unawaited(updater?.check(silent: true));
     await sync.start();
     if (settings.syncMode == SyncMode.cloud && settings.cloud != null) {
       try {

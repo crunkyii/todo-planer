@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 /// Nur von hier lädt die App Updates: die Release-Dateien dieses Projekts auf GitHub.
-const releaseDownloadBase = 'https://github.com/crunkyii/todo-planer/releases/download/';
+const releaseDownloadBase = 'https://github.com$_releasePath';
+const _releasePath = '/crunkyii/todo-planer/releases/download/';
 
 /// Die Datei, die immer auf die neueste Version zeigt (liegt an jedem Release).
 final latestManifestUrl = Uri.parse('https://github.com/crunkyii/todo-planer/releases/latest/download/latest.json');
@@ -12,10 +13,9 @@ const updatePublicKey = 'V1d6vuvYDMZgex4hxbgqzKApaL5rHfgQSnz2nsRy08Q=';
 
 /// „1.2.3“ (auch „1.2.3+4“) als Zahlenliste; `null`, wenn es keine solche Version ist.
 List<int>? parseVersion(String v) {
-  final parts = v.split('+').first.split('.');
-  if (parts.length != 3) return null;
-  final nums = [for (final p in parts) RegExp(r'^\d{1,6}$').hasMatch(p) ? int.parse(p) : null];
-  return nums.contains(null) ? null : nums.cast<int>();
+  final m = RegExp(r'^(\d{1,6})\.(\d{1,6})\.(\d{1,6})(\+\d{1,9})?$').firstMatch(v);
+  if (m == null) return null;
+  return [for (var i = 1; i <= 3; i++) int.parse(m[i]!)];
 }
 
 /// Ist [candidate] neuer als [current]? Unlesbare Versionen gelten nie als neuer.
@@ -47,13 +47,23 @@ class UpdateManifest {
     if (j is! Map) throw const FormatException('latest.json: kein Objekt');
     final version = j['version'], url = j['url'], signature = j['signature'];
     if (version is! String || parseVersion(version) == null) throw const FormatException('latest.json: Version');
-    // Nur die eigene Release-Seite, nur https, kein „..“ im Pfad.
-    if (url is! String || !url.startsWith(releaseDownloadBase) || url.contains('..')) {
+    if (url is! String) throw const FormatException('latest.json: Adresse');
+    // Erst zerlegen, dann prüfen: `Uri.parse` löst „..“ und „%2e%2e“ schon auf, ein Vergleich am
+    // Text würde das übersehen. Erlaubt ist nur die eigene Release-Seite über https.
+    final uri = Uri.tryParse(url);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host != 'github.com' ||
+        uri.hasPort ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        !uri.path.startsWith(_releasePath)) {
       throw const FormatException('latest.json: Adresse');
     }
     if (signature is! String) throw const FormatException('latest.json: Signatur');
     final sig = base64Decode(signature);
     if (sig.length != 64) throw const FormatException('latest.json: Signatur');
-    return UpdateManifest(version: version, url: Uri.parse(url), signature: sig);
+    return UpdateManifest(version: version, url: uri, signature: sig);
   }
 }
