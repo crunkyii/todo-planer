@@ -136,7 +136,10 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
         child: child,
       );
     }
+    // Tippen und Fokus meldet nur das Semantics-Widget unten. Sonst entsteht für
+    // Screenreader ein zweiter antippbarer Knoten ohne Beschriftung.
     child = GestureDetector(
+      excludeFromSemantics: true,
       behavior: HitTestBehavior.opaque,
       onTapDown: _down,
       onTapUp: widget.onTap == null ? null : (_) => _release(),
@@ -146,6 +149,7 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
     );
     child = FocusableActionDetector(
       enabled: widget.onTap != null,
+      includeFocusSemantics: false,
       mouseCursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
       onShowFocusHighlight: (v) => setState(() => _focus = v),
       actions: {ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) => _activate())},
@@ -154,6 +158,7 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
     child = Semantics(
       button: true,
       enabled: widget.onTap != null,
+      focusable: widget.onTap != null,
       label: widget.semanticLabel,
       selected: widget.selected,
       toggled: widget.toggled,
@@ -161,7 +166,8 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
       onTap: widget.onTap,
       child: child,
     );
-    if (widget.tooltip != null) child = Tooltip(message: widget.tooltip!, child: child);
+    // Der Name steht schon im Semantics-Label; der Tooltip ist nur für Maus/Langdruck.
+    if (widget.tooltip != null) child = Tooltip(message: widget.tooltip!, excludeFromSemantics: true, child: child);
     return child;
   }
 }

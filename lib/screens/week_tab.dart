@@ -341,7 +341,9 @@ class _DayColumn extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth / lay.lanes;
+        // Nur für Finger/Maus: Für Screenreader und Tastatur gibt es den +-Knopf „Neuer Block“.
         return GestureDetector(
+          excludeFromSemantics: true,
           behavior: HitTestBehavior.opaque,
           onTapUp: (e) {
             final m = ((startMin + e.localPosition.dy / Sizes.hour * 60) / s.raster).floor() * s.raster;
