@@ -129,13 +129,17 @@ class _AppShellState extends State<AppShell> {
                         child: _PageSwitcher(ui: ui, child: _tab()),
                       ),
                     ),
+                    // Schlüssel: In den Optionen fehlt der Plus-Knopf. Ohne Schlüssel rückt die Leiste dann
+                    // auf seinen Platz, wird neu aufgebaut – und ihr Balken springt, statt zu gleiten.
                     if (fab != null)
                       Positioned(
+                        key: const ValueKey('fab'),
                         right: Sizes.fabRight,
                         bottom: (low ? 78 : Sizes.fabBottom) + mq.padding.bottom,
                         child: _Fab(label: fab.label, onTap: fab.onTap, size: low ? 54 : Sizes.fab),
                       ),
                     Positioned(
+                      key: const ValueKey('nav'),
                       left: Sizes.navGap,
                       right: Sizes.navGap,
                       bottom: (low ? 8 : Sizes.navGap) + mq.padding.bottom,

@@ -746,6 +746,27 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Der Balken in der Leiste gleitet auch zu den Optionen und zurück', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      double left() => tester.getTopLeft(find.byType(AnimatedPositioned)).dx;
+      final start = left();
+      for (final label in [l.settings, l.navTasks]) {
+        final from = left();
+        await tester.tap(find.bySemanticsLabel(label).last);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+        // Kurz nach dem Tippen ist er unterwegs – weder am alten noch schon am neuen Platz.
+        final moving = left();
+        await tester.pumpAndSettle();
+        expect(moving, isNot(closeTo(from, 1)), reason: label);
+        expect(moving, isNot(closeTo(left(), 1)), reason: label);
+      }
+      expect(left(), closeTo(start, 0.5));
+      await finishApp(tester, app);
+    });
+
     testWidgets('Raster, Tag beginnt/endet und Erinnerungen werden gespeichert', (tester) async {
       final l = l10n('de');
       final app = await makeServices();
