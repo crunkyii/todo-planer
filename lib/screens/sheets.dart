@@ -535,54 +535,61 @@ class _TaskSheetState extends State<_TaskSheet> {
           padding: const EdgeInsets.only(top: 10),
           child: Row(
             children: [
-              Flexible(
-                child: Pressable(
-                  onTap: () => setState(() => _catOpen = !_catOpen),
-                  semanticLabel: l.categoryLabel(cat.name),
-                  excludeChildSemantics: true,
-                  child: Container(
-                    height: 36,
-                    constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width <= 360 ? 112 : 150),
-                    padding: const EdgeInsets.fromLTRB(10, 0, 12, 0),
-                    margin: const EdgeInsets.only(right: 4),
-                    decoration: BoxDecoration(color: cc.ct, borderRadius: BorderRadius.circular(18)),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Dot(cc.c),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            cat.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cc.ci),
+              // Chip und Symbole in einer eigenen Reihe: So bekommt der Chip den ganzen freien
+              // Platz (bis zur Maximalbreite) und muss ihn nicht mit einem Spacer teilen.
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Pressable(
+                        onTap: () => setState(() => _catOpen = !_catOpen),
+                        semanticLabel: l.categoryLabel(cat.name),
+                        excludeChildSemantics: true,
+                        child: Container(
+                          height: 36,
+                          constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width <= 360 ? 112 : 150),
+                          padding: const EdgeInsets.fromLTRB(10, 0, 12, 0),
+                          margin: const EdgeInsets.only(right: 4),
+                          decoration: BoxDecoration(color: cc.ct, borderRadius: BorderRadius.circular(18)),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Dot(cc.c),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  cat.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cc.ci),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                    IconBtn(
+                      Ic.calendar,
+                      size: 22,
+                      label: l.dateAndTime,
+                      pressed: _dateOpen,
+                      onTap: () => setState(() => _dateOpen = !_dateOpen),
+                    ),
+                    IconBtn(
+                      Ic.subtasks,
+                      size: 22,
+                      label: l.subtasks,
+                      pressed: _subsOpen,
+                      onTap: () {
+                        setState(() => _subsOpen = !_subsOpen);
+                        if (_subsOpen && _subs.isEmpty) _addSub();
+                      },
+                    ),
+                    if (isEdit) IconBtn(Ic.trash, size: 22, label: l.deleteTask, onTap: _delete),
+                  ],
                 ),
               ),
-              IconBtn(
-                Ic.calendar,
-                size: 22,
-                label: l.dateAndTime,
-                pressed: _dateOpen,
-                onTap: () => setState(() => _dateOpen = !_dateOpen),
-              ),
-              IconBtn(
-                Ic.subtasks,
-                size: 22,
-                label: l.subtasks,
-                pressed: _subsOpen,
-                onTap: () {
-                  setState(() => _subsOpen = !_subsOpen);
-                  if (_subsOpen && _subs.isEmpty) _addSub();
-                },
-              ),
-              if (isEdit) IconBtn(Ic.trash, size: 22, label: l.deleteTask, onTap: _delete),
-              const Spacer(),
               Pressable(
                 onTap: _save,
                 semanticLabel: isEdit ? l.save : l.add,

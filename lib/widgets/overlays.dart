@@ -70,15 +70,17 @@ class AppSheetRoute<T> extends PopupRoute<T> {
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     final tok = context.tok;
     final mq = MediaQuery.of(context);
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: Sizes.maxWidth,
-          maxHeight: (mq.size.height - mq.viewInsets.bottom) * 0.88,
-        ),
-        child: Padding(
-          padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+    // Der Abstand für die Tastatur liegt AUSSEN: Innerhalb der Höhenbegrenzung würde er dem
+    // Sheet den Platz wegnehmen (auf kleinen Handys bliebe Höhe 0 – das Sheet wäre unsichtbar).
+    return Padding(
+      padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: Sizes.maxWidth,
+            maxHeight: (mq.size.height - mq.viewInsets.bottom) * 0.88,
+          ),
           child: Semantics(
             scopesRoute: true,
             namesRoute: true,
