@@ -160,6 +160,17 @@ Bildschirme (lib/screens)  →  AppServices  →  Store  →  LocalDb (SQLite am
 
 Der Weg einer Änderung, z. B. „Aufgabe abhaken“: Tipp → `Store.toggleTask` → Speicher + lokale Datenbank (als „noch hochzuladen“ markiert) → alle Bildschirme zeichnen neu → `SyncService` lädt die Zeile hoch → andere Geräte bekommen sie über Realtime.
 
+### Regeln für Änderungen am Code
+
+- UI-Import ist `package:material_ui/material_ui.dart` (nicht `flutter/material.dart`).
+- Farben, Radien, Größen und Kurven nur über [`lib/theme/tokens.dart`](lib/theme/tokens.dart) (`context.tok`, `Sizes`, `Fs`, `Motion`).
+- Alle sichtbaren Texte und Screenreader-Beschriftungen in `app_de.arb` **und** `app_en.arb`; Zugriff über `context.l`.
+- Datums- und Zeitformate über `Fmt.of(context)` ([`lib/util/fmt.dart`](lib/util/fmt.dart)).
+- Daten nur über `Store` ändern – der schreibt lokal, merkt die Änderung vor und stößt den Abgleich an.
+- drift ohne Codegen (rohes SQL in [`lib/data/local_db.dart`](lib/data/local_db.dart)) – kein `build_runner`.
+- Neue Spalten: `schemaVersion` erhöhen und in `onUpgrade` nachziehen; [`supabase/schema.sql`](supabase/schema.sql) muss in einem Rutsch und wiederholt ausführbar bleiben.
+- Klickbare Elemente über `Pressable` (Feder, Schimmer, Haptik, Fokus, Semantik).
+- Vor jedem Commit: `dart format -l 120 lib test`, `flutter analyze` ohne Meldungen, `flutter test` grün.
 
 ## Projektaufbau
 
@@ -179,3 +190,7 @@ Der Weg einer Änderung, z. B. „Aufgabe abhaken“: Tipp → `Store.toggleTask
 | `tool/icon/` | Quelle und Erzeuger des App-Symbols |
 
 Neue Texte immer in **beide** ARB-Dateien eintragen; `flutter pub get` erzeugt daraus den Code.
+
+## Lizenz
+
+[MIT](LICENSE)
