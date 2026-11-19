@@ -238,6 +238,7 @@ class Store extends ChangeNotifier {
   }
 
   void _attachSubs() {
+    _subsTouched.clear();
     for (final t in _tasks.values) {
       t.subs = [];
     }
@@ -247,6 +248,23 @@ class Store extends ChangeNotifier {
     for (final t in _tasks.values) {
       t.subs.sort((a, b) => a.position.compareTo(b.position));
     }
+  }
+
+  /// Aufgaben, deren Unteraufgaben sich seit dem letzten [_changed] geändert haben.
+  final Set<String> _subsTouched = {};
+
+  /// Wie [_attachSubs], aber nur für die Aufgaben in [_subsTouched] – eine Änderung soll nicht
+  /// die Unteraufgaben aller Aufgaben neu zusammensuchen.
+  void _attachTouchedSubs() {
+    if (_subsTouched.isEmpty) return;
+    final byTask = <String, List<Subtask>>{for (final id in _subsTouched) id: []};
+    for (final s in _subs.values) {
+      if (!s.deleted) byTask[s.taskId]?.add(s);
+    }
+    byTask.forEach((id, subs) {
+      _tasks[id]?.subs = subs..sort((a, b) => a.position.compareTo(b.position));
+    });
+    _subsTouched.clear();
   }
 
   Future<void> wipe() async {
@@ -299,10 +317,12 @@ class Store extends ChangeNotifier {
       case Task x:
         _adopt(x.id);
         _tasks[x.id] = x;
+        _subsTouched.add(x.id);
         pendingTaskIds.add(x.id);
       case Subtask s:
         _adopt(s.taskId);
         _subs[s.id] = s;
+        _subsTouched.add(s.taskId);
         pendingTaskIds.add(s.taskId);
       case Habit h:
         _habits[h.id] = h;
@@ -360,7 +380,7 @@ class Store extends ChangeNotifier {
   void touch() => notifyListeners();
 
   void _changed() {
-    _attachSubs();
+    _attachTouchedSubs();
     notifyListeners();
     onLocalChange?.call();
     unawaited(refreshPending());
