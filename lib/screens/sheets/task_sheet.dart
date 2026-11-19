@@ -65,9 +65,12 @@ class _TitleController extends TextEditingController {
 
 /// Neue Aufgabe oder Aufgabe bearbeiten: Titel, Kategorie, Abgabe, Uhrzeit, Unteraufgaben.
 class TaskSheet extends StatefulWidget {
-  const TaskSheet({super.key, required this.task, required this.preset, required this.ui});
+  const TaskSheet({super.key, required this.task, required this.preset, this.initialTitle, required this.ui});
   final Task? task;
   final DateTime? preset;
+
+  /// Titel, mit dem eine neue Aufgabe beginnt (beim Bearbeiten ohne Wirkung).
+  final String? initialTitle;
   final UiState ui;
 
   @override
@@ -105,7 +108,7 @@ class _TaskSheetState extends State<TaskSheet> {
     final store = context.app.store;
     final t = widget.task;
     final cats = store.categories;
-    _title = _TitleController(text: t?.title ?? '')..addListener(_titleChanged);
+    _title = _TitleController(text: t?.title ?? widget.initialTitle ?? '')..addListener(_titleChanged);
     _notes = TextEditingController(text: t?.notes ?? '');
     _yearly = isYearly(_title.text);
     final f = widget.ui.filterIn(cats);

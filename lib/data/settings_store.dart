@@ -84,6 +84,9 @@ class SettingsStore extends ChangeNotifier {
   /// (`Section.name` bzw. `k-<Kategorie-ID>`). Leer = Zeiträume der Reihe nach, dann Kategorien.
   List<String> boardOrder = [];
 
+  /// Windows: die heutigen Aufgaben für den Launcher Flick bereitstellen (`lib/services/flick_export.dart`).
+  bool flick = false;
+
   /// Alle möglichen Listen in der eingestellten Reihenfolge; neue stehen hinten.
   List<String> boardColumnOrder() {
     final all = [for (final s in Section.values) s.name, for (final id in boardCats) 'k-$id'];
@@ -138,6 +141,7 @@ class SettingsStore extends ChangeNotifier {
       boardHidden = {...?(d['board_hidden'] as List?)?.whereType<String>()};
       boardCats = [...?(d['board_cats'] as List?)?.whereType<String>()];
       boardOrder = [...?(d['board_order'] as List?)?.whereType<String>()];
+      flick = d['flick'] == true;
     }
     dates.weekFirstDay = weekFirstDay;
   }
@@ -263,6 +267,7 @@ class SettingsStore extends ChangeNotifier {
         'board_hidden': boardHidden.toList(),
         'board_cats': boardCats,
         'board_order': boardOrder,
+        'flick': flick,
       }),
     );
     notifyListeners();

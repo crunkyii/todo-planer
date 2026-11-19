@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
 import '../data/sync_service.dart';
+import '../services/launch_commands.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
 import '../util/task_logic.dart';
@@ -33,6 +34,7 @@ class _AppShellState extends State<AppShell> {
   final ui = UiState();
   StreamSubscription<SyncEvent>? _sub;
   late final _widgets = context.app.homeWidgets;
+  late final _launch = context.app.launch;
   AppLifecycleListener? _resume;
 
   /// Hält den Zustand der Seite (Scroll-Position), wenn das Fenster zwischen schmal und breit wechselt.
@@ -44,26 +46,49 @@ class _AppShellState extends State<AppShell> {
     final app = context.app;
     _sub = app.sync.events.listen(_onSync);
     // „+“ im Startbildschirm-Widget: Sheet für eine neue Aufgabe öffnen.
-    _widgets.listen(() {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+    _widgets.listen(_newTask, store: app.store);
+    // Aufruf von außen (Launcher Flick, `todoplaner://…`).
+    _launch.onCommand = _onLaunch;
+    // Zurück in der App: im Widget abgehakte Gewohnheiten übernehmen.
+    _resume = AppLifecycleListener(onResume: _widgets.applyHabitToggles);
+  }
+
+  /// Öffnet das Formular „Neue Aufgabe“ über allem, was gerade offen ist – außer es ist schon eins offen.
+  void _newTask({String? title}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final nav = Navigator.of(context);
+      // Liefert die oberste Route, ohne etwas zu schließen.
+      Route<dynamic>? top;
+      nav.popUntil((route) {
+        top = route;
+        return true;
+      });
+      // Schon ein Formular offen (z. B. mehrmals auf „+“ getippt): kein zweites darüber.
+      if (top is AppSheetRoute) return;
+      // Ein offenes ⋮-Menü zuerst schließen, sonst läge das Formular über dem Menü.
+      if (top is AppMenuRoute) nav.pop();
+      Sheets(context, ui).task(null, title: title);
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  void _onLaunch(LaunchCommand cmd) {
+    switch (cmd) {
+      case NewTask(:final title):
+        _newTask(title: title);
+      case OpenTab(:final tab):
+        // Ein offenes Formular oder Menü bleibt, wie es ist (nichts Getipptes geht verloren);
+        // nur ein ⋮-Menü schließt sich, damit man den Tab auch sieht.
         final nav = Navigator.of(context);
-        // Liefert die oberste Route, ohne etwas zu schließen.
         Route<dynamic>? top;
         nav.popUntil((route) {
           top = route;
           return true;
         });
-        // Schon ein Formular offen (z. B. mehrmals auf „+“ getippt): kein zweites darüber.
-        if (top is AppSheetRoute) return;
-        // Ein offenes ⋮-Menü zuerst schließen, sonst läge das Formular über dem Menü.
         if (top is AppMenuRoute) nav.pop();
-        Sheets(context, ui).task(null);
-      });
-      WidgetsBinding.instance.scheduleFrame();
-    }, store: app.store);
-    // Zurück in der App: im Widget abgehakte Gewohnheiten übernehmen.
-    _resume = AppLifecycleListener(onResume: _widgets.applyHabitToggles);
+        ui.goTab(tab);
+    }
   }
 
   @override
@@ -91,6 +116,7 @@ class _AppShellState extends State<AppShell> {
   void dispose() {
     _sub?.cancel();
     _widgets.onNewTask = null;
+    _launch.onCommand = null;
     _resume?.dispose();
     ui.dispose();
     super.dispose();

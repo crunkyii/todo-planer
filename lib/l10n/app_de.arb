@@ -863,5 +863,46 @@
         "type": "int"
       }
     }
-  }
+  },
+  "flickHeader": "Heute, {date} · {count, plural, =0{nichts offen} =1{1 offen} other{{count} offen}}",
+  "@flickHeader": {
+    "description": "Erste Zeile der Liste in Flick (Windows-Launcher)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "flickTimed": "{time} {title}",
+  "@flickTimed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "flickOverdue": "⚠ {title} (überfällig)",
+  "@flickOverdue": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "flickToday": "Heutige Aufgaben für Flick",
+  "flickTodaySub": "Zeigt sie im Windows-Launcher Flick, wenn man „Aufgaben“ eintippt",
+  "flickCopy": "Flick-Shortcuts kopieren",
+  "flickCopySub": "In Flick „flick config“ eintippen und am Ende einfügen",
+  "flickCopied": "Flick-Shortcuts kopiert",
+  "flickAboutAdd": "Neue Aufgabe im ToDo Planer",
+  "flickAboutAddTitle": "Neue Aufgabe mit Titel, z. B. aufgabe Mathe lernen",
+  "flickAboutToday": "Heutige Aufgaben aus dem ToDo Planer",
+  "flickAboutTab": "ToDo Planer in einem Tab öffnen",
+  "flickHeading": "Flick"
 }

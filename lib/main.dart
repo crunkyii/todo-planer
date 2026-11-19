@@ -12,12 +12,17 @@ import 'data/store.dart';
 import 'data/sync_service.dart';
 import 'screens/widget_config_screen.dart';
 import 'services/home_widgets.dart';
+import 'services/launch_commands.dart';
 import 'services/reminders.dart';
 import 'services/updater.dart';
 import 'services/widget_config.dart';
 
-Future<void> main() async {
+/// [args]: Start-Argumente – unter Windows z. B. `todoplaner://add`, wenn die App über einen Link
+/// (Launcher Flick) gestartet wurde.
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Sofort auf den Kanal hören: Ein zweiter Start reicht seinen Link an dieses Fenster weiter.
+  final launch = LaunchCommands(args)..attach();
   final store = Store(LocalDb());
   final reminders = Reminders();
   // Unabhängige Vorbereitungen gleichzeitig.
@@ -38,6 +43,7 @@ Future<void> main() async {
     sync: SyncService(store: store, settings: settings, cloud: cloud),
     reminders: reminders,
     updater: updater,
+    launch: launch,
   );
   await services.boot();
 

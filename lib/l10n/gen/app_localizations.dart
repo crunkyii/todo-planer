@@ -2293,6 +2293,84 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'{count, plural, =1{Ohne 1 ältere erledigte Aufgabe – die gibt es nur online} other{Ohne {count} ältere erledigte Aufgaben – die gibt es nur online}}'**
   String exportOlderMissing(int count);
+
+  /// Erste Zeile der Liste in Flick (Windows-Launcher)
+  ///
+  /// In de, this message translates to:
+  /// **'Heute, {date} · {count, plural, =0{nichts offen} =1{1 offen} other{{count} offen}}'**
+  String flickHeader(String date, int count);
+
+  /// No description provided for @flickTimed.
+  ///
+  /// In de, this message translates to:
+  /// **'{time} {title}'**
+  String flickTimed(String time, String title);
+
+  /// No description provided for @flickOverdue.
+  ///
+  /// In de, this message translates to:
+  /// **'⚠ {title} (überfällig)'**
+  String flickOverdue(String title);
+
+  /// No description provided for @flickToday.
+  ///
+  /// In de, this message translates to:
+  /// **'Heutige Aufgaben für Flick'**
+  String get flickToday;
+
+  /// No description provided for @flickTodaySub.
+  ///
+  /// In de, this message translates to:
+  /// **'Zeigt sie im Windows-Launcher Flick, wenn man „Aufgaben“ eintippt'**
+  String get flickTodaySub;
+
+  /// No description provided for @flickCopy.
+  ///
+  /// In de, this message translates to:
+  /// **'Flick-Shortcuts kopieren'**
+  String get flickCopy;
+
+  /// No description provided for @flickCopySub.
+  ///
+  /// In de, this message translates to:
+  /// **'In Flick „flick config“ eintippen und am Ende einfügen'**
+  String get flickCopySub;
+
+  /// No description provided for @flickCopied.
+  ///
+  /// In de, this message translates to:
+  /// **'Flick-Shortcuts kopiert'**
+  String get flickCopied;
+
+  /// No description provided for @flickAboutAdd.
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Aufgabe im ToDo Planer'**
+  String get flickAboutAdd;
+
+  /// No description provided for @flickAboutAddTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Aufgabe mit Titel, z. B. aufgabe Mathe lernen'**
+  String get flickAboutAddTitle;
+
+  /// No description provided for @flickAboutToday.
+  ///
+  /// In de, this message translates to:
+  /// **'Heutige Aufgaben aus dem ToDo Planer'**
+  String get flickAboutToday;
+
+  /// No description provided for @flickAboutTab.
+  ///
+  /// In de, this message translates to:
+  /// **'ToDo Planer in einem Tab öffnen'**
+  String get flickAboutTab;
+
+  /// No description provided for @flickHeading.
+  ///
+  /// In de, this message translates to:
+  /// **'Flick'**
+  String get flickHeading;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -8,7 +8,9 @@ import 'data/settings_store.dart';
 import 'data/store.dart';
 import 'data/sync_service.dart';
 import 'l10n/gen/app_localizations.dart';
+import 'services/flick_export.dart';
 import 'services/home_widgets.dart';
+import 'services/launch_commands.dart';
 import 'services/reminders.dart';
 import 'services/updater.dart';
 import 'theme/tokens.dart';
@@ -27,7 +29,10 @@ class AppServices extends ChangeNotifier {
     required this.sync,
     required this.reminders,
     this.updater,
-  }) {
+    LaunchCommands? launch,
+    FlickExport? flick,
+  }) : launch = launch ?? LaunchCommands(),
+       flick = flick ?? FlickExport() {
     updater?.addListener(_announceUpdate);
     store.onLocalChange = _onLocalChange;
     store.addListener(_refreshRemindersAndWidgets);
@@ -40,6 +45,12 @@ class AppServices extends ChangeNotifier {
 
   /// Startbildschirm-Widgets (Android): bekommen nach jeder Änderung die aktuellen Daten.
   final homeWidgets = HomeWidgets();
+
+  /// Aufrufe von außen (`todoplaner://…`, z. B. aus dem Windows-Launcher Flick).
+  final LaunchCommands launch;
+
+  /// Windows: die heutigen Aufgaben als Liste für Flick (nur wenn in den Optionen eingeschaltet).
+  final FlickExport flick;
 
   late final AppLifecycleListener _lifecycle;
   Timer? _nextChangeTimer;
@@ -247,6 +258,7 @@ class AppServices extends ChangeNotifier {
       final l = _l;
       if (l == null) return;
       unawaited(homeWidgets.push(store, l, themeId: settings.theme));
+      unawaited(flick.push(settings.flick ? flickTodayEntries(store, l) : null));
       final f = Fmt(l);
       final items = upcomingReminders(
         store.tasks,

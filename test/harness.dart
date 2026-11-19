@@ -14,6 +14,7 @@ import 'package:todo_liste/data/settings_store.dart';
 import 'package:todo_liste/data/store.dart';
 import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
+import 'package:todo_liste/services/flick_export.dart';
 import 'package:todo_liste/services/reminders.dart';
 import 'package:todo_liste/services/updater.dart';
 import 'package:todo_liste/util/dates.dart';
@@ -56,6 +57,7 @@ Future<AppServices> makeServices({
   SyncService Function(Store, SettingsStore, Cloud)? sync,
   Cloud? cloud,
   Updater? updater,
+  FlickExport? flick,
 }) async {
   // keepPrefs: „App neu gestartet“ – die gespeicherten Einstellungen bleiben, wie sie sind.
   if (!keepPrefs) {
@@ -79,6 +81,8 @@ Future<AppServices> makeServices({
     sync: sync?.call(store, settings, c) ?? SyncService(store: store, settings: settings, cloud: c),
     reminders: Reminders(),
     updater: updater,
+    // Sonst hinge es vom PC ab, ob die Optionen den Abschnitt „Flick“ zeigen (nur Windows).
+    flick: flick ?? FlickExport.off(),
   );
 }
 

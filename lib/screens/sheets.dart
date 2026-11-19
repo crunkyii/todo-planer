@@ -21,14 +21,15 @@ class Sheets {
   final BuildContext context;
   final UiState ui;
 
-  void task(Task? t, {DateTime? preset}) {
+  /// [title]: Vorgabe für eine neue Aufgabe (z. B. aus einem `todoplaner://add?title=…`-Link).
+  void task(Task? t, {DateTime? preset, String? title}) {
     final l = context.l;
     final app = context.app;
     if (app.store.categories.isEmpty) app.ensureCategoriesNow(l);
     showAppSheet<void>(
       context,
       label: t == null ? l.newTask : l.editTask,
-      builder: (_) => TaskSheet(task: t, preset: preset, ui: ui),
+      builder: (_) => TaskSheet(task: t, preset: preset, initialTitle: title, ui: ui),
     );
   }
 

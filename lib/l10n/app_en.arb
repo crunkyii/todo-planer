@@ -383,5 +383,18 @@
   "olderDoneLoad": "{count, plural, =1{Load 1 older completed task} other{Load {count} older completed tasks}}",
   "olderDoneOffline": "{count, plural, =1{1 older completed task is only visible online} other{{count} older completed tasks are only visible online}}",
   "olderDoneFailed": "Could not load older tasks",
-  "exportOlderMissing": "{count, plural, =1{Without 1 older completed task – only available online} other{Without {count} older completed tasks – only available online}}"
+  "exportOlderMissing": "{count, plural, =1{Without 1 older completed task – only available online} other{Without {count} older completed tasks – only available online}}",
+  "flickHeader": "Today, {date} · {count, plural, =0{nothing open} =1{1 open} other{{count} open}}",
+  "flickTimed": "{time} {title}",
+  "flickOverdue": "⚠ {title} (overdue)",
+  "flickToday": "Today's tasks for Flick",
+  "flickTodaySub": "Shows them in the Windows launcher Flick when you type “Aufgaben”",
+  "flickCopy": "Copy Flick shortcuts",
+  "flickCopySub": "Type “flick config” in Flick and paste them at the end",
+  "flickCopied": "Flick shortcuts copied",
+  "flickAboutAdd": "New task in ToDo Planer",
+  "flickAboutAddTitle": "New task with a title, e.g. aufgabe Learn maths",
+  "flickAboutToday": "Today's tasks from ToDo Planer",
+  "flickAboutTab": "Open ToDo Planer on a tab",
+  "flickHeading": "Flick"
 }

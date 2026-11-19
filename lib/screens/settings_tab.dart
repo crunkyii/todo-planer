@@ -1,8 +1,10 @@
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
 import '../data/settings_store.dart';
 import '../l10n/gen/app_localizations.dart';
+import '../services/flick_export.dart';
 import '../services/updater.dart';
 import '../theme/color_math.dart';
 import '../theme/tokens.dart';
@@ -135,6 +137,7 @@ class SettingsTab extends StatelessWidget {
                     chevron: true,
                     onTap: () => Sheets(context, ui).export(),
                   ),
+                  if (app.flick.dir case final dir?) ..._flickRows(context, app, dir),
                   if (app.updater case final u? when u.supported) ...[CapsHeading(l.updates), _UpdateRow(updater: u)],
                 ],
               ),
@@ -175,6 +178,30 @@ class SettingsTab extends StatelessWidget {
       SetRow(
         title: app.user?.email ?? '',
         trailing: AppButton(label: l.signOut, icon: Ic.logout, kind: BtnKind.tonal, onTap: app.signOut),
+      ),
+    ];
+  }
+
+  /// Windows: Anbindung an den Launcher Flick (`lib/services/flick_export.dart`).
+  List<Widget> _flickRows(BuildContext context, AppServices app, String dir) {
+    final l = context.l;
+    final s = app.settings;
+    return [
+      CapsHeading(l.flickHeading),
+      SetRow(
+        title: l.flickToday,
+        subtitle: l.flickTodaySub,
+        inline: true,
+        trailing: AppSwitch(value: s.flick, label: l.flickToday, onChanged: (v) => s.updateDevice((x) => x.flick = v)),
+      ),
+      SetRow(
+        title: l.flickCopy,
+        subtitle: l.flickCopySub,
+        chevron: true,
+        onTap: () async {
+          await Clipboard.setData(ClipboardData(text: flickShortcuts(l, dir)));
+          app.snack.show(l.flickCopied, icon: Ic.check);
+        },
       ),
     ];
   }

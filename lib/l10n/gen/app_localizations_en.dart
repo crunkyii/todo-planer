@@ -1279,4 +1279,56 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String flickHeader(String date, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count open',
+      one: '1 open',
+      zero: 'nothing open',
+    );
+    return 'Today, $date · $_temp0';
+  }
+
+  @override
+  String flickTimed(String time, String title) {
+    return '$time $title';
+  }
+
+  @override
+  String flickOverdue(String title) {
+    return '⚠ $title (overdue)';
+  }
+
+  @override
+  String get flickToday => 'Today\'s tasks for Flick';
+
+  @override
+  String get flickTodaySub => 'Shows them in the Windows launcher Flick when you type “Aufgaben”';
+
+  @override
+  String get flickCopy => 'Copy Flick shortcuts';
+
+  @override
+  String get flickCopySub => 'Type “flick config” in Flick and paste them at the end';
+
+  @override
+  String get flickCopied => 'Flick shortcuts copied';
+
+  @override
+  String get flickAboutAdd => 'New task in ToDo Planer';
+
+  @override
+  String get flickAboutAddTitle => 'New task with a title, e.g. aufgabe Learn maths';
+
+  @override
+  String get flickAboutToday => 'Today\'s tasks from ToDo Planer';
+
+  @override
+  String get flickAboutTab => 'Open ToDo Planer on a tab';
+
+  @override
+  String get flickHeading => 'Flick';
 }
