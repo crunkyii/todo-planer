@@ -61,6 +61,14 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
+[Registry]
+; Links wie todoplaner://add öffnen die App (z. B. aus dem Launcher Flick, docs/funktionen.md).
+; Nur für den angemeldeten Benutzer; die Deinstallation entfernt den Eintrag wieder.
+Root: HKCU; Subkey: "Software\Classes\todoplaner"; ValueType: string; ValueName: ""; ValueData: "URL:{#AppName}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\todoplaner"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\todoplaner\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"",0"
+Root: HKCU; Subkey: "Software\Classes\todoplaner\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" ""%1"""
+
 [Run]
 ; Nach der Installation starten – auch beim stillen Update, damit die App gleich wieder da ist.
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall

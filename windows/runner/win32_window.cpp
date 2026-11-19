@@ -4,6 +4,7 @@
 #include <flutter_windows.h>
 
 #include "resource.h"
+#include "single_instance.h"
 
 namespace {
 
@@ -16,7 +17,9 @@ namespace {
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
 
-constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
+// Eigener Name statt FLUTTER_RUNNER_WIN32_WINDOW: Daran findet ein zweiter Start dieses Fenster
+// (single_instance.cpp) – und nicht das einer anderen Flutter-App.
+const wchar_t* const kWindowClassName = kAppWindowClass;
 
 /// Registry key for app theme preference.
 ///

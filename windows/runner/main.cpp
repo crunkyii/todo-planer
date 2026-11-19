@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include "flutter_window.h"
+#include "single_instance.h"
 #include "utils.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
@@ -15,12 +16,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
+  std::vector<std::string> command_line_arguments =
+      GetCommandLineArguments();
+
+  // Läuft die App schon, bekommt sie die Argumente (z. B. todoplaner://add) und dieser Start endet.
+  if (!AcquireSingleInstance(command_line_arguments)) {
+    return EXIT_SUCCESS;
+  }
+
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
   flutter::DartProject project(L"data");
-
-  std::vector<std::string> command_line_arguments =
-      GetCommandLineArguments();
 
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
