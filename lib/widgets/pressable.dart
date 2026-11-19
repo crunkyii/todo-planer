@@ -94,11 +94,20 @@ class _PressableState extends State<Pressable> with TickerProviderStateMixin {
     // 0 % → 0.92, 40 % → 1.045, 70 % → 0.99, 100 % → 1 (Keyframes `release` aus dem CSS)
     _scale
         .animateTo(1 + widget.overshoot, duration: Motion.releaseDur * 0.4, curve: Motion.release)
-        .then(
-          (_) =>
-              _scale.animateTo(1 - widget.overshoot * 0.22, duration: Motion.releaseDur * 0.3, curve: Curves.easeInOut),
-        )
-        .then((_) => _scale.animateTo(1, duration: Motion.releaseDur * 0.3, curve: Curves.easeOut));
+        // Die Schritte laufen nacheinander – ist der Knopf inzwischen weg (z. B. Seite gewechselt),
+        // nicht weiter animieren.
+        .then((_) {
+          if (mounted) {
+            return _scale.animateTo(
+              1 - widget.overshoot * 0.22,
+              duration: Motion.releaseDur * 0.3,
+              curve: Curves.easeInOut,
+            );
+          }
+        })
+        .then((_) {
+          if (mounted) _scale.animateTo(1, duration: Motion.releaseDur * 0.3, curve: Curves.easeOut);
+        });
   }
 
   void _activate() {
