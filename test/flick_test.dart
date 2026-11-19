@@ -373,6 +373,7 @@ void main() {
       expect(find.byType(FlickGuidePage), findsOneWidget);
       expect(find.text(l.flickStep2), findsOneWidget);
       expect(find.text('addAufgabe'), findsOneWidget);
+      expect(find.text('aufgabe …'), findsNothing);
       await tester.tap(find.byWidgetPredicate((w) => w is AppSwitch && w.label == l.flickToday).last);
       await tester.pumpAndSettle();
       expect(app.settings.flick, isFalse, reason: 'Schalter in der Anleitung ist derselbe');

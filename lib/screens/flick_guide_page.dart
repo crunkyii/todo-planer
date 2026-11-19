@@ -55,7 +55,6 @@ class _FlickGuidePageState extends State<FlickGuidePage> {
     ];
     final examples = [
       (FlickIcon.add, 'addAufgabe', l.flickAboutAdd),
-      (FlickIcon.add, 'aufgabe …', l.flickAboutAddTitle),
       (FlickIcon.today, 'Aufgaben', l.flickAboutToday),
       (FlickIcon.open, 'todo …', l.flickAboutTab),
     ];
