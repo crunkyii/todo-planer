@@ -28,7 +28,7 @@ flutter run -d windows
 Beim ersten Start fragt die App, wo die Aufgaben gespeichert werden sollen:
 
 - **Nur auf diesem Gerät** – kein Konto, keine Einrichtung. Fertig.
-- **Auf allen Geräten** – eigene Supabase-Datenbank (siehe unten).
+- **Konto erstellen** oder **Ich habe schon ein Konto** – auf allen Geräten, mit eigener Supabase-Datenbank (siehe unten).
 
 Es gibt **keine** Konfigurationsdatei mit Zugangsdaten im Code: URL und Key werden in der App eingegeben und am Gerät gespeichert.
 
