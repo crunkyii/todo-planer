@@ -265,6 +265,9 @@ abstract final class Sizes {
 /// Schriftgrößen (px aus dem CSS).
 abstract final class Fs {
   static const double base = 14;
+
+  /// Fließtext auf ganzen Seiten (Einleitung, leere Liste).
+  static const double body = 15;
   static const double title = 22;
   static const double sheetTitle = 20;
   static const double task = 15.5;

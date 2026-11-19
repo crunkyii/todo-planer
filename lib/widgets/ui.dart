@@ -550,6 +550,36 @@ class AppCard extends StatelessWidget {
 }
 
 /// Kopfzeile mit Titel (.topbar), optional mit Zurück-Pfeil.
+/// Eine ganze Seite über der App: Hintergrund, sichere Ränder, mittig mit Höchstbreite und
+/// oben eine [TopBar] mit „Zurück“. [children] stehen darunter (z. B. ein `Expanded`-Inhalt).
+class AppPage extends StatelessWidget {
+  const AppPage({super.key, required this.title, required this.backLabel, required this.children});
+  final String title;
+  final String backLabel;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.tok.bg,
+      child: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Sizes.maxWidth),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TopBar(title: title, onBack: () => Navigator.pop(context), backLabel: backLabel),
+                ...children,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class TopBar extends StatelessWidget {
   const TopBar({super.key, required this.title, this.onBack, this.backLabel, this.trailing});
   final String title;

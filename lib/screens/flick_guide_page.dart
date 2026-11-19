@@ -59,73 +59,66 @@ class _FlickGuidePageState extends State<FlickGuidePage> {
       (FlickIcon.today, 'Aufgaben', l.flickAboutToday),
       (FlickIcon.open, 'todo …', l.flickAboutTab),
     ];
-    return Material(
-      color: tok.bg,
-      child: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: Sizes.maxWidth),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TopBar(title: l.flickGuideTitle, onBack: () => Navigator.pop(context), backLabel: l.back),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-                        child: Text(l.flickGuideIntro, style: TextStyle(fontSize: 15, color: tok.sub)),
-                      ),
-                      for (final (i, (title, sub)) in steps.indexed)
-                        SetRow(title: title, subtitle: sub, leading: _StepNumber(i + 1)),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: AppButton(
-                            label: _again ? l.flickCopied : l.flickCopyAgain,
-                            icon: _again ? Ic.check : Ic.copy,
-                            kind: BtnKind.tonal,
-                            onTap: _copyAgain,
-                          ),
-                        ),
-                      ),
-                      CapsHeading(l.flickGuideList),
-                      ListenableBuilder(
-                        listenable: s,
-                        builder: (context, _) => SetRow(
-                          title: l.flickToday,
-                          subtitle: l.flickTodaySub,
-                          inline: true,
-                          trailing: AppSwitch(
-                            value: s.flick,
-                            label: l.flickToday,
-                            onChanged: (v) => s.updateDevice((x) => x.flick = v),
-                          ),
-                        ),
-                      ),
-                      CapsHeading(l.flickGuideTry),
-                      for (final (icon, name, about) in examples)
-                        SetRow(
-                          title: name,
-                          subtitle: about,
-                          leading: Image.asset(
-                            icon.asset,
-                            width: Sizes.flickIcon,
-                            height: Sizes.flickIcon,
-                            excludeFromSemantics: true,
-                            errorBuilder: (_, _, _) => const SizedBox.square(dimension: Sizes.flickIcon),
-                          ),
-                        ),
-                    ],
+    return AppPage(
+      title: l.flickGuideTitle,
+      backLabel: l.back,
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 24),
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                child: Text(
+                  l.flickGuideIntro,
+                  style: TextStyle(fontSize: Fs.body, color: tok.sub),
+                ),
+              ),
+              for (final (i, (title, sub)) in steps.indexed)
+                SetRow(title: title, subtitle: sub, leading: _StepNumber(i + 1)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: AppButton(
+                    label: _again ? l.flickCopied : l.flickCopyAgain,
+                    icon: _again ? Ic.check : Ic.copy,
+                    kind: BtnKind.tonal,
+                    onTap: _copyAgain,
                   ),
                 ),
-              ],
-            ),
+              ),
+              CapsHeading(l.flickGuideList),
+              ListenableBuilder(
+                listenable: s,
+                builder: (context, _) => SetRow(
+                  title: l.flickToday,
+                  subtitle: l.flickTodaySub,
+                  inline: true,
+                  trailing: AppSwitch(
+                    value: s.flick,
+                    label: l.flickToday,
+                    onChanged: (v) => s.updateDevice((x) => x.flick = v),
+                  ),
+                ),
+              ),
+              CapsHeading(l.flickGuideTry),
+              for (final (icon, name, about) in examples)
+                SetRow(
+                  title: name,
+                  subtitle: about,
+                  leading: Image.asset(
+                    icon.asset,
+                    width: Sizes.flickIcon,
+                    height: Sizes.flickIcon,
+                    excludeFromSemantics: true,
+                    errorBuilder: (_, _, _) => const SizedBox.square(dimension: Sizes.flickIcon),
+                  ),
+                ),
+            ],
           ),
         ),
-      ),
+      ],
     );
   }
 }
