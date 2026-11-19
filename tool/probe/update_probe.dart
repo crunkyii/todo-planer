@@ -36,6 +36,7 @@ Future<void> main() async {
   );
   runApp(
     MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: SafeArea(
           child: Center(
