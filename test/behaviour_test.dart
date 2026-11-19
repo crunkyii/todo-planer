@@ -21,6 +21,7 @@ import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
 import 'package:todo_liste/screens/tasks_board.dart';
+import 'package:todo_liste/screens/ui_state.dart';
 import 'package:todo_liste/services/export.dart';
 import 'package:todo_liste/services/update_manifest.dart';
 import 'package:todo_liste/services/update_platform.dart';
@@ -1591,6 +1592,66 @@ void main() {
       await tester.pumpAndSettle();
       await _tap(tester, find.bySemanticsLabel(RegExp('^${RegExp.escape(f.dayMonth(day))}')).last);
       expect(find.text(f.longDate(day)), findsOneWidget, reason: 'Kalender zeigt den gewählten Tag');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben: gemerkter Filter „nur Gewohnheiten“ zählt am PC als „Alle“', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      // Der Chip steht am Handy ganz hinten in der Leiste – erst hinscrollen.
+      await tester.scrollUntilVisible(
+        find.widgetWithText(AppChip, l.habits),
+        120,
+        scrollable: find.ancestor(of: find.widgetWithText(AppChip, l.all), matching: find.byType(Scrollable)).first,
+      );
+      await tester.pumpAndSettle();
+      await _tap(tester, find.widgetWithText(AppChip, l.habits));
+      expect(find.text('Müll rausbringen'), findsNothing);
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      expect(find.text('Müll rausbringen'), findsOneWidget);
+      expect(find.text(l.habits), findsOneWidget, reason: 'nur noch die Karte in der Seitenleiste');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben: nach rechts geblättert und die letzte Liste wird leer – nichts bricht', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      // Zwei Listen sichtbar; bis ans Ende blättern
+      for (var i = 0; i < 4; i++) {
+        final next = find.bySemanticsLabel(l.nextLists);
+        if (next.evaluate().isEmpty) break;
+        await _tap(tester, next);
+      }
+      app.store.clearDone();
+      await tester.pumpAndSettle();
+      for (final t in app.store.tasks.where((t) => !t.done).toList()) {
+        app.store.deleteTask(t);
+      }
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.bySemanticsLabel(l.sectionCount(l.today, 0)).hitTestable(), findsOneWidget);
+      expect(find.bySemanticsLabel(l.nextLists), findsNothing, reason: 'nur noch eine Liste');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben: nach Kategorie sortiert und mit großer Schrift ohne Überlauf', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      for (final size in const [Size(1366, 705), Size(1210, 620)]) {
+        await pumpApp(tester, app, size: size, textScale: 1.6);
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+      final ui = tester.widget<TasksSide>(find.byType(TasksSide)).ui;
+      ui.set((s) => s.sort = SortMode.category);
+      await tester.pumpAndSettle();
+      final first = app.store.categories.first;
+      expect(find.bySemanticsLabel(RegExp('^${RegExp.escape(first.name)} \\(')), findsWidgets);
+      expect(tester.takeException(), isNull);
       await finishApp(tester, app);
     });
 

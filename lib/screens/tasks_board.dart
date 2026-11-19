@@ -280,6 +280,8 @@ class _Panel extends StatelessWidget {
 }
 
 /// Wie viel von heute geschafft ist: Ring mit „erledigt/gesamt“ und was noch offen ist.
+/// Es zählt, was heute dran ist oder war (überfällig oder heute zu tun) – eine Aufgabe von
+/// nächster Woche, die man heute schon abhakt, verändert den Ring nicht.
 class _TodayPanel extends StatelessWidget {
   const _TodayPanel();
 
@@ -291,12 +293,13 @@ class _TodayPanel extends StatelessWidget {
     final now = clock();
     var open = 0, late = 0, done = 0;
     for (final t in store.tasks) {
+      final off = store.catOf(t.categoryId).offset;
       if (t.done) {
         final at = t.doneAt;
-        if (at != null && sameDay(at.toLocal(), now)) done++;
+        if (at != null && sameDay(at.toLocal(), now) && !doDate(t, off).isAfter(sod(now))) done++;
         continue;
       }
-      final s = sectionOf(t, store.catOf(t.categoryId).offset, now: now);
+      final s = sectionOf(t, off, now: now);
       if (s == Section.overdue) late++;
       if (s == Section.overdue || s == Section.today) open++;
     }

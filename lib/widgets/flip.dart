@@ -72,16 +72,26 @@ class _RenderFlip extends RenderBox
     if (child.parentData is! _FlipData) child.parentData = _FlipData();
   }
 
+  /// Reihenfolge der Kinder nach dem letzten Layout.
+  List<RenderBox> _order = const [];
+
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
     _curve.addListener(markNeedsPaint);
+    _controller.addStatusListener(_arrived);
   }
 
   @override
   void detach() {
     _curve.removeListener(markNeedsPaint);
+    _controller.removeStatusListener(_arrived);
     super.detach();
+  }
+
+  /// Angekommen: Der Screenreader soll den Eintrag am neuen Platz finden, nicht am alten.
+  void _arrived(AnimationStatus status) {
+    if (status == AnimationStatus.completed) markNeedsSemanticsUpdate();
   }
 
   /// Wie weit [d] gerade noch von seinem Platz entfernt gezeichnet wird.
@@ -92,15 +102,28 @@ class _RenderFlip extends RenderBox
     final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
     final inner = BoxConstraints.tightFor(width: width);
     final places = <RenderBox, Offset>{};
-    var y = 0.0, moved = false;
+    var y = 0.0;
     for (var child = firstChild; child != null; child = childAfter(child)) {
       child.layout(inner, parentUsesSize: true);
-      final d = child.parentData! as _FlipData;
-      final place = Offset(0, y);
-      places[child] = place;
-      if (d.last != null && d.last != place) moved = true;
+      places[child] = Offset(0, y);
       y += child.size.height;
     }
+    // Gleiten nur, wenn Einträge die Plätze getauscht haben – nicht, wenn sich bloß Höhen
+    // ändern (Fenstergröße, Schriftgröße) oder ein Eintrag dazukommt bzw. wegfällt.
+    final order = places.keys.toList();
+    final before = [
+      for (final c in _order)
+        if (places.containsKey(c)) c,
+    ];
+    final after = [
+      for (final c in order)
+        if (_order.contains(c)) c,
+    ];
+    var moved = false;
+    for (var i = 0; i < before.length && !moved; i++) {
+      moved = before[i] != after[i];
+    }
+    _order = order;
     for (final MapEntry(key: child, value: place) in places.entries) {
       final d = child.parentData! as _FlipData;
       // Neu losgleiten: vom Platz, an dem der Eintrag gerade zu sehen ist (auch mitten im Gleiten).
@@ -111,6 +134,28 @@ class _RenderFlip extends RenderBox
     }
     size = constraints.constrain(Size(width, y));
     if (moved) _controller.forward(from: 0);
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
+    final inner = BoxConstraints.tightFor(width: width);
+    return constraints.constrain(Size(width, _sum((c) => c.getDryLayout(inner).height)));
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) => _max((c) => c.getMinIntrinsicWidth(double.infinity));
+
+  @override
+  double computeMaxIntrinsicWidth(double height) => _max((c) => c.getMaxIntrinsicWidth(double.infinity));
+
+  double _max(double Function(RenderBox) of) {
+    var w = 0.0;
+    for (var child = firstChild; child != null; child = childAfter(child)) {
+      final v = of(child);
+      if (v > w) w = v;
+    }
+    return w;
   }
 
   @override
