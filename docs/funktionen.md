@@ -19,7 +19,7 @@ Tägliche Gewohnheiten zum Abhaken, mit Serien-Flamme für aufeinanderfolgende T
 ## Kalender, Wochenplan, Statistik
 
 - **Kalender** mit allen Aufgaben und den österreichischen Feiertagen.
-- **Wochenplan** mit Zeitblöcken (einmalig oder jede Woche), Raster 5, 15 oder 30 Minuten. Beim Anlegen eines Blocks stehen die **Aufgaben des gewählten Tags** zur Auswahl: Antippen übernimmt den Namen, und die Aufgabe bekommt die Von-Zeit als Uhrzeit.
+- **Wochenplan** mit Zeitblöcken (einmalig oder jede Woche), Raster 5, 15 oder 30 Minuten. Beim Anlegen eines Blocks stehen die **Aufgaben des gewählten Tags** zur Auswahl – samt dem Vorlauf ihrer Kategorie: Ein Test mit zwei Tagen Vorlauf steht an beiden Tagen davor und am Abgabetag, eine Hausübung mit einem Tag Vorlauf auch am Tag davor (dort mit „Abgabe …“ dahinter). Antippen übernimmt den Namen; am Abgabetag bekommt die Aufgabe außerdem die Von-Zeit als Uhrzeit, an den Tagen davor bleibt ihre Abgabezeit.
 - **Wochenbeginn** frei wählbar (Optionen → *Woche beginnt am*, gilt nur an diesem Gerät) – für Wochenplan, Kalender und die Gruppe „Diese Woche“.
 - **Uhrzeit am PC tippen**: Im Zeitrad einfach Ziffern eingeben, z. B. `1430`.
 - **Statistik** mit Heatmap, Diagramm der erledigten Aufgaben und Serien.

@@ -807,6 +807,61 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Neuer Block: Aufgaben stehen schon an den Tagen davor (Vorlauf der Kategorie)', (tester) async {
+      final l = l10n('de');
+      useFixedClock(); // Mittwoch, 18.11.2026
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      final store = app.store;
+      final homework = store.categories.firstWhere((c) => c.name == l.catHomework); // 1 Tag vorher
+      final test = store.categories.firstWhere((c) => c.name == l.catTest); // 2 Tage vorher
+      final friday = addDays(today(), 2);
+      store.addTask(title: 'Mathe HÜ', categoryId: homework.id, dueDate: friday, dueTime: 8 * 60, subs: const []);
+      store.addTask(title: 'Englisch-Test', categoryId: test.id, dueDate: friday, dueTime: 10 * 60, subs: const []);
+      await pumpApp(tester, app);
+      final f = Fmt.of(tester.element(find.byType(AppShell)));
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      await _tap(tester, find.bySemanticsLabel(l.newBlock).last);
+      Future<List<String>> chipsOn(int wd) async {
+        // Genau einen Tag wählen: den gewünschten an, alle anderen aus.
+        for (var i = 0; i < 7; i++) {
+          final chip = find.bySemanticsLabel(f.wdLong(i)).last;
+          final on = tester.getSemantics(chip).flagsCollection.isSelected == Tristate.isTrue;
+          if (on != (i == wd)) await _tap(tester, chip);
+        }
+        return [
+          for (final c in tester.widgetList<AppChip>(find.byType(AppChip)))
+            if (c.label.contains('Mathe') || c.label.contains('Englisch')) c.label,
+        ];
+      }
+
+      final handIn = l.infoHandIn(f.wd(4));
+      expect(await chipsOn(1), isEmpty, reason: 'Dienstag: noch nichts dran');
+      expect(await chipsOn(2), ['Englisch-Test · $handIn'], reason: 'Mittwoch: der Test (2 Tage vorher)');
+      expect(await chipsOn(3), ['Mathe HÜ · $handIn', 'Englisch-Test · $handIn'], reason: 'Donnerstag: beide');
+      expect(await chipsOn(4), ['Mathe HÜ', 'Englisch-Test'], reason: 'Freitag: Abgabetag');
+      expect(tester.takeException(), isNull);
+
+      // Am Donnerstag für den Test lernen: Der Block steht am Do, die Abgabezeit am Fr bleibt.
+      await chipsOn(3);
+      await _tap(tester, find.widgetWithText(AppChip, 'Englisch-Test · $handIn'));
+      expect(tester.widget<EditableText>(find.byType(EditableText).first).controller.text, 'Englisch-Test');
+      await _tap(tester, find.text(l.save).last);
+      final block = store.blocks.single;
+      expect((block.day, block.repeat), (3, false));
+      expect(store.tasks.firstWhere((t) => t.title == 'Englisch-Test').dueTime, 10 * 60);
+
+      // Vorlauf umstellen: Test nur noch am selben Tag – am Donnerstag steht er dann nicht mehr.
+      store.updateCategory(test, name: test.name, color: test.color, offset: 0);
+      store.updateCategory(homework, name: homework.name, color: homework.color, offset: 3);
+      await tester.pumpAndSettle();
+      await _tap(tester, find.bySemanticsLabel(l.newBlock).last);
+      expect(await chipsOn(3), ['Mathe HÜ · $handIn']);
+      expect(await chipsOn(1), ['Mathe HÜ · $handIn'], reason: 'Hausübung jetzt 3 Tage vorher');
+      expect(await chipsOn(4), ['Mathe HÜ', 'Englisch-Test']);
+      await finishApp(tester, app);
+    });
+
     testWidgets('Neuer Block: Aufgabe des Tages antippen – Block mit ihrem Namen, die Aufgabe bekommt die Zeit', (
       tester,
     ) async {

@@ -8,6 +8,7 @@ import '../../data/store.dart';
 import '../../theme/tokens.dart';
 import '../../util/dates.dart';
 import '../../util/fmt.dart';
+import '../../util/task_logic.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/pickers.dart';
 import '../../widgets/pressable.dart';
@@ -58,13 +59,32 @@ class _BlockSheetState extends State<BlockSheet> {
   /// dabei, wird weder gerundet noch die Uhrzeit der Aufgabe angefasst.
   int? _taskStart;
 
-  /// Offene Aufgaben, die am gewählten Tag der gezeigten Woche fällig sind – nur, wenn genau
-  /// ein Tag gewählt ist.
+  /// Der gewählte Tag der gezeigten Woche – nur bei einem neuen Block mit genau einem Tag.
+  DateTime? get _date =>
+      widget.block != null || _days.length != 1 ? null : sod(Store.dayInWeek(widget.ui.weekStart, _days.single));
+
+  /// Offene Aufgaben, an denen man am gewählten Tag arbeitet: vom Tag, an dem sie laut
+  /// Vorlauf ihrer Kategorie dran sind, bis zur Abgabe. Ein Test mit zwei Tagen Vorlauf steht
+  /// also an allen drei Tagen. Der Vorlauf wird jedes Mal neu gelesen – stellt man ihn um,
+  /// gilt sofort der neue.
   List<Task> get _dayTasks {
-    if (widget.block != null || _days.length != 1) return const [];
-    final date = Store.dayInWeek(widget.ui.weekStart, _days.single);
-    return context.app.store.tasks.where((t) => !t.done && sameDay(t.dueDate, date)).toList()
-      ..sort((a, b) => (a.dueTime ?? 24 * 60).compareTo(b.dueTime ?? 24 * 60));
+    final date = _date;
+    if (date == null) return const [];
+    final store = context.app.store;
+    return store.tasks.where((t) {
+      if (t.done) return false;
+      final from = doDate(t, store.catOf(t.categoryId).offset);
+      return !date.isBefore(from) && !date.isAfter(sod(t.dueDate));
+    }).toList()..sort((a, b) {
+      final c = sod(a.dueDate).compareTo(sod(b.dueDate));
+      return c != 0 ? c : (a.dueTime ?? 24 * 60).compareTo(b.dueTime ?? 24 * 60);
+    });
+  }
+
+  /// Ist [t] am gewählten Tag abzugeben? Nur dann gehören ihre Uhrzeit und der Block zusammen.
+  bool _dueThatDay(Task t) {
+    final date = _date;
+    return date != null && sameDay(t.dueDate, date);
   }
 
   void _pickTask(Task t) => setState(() {
@@ -78,7 +98,8 @@ class _BlockSheetState extends State<BlockSheet> {
     _color = context.app.store.catOf(t.categoryId).color;
     // Eine Aufgabe ist an einem bestimmten Tag dran – der Block gilt nur für diese Woche.
     _repeat = false;
-    final time = t.dueTime;
+    // Die Uhrzeit der Abgabe nur am Abgabetag übernehmen – an den Tagen davor wird geübt.
+    final time = _dueThatDay(t) ? t.dueTime : null;
     if (time != null) {
       _start = math.min(time, _lastEnd - _raster);
       _end = math.min(_start + 60, _lastEnd);
@@ -159,7 +180,8 @@ class _BlockSheetState extends State<BlockSheet> {
       // Die gewählte Aufgabe bekommt die Zeit des Blocks – wenn es sie noch gibt.
       final task = _taskId == null ? null : app.store.taskById(_taskId!);
       // Kam „Von“ unverändert von ihrer eigenen Uhrzeit, bleibt die Aufgabe, wie sie ist.
-      if (task != null && !task.done && !fromTask && _dayTasks.any((t) => t.id == task.id)) {
+      // Nur am Abgabetag: Ein Block zum Lernen davor verschiebt nicht die Uhrzeit der Abgabe.
+      if (task != null && !task.done && !fromTask && _dueThatDay(task) && _dayTasks.any((t) => t.id == task.id)) {
         app.store.setTaskTime(task, start);
       }
       Navigator.pop(context);
@@ -252,7 +274,8 @@ class _BlockSheetState extends State<BlockSheet> {
               children: [
                 for (final t in dayTasks)
                   AppChip(
-                    label: t.title,
+                    // An den Tagen davor steht dabei, wann sie fällig ist.
+                    label: _dueThatDay(t) ? t.title : '${t.title} · ${l.infoHandIn(f.wd(wdIndex(t.dueDate)))}',
                     selected: _taskId == t.id,
                     colors: tok.item(store.catOf(t.categoryId).color),
                     height: 32,
