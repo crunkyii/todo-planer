@@ -137,6 +137,44 @@ void main() {
     await old.close();
   });
 
+  test('Alte Kategorie ohne „In der Liste ab“ (Version 5) geht wieder hoch', () async {
+    final old = LocalDb(
+      NativeDatabase.memory(
+        setup: (db) {
+          for (final t in syncTables) {
+            final cols = t.columns.entries.map((e) => '"${e.key}" ${e.value}').join(', ');
+            db.execute(
+              'CREATE TABLE "${t.name}" ($cols, "dirty" INTEGER NOT NULL DEFAULT 0, '
+              'PRIMARY KEY (${t.keys.map((k) => '"$k"').join(', ')}))',
+            );
+          }
+          db.execute(
+            'INSERT INTO categories (id, name, color, offset_days, list_from, position, updated_at, deleted, dirty) '
+            "VALUES ('c1', 'Hausübung', '#3D9BE9', 1, NULL, 0, '2026-11-18T10:29:17Z', 0, 1)",
+          );
+          db.execute(
+            'INSERT INTO tasks (id, title, notes, category_id, due_date, due_time, done, done_at, created_at, '
+            'updated_at, deleted, dirty) '
+            "VALUES ('t1', 'Von früher', NULL, 'c1', '2026-11-18', NULL, 0, NULL, '2026-11-01T00:00:00Z', "
+            "'2026-11-01T00:00:00Z', 0, 1)",
+          );
+          db.execute(
+            'CREATE TABLE "done_archive" ("id" TEXT NOT NULL PRIMARY KEY, "day" TEXT NOT NULL, '
+            '"category_id" TEXT NOT NULL, "due_date" TEXT)',
+          );
+          db.execute('PRAGMA user_version = 5');
+        },
+      ),
+    );
+    final s = Store(old);
+    await s.load();
+    final cat = (await old.dirtyRows(categoriesTable)).single;
+    expect(cat['list_from'], 'always');
+    expect(cat['updated_at'], '2026-11-18T10:29:17Z', reason: 'bleibt in der Warteschlange und geht hoch');
+    expect((await old.dirtyRows(tasksTable)).single['notes'], '');
+    await old.close();
+  });
+
   test('Unteraufgaben bearbeiten verwendet vorhandene wieder', () {
     final t = add('Referat', subs: [(title: 'A', done: false), (title: 'B', done: true)]);
     final firstId = t.subs.first.id;

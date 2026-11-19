@@ -186,9 +186,9 @@ class LocalDb extends GeneratedDatabase {
 
   /// Bei jeder Änderung an den Spalten um eins erhöhen und unten in `onUpgrade` nachziehen.
   /// 2: `tasks.notes` · 3: `categories.list_from` · 4: Tabelle `done_archive` ·
-  /// 5: `field_times` (Zeitstempel je Feld-Gruppe).
+  /// 5: `field_times` (Zeitstempel je Feld-Gruppe) · 6: leere `list_from`/`notes` auffüllen.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   /// Merkzettel der erledigten Aufgaben, die nur noch online liegen (siehe [ArchivedDone]).
   /// Nur am Gerät – diese Tabelle wird nie abgeglichen.
@@ -216,6 +216,13 @@ class LocalDb extends GeneratedDatabase {
         for (final t in syncTables.where((t) => t.groups.isNotEmpty)) {
           await _addColumn(t.name, 'field_times', 'TEXT');
         }
+      }
+      // Zeilen von vor den Versionen 2 und 3 haben hier noch nichts stehen. Supabase verlangt
+      // einen Wert und lehnt sie sonst bei jedem Hochladen ab – dann sehen andere Geräte die
+      // Kategorie nie. `updated_at` bleibt, die Zeilen gehen beim nächsten Abgleich hoch.
+      if (from < 6) {
+        await customStatement("UPDATE \"categories\" SET \"list_from\" = 'always' WHERE \"list_from\" IS NULL");
+        await customStatement("UPDATE \"tasks\" SET \"notes\" = '' WHERE \"notes\" IS NULL");
       }
     },
   );
