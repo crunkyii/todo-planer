@@ -107,26 +107,34 @@ class _ListsState extends State<_Lists> {
             // Nur solange es die Liste unter der Maus noch gibt.
             physics: b.groups.any((g) => g.id == _grab) ? const NeverScrollableScrollPhysics() : null,
             itemCount: b.groups.length,
+            // Über den Schlüssel findet jede Liste ihren neuen Platz und behält dabei ihren Zustand.
+            findChildIndexCallback: (key) {
+              final i = b.groups.indexWhere((g) => ValueKey(g.id) == key);
+              return i < 0 ? null : i;
+            },
             itemBuilder: (context, i) {
               final g = b.groups[i];
               final move = b.groups.length > 1 ? b.onMove : null;
-              return _ListPanel(
+              return _SlideOnMove(
                 key: ValueKey(g.id),
-                ui: b.ui,
-                group: g,
-                older: b.showOlder && g.section == Section.done,
-                olderCat: b.olderCat,
-                onDrop: move == null ? null : (id) => move(id, g.id),
-                dragging: _drag == g.id,
-                onDrag: (on) {
-                  if (mounted) setState(() => _drag = on ? g.id : null);
-                },
-                onGrab: (on) {
-                  if (!mounted || (!on && _grab != g.id && _grab != null)) return;
-                  setState(() => _grab = on ? g.id : null);
-                },
-                onLeft: move == null || i == 0 ? null : () => move(g.id, b.groups[i - 1].id),
-                onRight: move == null || i == b.groups.length - 1 ? null : () => move(g.id, b.groups[i + 1].id),
+                index: i,
+                child: _ListPanel(
+                  ui: b.ui,
+                  group: g,
+                  older: b.showOlder && g.section == Section.done,
+                  olderCat: b.olderCat,
+                  onDrop: move == null ? null : (id) => move(id, g.id),
+                  dragging: _drag == g.id,
+                  onDrag: (on) {
+                    if (mounted) setState(() => _drag = on ? g.id : null);
+                  },
+                  onGrab: (on) {
+                    if (!mounted || (!on && _grab != g.id && _grab != null)) return;
+                    setState(() => _grab = on ? g.id : null);
+                  },
+                  onLeft: move == null || i == 0 ? null : () => move(g.id, b.groups[i - 1].id),
+                  onRight: move == null || i == b.groups.length - 1 ? null : () => move(g.id, b.groups[i + 1].id),
+                ),
               );
             },
           ),
@@ -135,6 +143,51 @@ class _ListsState extends State<_Lists> {
       ],
     );
   }
+}
+
+/// Wechselt eine Liste ihren Platz, gleitet sie von dort herüber, wo sie eben noch stand.
+class _SlideOnMove extends StatefulWidget {
+  const _SlideOnMove({super.key, required this.index, required this.child});
+  final int index;
+  final Widget child;
+
+  @override
+  State<_SlideOnMove> createState() => _SlideOnMoveState();
+}
+
+class _SlideOnMoveState extends State<_SlideOnMove> with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(vsync: this, value: 1);
+  double _from = 0;
+
+  @override
+  void didUpdateWidget(_SlideOnMove old) {
+    super.didUpdateWidget(old);
+    if (old.index == widget.index) return;
+    // Von der Stelle aus weiter, an der sie gerade zu sehen ist.
+    _from = _from * (1 - Curves.easeOutCubic.transform(_c.value)) + (old.index - widget.index);
+    _c
+      ..duration = Motion.of(context, Motion.fast)
+      ..forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _c,
+    child: widget.child,
+    builder: (context, child) => FractionalTranslation(
+      translation: Offset(_from * (1 - Curves.easeOutCubic.transform(_c.value)), 0),
+      // Nur fürs Auge: Getroffen wird die Liste dort, wo sie wirklich steht – sonst spränge
+      // sie unter dem Zeiger hin und her.
+      transformHitTests: false,
+      child: child,
+    ),
+  );
 }
 
 /// Pfeile und Punkte unter den Listen: zeigen, welche gerade zu sehen sind.
@@ -198,7 +251,6 @@ class _Pager extends StatelessWidget {
 
 class _ListPanel extends StatelessWidget {
   const _ListPanel({
-    super.key,
     required this.ui,
     required this.group,
     required this.older,
@@ -317,17 +369,19 @@ class _ListPanel extends StatelessWidget {
       );
     }
     return DragTarget<String>(
-      onWillAcceptWithDetails: (d) => onDrop != null && d.data != g.id,
-      onAcceptWithDetails: (d) => onDrop?.call(d.data),
-      builder: (context, over, _) => Opacity(
-        opacity: dragging ? 0.35 : 1,
-        child: _panel(context, header, drop: over.isNotEmpty),
-      ),
+      // Schon beim Darüberziehen rückt diese Liste zur Seite: Man sieht sofort, was Loslassen
+      // ergibt. Die gezogene steht blass an ihrem neuen Platz.
+      onWillAcceptWithDetails: (d) {
+        if (onDrop == null || d.data == g.id) return false;
+        onDrop!(d.data);
+        return true;
+      },
+      builder: (context, _, _) => Opacity(opacity: dragging ? 0.35 : 1, child: _panel(context, header)),
     );
   }
 
   /// [lifted]: die Liste, wie sie beim Ziehen am Zeiger hängt – deckend und mit Schatten.
-  Widget _panel(BuildContext context, Widget header, {bool drop = false, bool lifted = false}) {
+  Widget _panel(BuildContext context, Widget header, {bool lifted = false}) {
     final tok = context.tok;
     final l = context.l;
     final g = group;
@@ -336,8 +390,7 @@ class _ListPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: lifted ? tok.card : tok.glass,
         borderRadius: BorderRadius.circular(Sizes.rCardLarge),
-        // Leuchtet, solange eine gezogene Liste darüber schwebt: Hier landet sie.
-        border: Border.all(color: drop || lifted ? tok.p : tok.glassEdge),
+        border: Border.all(color: lifted ? tok.p : tok.glassEdge),
         boxShadow: lifted ? tok.cardShadow : null,
       ),
       clipBehavior: Clip.antiAlias,
