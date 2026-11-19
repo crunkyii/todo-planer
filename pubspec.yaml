@@ -4,7 +4,7 @@ description: "ToDo Planer: Todo-Liste mit Gewohnheiten, Kalender und Wochenplan 
 publish_to: 'none'
 
 # Versionsname + Buildnummer (Android: versionName + versionCode).
-version: 1.3.0+4
+version: 1.4.0+5
 
 environment:
   sdk: ^3.14.0
