@@ -128,6 +128,9 @@ class LaunchCommands {
     });
   }
 
+  /// Wer gerade zuhört (`null` = niemand).
+  void Function(LaunchCommand)? get handler => _onCommand;
+
   /// Der App-Bildschirm meldet sich an; ein wartender Aufruf kommt sofort. `null` = abgemeldet.
   set onCommand(void Function(LaunchCommand)? cb) {
     _onCommand = cb;

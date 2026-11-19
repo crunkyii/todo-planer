@@ -116,7 +116,8 @@ class _AppShellState extends State<AppShell> {
   void dispose() {
     _sub?.cancel();
     _widgets.onNewTask = null;
-    _launch.onCommand = null;
+    // Nur abmelden, wenn nicht schon ein neuer App-Bildschirm übernommen hat (Wechsel mit Animation).
+    if (_launch.handler == _onLaunch) _launch.onCommand = null;
     _resume?.dispose();
     ui.dispose();
     super.dispose();

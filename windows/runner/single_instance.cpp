@@ -83,10 +83,9 @@ std::optional<std::vector<std::string>> ReadForwardedArgs(LPARAM lparam) {
 }
 
 void BringToFront(HWND hwnd) {
-  if (::IsIconic(hwnd)) {
-    ::ShowWindow(hwnd, SW_RESTORE);
-  } else if (!::IsWindowVisible(hwnd)) {
-    ::ShowWindow(hwnd, SW_SHOW);
-  }
+  // Noch unsichtbar = die App startet gerade: Sie zeigt sich nach dem ersten Bild selbst
+  // (Win32Window::Show) – vorher käme nur ein leeres Fenster.
+  if (!::IsWindowVisible(hwnd)) return;
+  if (::IsIconic(hwnd)) ::ShowWindow(hwnd, SW_RESTORE);
   ::SetForegroundWindow(hwnd);
 }
