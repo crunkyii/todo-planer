@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../data/models.dart';
 import '../util/dates.dart';
 import '../util/task_logic.dart';
+import 'drag_order.dart';
 
 enum AppTab { tasks, calendar, week, stats, settings }
 
@@ -11,6 +12,11 @@ enum SortMode { date, category, name }
 /// Bildschirm-Zustand wie `state` im Prototyp (Tab, Filter, eingeklappte Abschnitte …).
 class UiState extends ChangeNotifier {
   AppTab tab = AppTab.tasks;
+
+  /// Am Handy: Reihenfolge der Abschnitte, solange einer gezogen wird. Jede Änderung zählt
+  /// [sectionDragTick] hoch – das baut nur die Aufgabenliste neu, nicht die ganze App.
+  final sectionDrag = DragOrder();
+  final sectionDragTick = ValueNotifier(0);
 
   /// Unterseite „Kategorien“ in den Optionen.
   bool cats = false;

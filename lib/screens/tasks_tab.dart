@@ -25,7 +25,7 @@ class TasksTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     return ListenableBuilder(
-      listenable: Listenable.merge([app.store, app.sync, app.settings]),
+      listenable: Listenable.merge([app.store, app.sync, app.settings, ui.sectionDragTick]),
       builder: (context, _) => LayoutBuilder(
         builder: (context, box) {
           // Am PC mit genug Platz: Listen nebeneinander und rechts die Seitenleiste.
@@ -424,6 +424,7 @@ class _TaskList extends StatelessWidget {
                 olderCat: olderCat,
                 maxVisible: context.app.settings.boardVisible,
                 onMove: ui.sort == SortMode.date ? context.app.settings.moveBoardColumn : null,
+                onReorder: context.app.settings.reorderBoard,
               ),
             ),
             if (hiddenNote != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: hiddenNote),
@@ -447,8 +448,22 @@ class _TaskList extends StatelessWidget {
           ..addAll(list.map(card));
       } else {
         // Nach Datum sortiert lassen sich die Abschnitte mit langem Druck umsortieren.
-        final move = ui.sort == SortMode.date && groups.length > 1 ? context.app.settings.moveBoardColumn : null;
-        final gs = groups;
+        final set = context.app.settings;
+        final move = ui.sort == SortMode.date && groups.length > 1 ? set.moveBoardColumn : null;
+        // Während des Ziehens gilt die Vorschau; gespeichert wird erst beim Loslassen.
+        final drag = ui.sectionDrag;
+        final gs = drag.apply(groups, (g) => g.id);
+        void hover(String id, String target) {
+          if (drag.move([for (final x in gs) x.id], id, target)) ui.sectionDragTick.value++;
+        }
+
+        void done() {
+          final ids = drag.finish();
+          if (ids == null) return;
+          set.reorderBoard(ids);
+          ui.sectionDragTick.value++;
+        }
+
         for (final (i, g) in gs.indexed) {
           final open = !ui.collapsed.contains(g.id);
           if (g.section == Section.done && !open) showOlder = false;
@@ -472,7 +487,8 @@ class _TaskList extends StatelessWidget {
               key: ValueKey('section-${g.id}'),
               id: g.id,
               head: head,
-              onDrop: (id) => move(id, g.id),
+              onDrop: (id) => hover(id, g.id),
+              onDone: done,
               onUp: i == 0 ? null : () => move(g.id, gs[i - 1].id),
               onDown: i == gs.length - 1 ? null : () => move(g.id, gs[i + 1].id),
               children: items,

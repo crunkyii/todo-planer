@@ -14,6 +14,7 @@ class MovableSection extends StatefulWidget {
     required this.head,
     required this.children,
     required this.onDrop,
+    required this.onDone,
     this.onUp,
     this.onDown,
   });
@@ -23,6 +24,9 @@ class MovableSection extends StatefulWidget {
 
   /// Ein anderer Abschnitt (seine ID) wurde auf diesen gezogen.
   final ValueChanged<String> onDrop;
+
+  /// Losgelassen: Jetzt wird die neue Reihenfolge gespeichert.
+  final VoidCallback onDone;
 
   /// Einen Platz nach oben oder unten (für Screenreader).
   final VoidCallback? onUp, onDown;
@@ -37,6 +41,7 @@ class _MovableSectionState extends State<MovableSection> {
 
   void _end() {
     _scroller?.stopAutoScroll();
+    widget.onDone();
     if (mounted) setState(() => _dragging = false);
   }
 
@@ -53,26 +58,29 @@ class _MovableSectionState extends State<MovableSection> {
     return LayoutBuilder(
       builder: (context, box) {
         // Am Finger hängt der Abschnitt, wie er dasteht – bei vielen Aufgaben nur sein Anfang.
+        // Einmal gezeichnet und dann nur noch verschoben (RepaintBoundary): Das hält das Ziehen flüssig.
         final feedback = IgnorePointer(
-          child: SizedBox(
-            width: box.maxWidth,
-            child: Material(
-              type: MaterialType.transparency,
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: Sizes.dragPreviewMax),
-                decoration: BoxDecoration(
-                  color: tok.card,
-                  borderRadius: BorderRadius.circular(Sizes.rCard),
-                  border: Border.all(color: tok.p),
-                  boxShadow: tok.cardShadow,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: SingleChildScrollView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [widget.head, ...widget.children],
+          child: RepaintBoundary(
+            child: SizedBox(
+              width: box.maxWidth,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: Sizes.dragPreviewMax),
+                  decoration: BoxDecoration(
+                    color: tok.card,
+                    borderRadius: BorderRadius.circular(Sizes.rCard),
+                    border: Border.all(color: tok.p),
+                    boxShadow: tok.cardShadow,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [widget.head, ...widget.children],
+                    ),
                   ),
                 ),
               ),
@@ -105,6 +113,8 @@ class _MovableSectionState extends State<MovableSection> {
             widget.onDrop(d.data);
             return true;
           },
+          // Losgelassen über einem Abschnitt: fertig, auch wenn der gezogene gerade weggescrollt ist.
+          onAcceptWithDetails: (_) => widget.onDone(),
           builder: (context, _, _) => Opacity(
             // Der gezogene Abschnitt steht blass an seinem neuen Platz.
             opacity: _dragging ? 0.35 : 1,

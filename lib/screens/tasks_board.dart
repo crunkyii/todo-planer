@@ -15,6 +15,7 @@ import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pickers.dart';
 import '../widgets/ui.dart';
+import 'drag_order.dart';
 import 'older_done.dart';
 import 'task_card.dart';
 import 'ui_state.dart';
@@ -46,6 +47,7 @@ class TasksBoard extends StatelessWidget {
     this.olderCat,
     this.maxVisible = 3,
     this.onMove,
+    this.onReorder,
   });
   final UiState ui;
   final List<TaskGroup> groups;
@@ -53,6 +55,9 @@ class TasksBoard extends StatelessWidget {
 
   /// Liste `id` wurde auf die Liste `target` gezogen. `null` = Reihenfolge steht fest.
   final void Function(String id, String target)? onMove;
+
+  /// Fertig gezogen: die neue Reihenfolge der Listen.
+  final ValueChanged<List<String>>? onReorder;
 
   /// Ältere erledigte Aufgaben liegen noch online – der Hinweis steht am Ende von „Erledigt“.
   final bool showOlder;
@@ -89,6 +94,21 @@ class _ListsState extends State<_Lists> {
   /// Die Liste, die gerade gezogen wird: An ihrem Platz bleibt nur ein blasser Schatten.
   String? _drag;
 
+  /// Reihenfolge während des Ziehens (gespeichert wird erst beim Loslassen).
+  final _order = DragOrder();
+
+  List<TaskGroup> get _groups => _order.apply(widget.board.groups, (g) => g.id);
+
+  void _hover(String dragged, String target) {
+    if (_order.move([for (final g in _groups) g.id], dragged, target)) setState(() {});
+  }
+
+  void _dragEnded() {
+    final ids = _order.finish();
+    if (ids != null) widget.board.onReorder?.call(ids);
+    if (mounted) setState(() => _drag = null);
+  }
+
   @override
   void dispose() {
     _pages.dispose();
@@ -98,6 +118,7 @@ class _ListsState extends State<_Lists> {
   @override
   Widget build(BuildContext context) {
     final b = widget.board;
+    final groups = _groups;
     return Column(
       children: [
         Expanded(
@@ -105,16 +126,16 @@ class _ListsState extends State<_Lists> {
             controller: _pages,
             padEnds: false,
             // Nur solange es die Liste unter der Maus noch gibt.
-            physics: b.groups.any((g) => g.id == _grab) ? const NeverScrollableScrollPhysics() : null,
-            itemCount: b.groups.length,
+            physics: groups.any((g) => g.id == _grab) ? const NeverScrollableScrollPhysics() : null,
+            itemCount: groups.length,
             // Über den Schlüssel findet jede Liste ihren neuen Platz und behält dabei ihren Zustand.
             findChildIndexCallback: (key) {
-              final i = b.groups.indexWhere((g) => ValueKey(g.id) == key);
+              final i = groups.indexWhere((g) => ValueKey(g.id) == key);
               return i < 0 ? null : i;
             },
             itemBuilder: (context, i) {
-              final g = b.groups[i];
-              final move = b.groups.length > 1 ? b.onMove : null;
+              final g = groups[i];
+              final move = groups.length > 1 ? b.onMove : null;
               return _SlideOnMove(
                 key: ValueKey(g.id),
                 index: i,
@@ -123,17 +144,21 @@ class _ListsState extends State<_Lists> {
                   group: g,
                   older: b.showOlder && g.section == Section.done,
                   olderCat: b.olderCat,
-                  onDrop: move == null ? null : (id) => move(id, g.id),
+                  onDrop: move == null ? null : (id) => _hover(id, g.id),
                   dragging: _drag == g.id,
                   onDrag: (on) {
-                    if (mounted) setState(() => _drag = on ? g.id : null);
+                    if (on) {
+                      setState(() => _drag = g.id);
+                    } else {
+                      _dragEnded();
+                    }
                   },
                   onGrab: (on) {
                     if (!mounted || (!on && _grab != g.id && _grab != null)) return;
                     setState(() => _grab = on ? g.id : null);
                   },
-                  onLeft: move == null || i == 0 ? null : () => move(g.id, b.groups[i - 1].id),
-                  onRight: move == null || i == b.groups.length - 1 ? null : () => move(g.id, b.groups[i + 1].id),
+                  onLeft: move == null || i == 0 ? null : () => move(g.id, groups[i - 1].id),
+                  onRight: move == null || i == groups.length - 1 ? null : () => move(g.id, groups[i + 1].id),
                 ),
               );
             },
@@ -321,12 +346,15 @@ class _ListPanel extends StatelessWidget {
     if (onDrop != null) {
       // Beim Ziehen hängt die ganze Liste am Zeiger – so groß, wie sie dasteht.
       final plain = header;
+      // Einmal gezeichnet und dann nur noch verschoben (RepaintBoundary): Das hält das Ziehen flüssig.
       final feedback = IgnorePointer(
-        child: SizedBox.fromSize(
-          size: size,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Builder(builder: (context) => _panel(context, plain, lifted: true)),
+        child: RepaintBoundary(
+          child: SizedBox.fromSize(
+            size: size,
+            child: Material(
+              type: MaterialType.transparency,
+              child: Builder(builder: (context) => _panel(context, plain, lifted: true)),
+            ),
           ),
         ),
       );
@@ -376,6 +404,8 @@ class _ListPanel extends StatelessWidget {
         onDrop!(d.data);
         return true;
       },
+      // Losgelassen über einer Liste: fertig, auch wenn die gezogene gerade nicht zu sehen ist.
+      onAcceptWithDetails: (_) => onDrag?.call(false),
       builder: (context, _, _) => Opacity(opacity: dragging ? 0.35 : 1, child: _panel(context, header)),
     );
   }

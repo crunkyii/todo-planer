@@ -79,7 +79,11 @@ void main() {
       final g = await _drag(tester, title(a), title(c) + const Offset(0, 200), mouse: true);
       expect(find.byType(TaskCard).evaluate().length, greaterThan(0));
       await tester.pumpAndSettle();
-      expect([for (final g in board().groups) g.id].take(3), [b, c, a], reason: 'beim Ziehen ($size)');
+      // Beim Ziehen sieht man die neue Reihenfolge schon – gespeichert ist sie noch nicht.
+      // `.first`: die Liste an ihrem Platz, nicht die, die am Zeiger hängt.
+      double left(String id) => tester.getRect(head(id).first).left;
+      expect(left(b) < left(c) && left(c) < left(a), isTrue, reason: 'beim Ziehen ($size)');
+      expect([for (final g in board().groups) g.id].take(3), [a, b, c], reason: 'noch nicht gespeichert ($size)');
       await g.up();
       await g.removePointer();
       await tester.pumpAndSettle();

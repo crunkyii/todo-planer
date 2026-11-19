@@ -932,6 +932,10 @@ void main() {
       // Die erste Überschrift lange drücken und unter die zweite ziehen.
       final from = tester.getCenter(head(a));
       final to = tester.getRect(head(b)).bottomCenter + const Offset(0, 24);
+      var saves = 0;
+      void count() => saves++;
+      app.settings.addListener(count);
+      addTearDown(() => app.settings.removeListener(count));
       final g = await tester.startGesture(from);
       await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
       for (var i = 1; i <= 10; i++) {
@@ -941,8 +945,11 @@ void main() {
       // Noch während des Ziehens steht die Reihenfolge schon so da, wie sie nach dem Loslassen wird.
       expect(ids().take(2), [b, a]);
       expect(tester.takeException(), isNull);
+      // Flüssig: Während des Ziehens wird nichts gespeichert (das würde die ganze App neu aufbauen).
+      expect(saves, 0);
       await g.up();
       await tester.pumpAndSettle();
+      expect(saves, 1, reason: 'beim Loslassen genau einmal gespeichert');
       expect(ids().take(2), [b, a]);
       expect(app.settings.boardColumnOrder().where(before.contains).take(2), [b, a]);
       // Ein kurzer Tipp klappt weiter nur ein und aus.
@@ -1092,6 +1099,10 @@ void main() {
       // Die erste Liste mit der Maus auf die dritte ziehen: Sie landet dahinter.
       Offset title(String id) => tester.getRect(head(id)).topCenter + const Offset(0, 28);
       final from = title(a), to = title(c) + const Offset(0, 200);
+      var saves = 0;
+      void count() => saves++;
+      app.settings.addListener(count);
+      addTearDown(() => app.settings.removeListener(count));
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await mouse.addPointer(location: from);
       await tester.pump();
@@ -1105,8 +1116,11 @@ void main() {
       // Am Zeiger hängt die ganze Liste mit ihren Aufgaben, nicht nur die Überschrift.
       expect(find.byType(TaskCard).evaluate().length, greaterThan(cards));
       expect(tester.takeException(), isNull);
+      // Flüssig: Während des Ziehens wird nichts gespeichert (das würde die ganze App neu aufbauen).
+      expect(saves, 0);
       await mouse.up();
       await tester.pump();
+      expect(saves, 1, reason: 'beim Loslassen genau einmal gespeichert');
       await tester.pumpAndSettle();
       expect(ids().take(3), [b, c, a]);
       expect(tester.takeException(), isNull);
@@ -2041,6 +2055,7 @@ void main() {
     });
 
     testWidgets('Aufgaben: Listen nebeneinander, höchstens drei zu sehen, daneben die Seitenleiste', (tester) async {
+      useFixedClock(); // Beispieldaten hängen an der Uhrzeit (z. B. „heute, 18:00“)
       final l = l10n('de');
       final app = await makeServices();
       seedDemo(app.store, l);
@@ -2184,6 +2199,7 @@ void main() {
     });
 
     testWidgets('Aufgaben: im schmalen PC-Fenster bleibt die eine Liste mit Abschnitten', (tester) async {
+      useFixedClock(); // Beispieldaten hängen an der Uhrzeit (z. B. „heute, 18:00“)
       final l = l10n('de');
       final app = await makeServices();
       seedDemo(app.store, l);

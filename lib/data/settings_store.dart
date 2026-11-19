@@ -90,6 +90,23 @@ class SettingsStore extends ChangeNotifier {
     return [...boardOrder.where(all.contains), ...all.where((id) => !boardOrder.contains(id))];
   }
 
+  /// Übernimmt die Reihenfolge der gerade sichtbaren Listen [visible]. Ausgeblendete behalten
+  /// ihren Platz zwischen ihnen.
+  void reorderBoard(List<String> visible) {
+    final order = boardColumnOrder();
+    final slots = [
+      for (var i = 0; i < order.length; i++)
+        if (visible.contains(order[i])) i,
+    ];
+    final ids = visible.where(order.contains).toList();
+    if (ids.length != slots.length) return;
+    for (var k = 0; k < slots.length; k++) {
+      order[slots[k]] = ids[k];
+    }
+    if (listEquals(order, boardColumnOrder())) return;
+    updateDevice((s) => s.boardOrder = order);
+  }
+
   /// Zieht die Liste [id] an den Platz von [target]; die dazwischen rücken auf.
   void moveBoardColumn(String id, String target) {
     final order = boardColumnOrder();
