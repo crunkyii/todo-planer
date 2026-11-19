@@ -17,13 +17,6 @@ about = "Neue Aufgabe im ToDo Planer"
 icon = "C:/Users/DEIN-NAME/AppData/Local/ToDo Planer/Flick/Icons/aufgabe_hinzufuegen.ico"
 open = "todoplaner://add"
 
-# aufgabe Mathe lernen → Formular mit Titel
-[[shortcut]]
-name = "aufgabe"
-about = "Neue Aufgabe mit Titel, z. B. aufgabe Mathe lernen"
-icon = "C:/Users/DEIN-NAME/AppData/Local/ToDo Planer/Flick/Icons/aufgabe_hinzufuegen.ico"
-open = "todoplaner://add?title={arg}"
-
 # Aufgaben → heutige Aufgaben in der Leiste (Flick verlangt {name} im Ziel; die App braucht es nicht)
 [[shortcut]]
 name = "Aufgaben"

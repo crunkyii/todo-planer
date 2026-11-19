@@ -1332,9 +1332,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get flickAboutAdd => 'Neue Aufgabe im ToDo Planer';
 
   @override
-  String get flickAboutAddTitle => 'Neue Aufgabe mit Titel, z. B. aufgabe Mathe lernen';
-
-  @override
   String get flickAboutToday => 'Heutige Aufgaben aus dem ToDo Planer';
 
   @override

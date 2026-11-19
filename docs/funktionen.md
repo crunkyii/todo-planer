@@ -37,7 +37,6 @@ Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhake
 | In Flick eintippen | Was passiert |
 |---|---|
 | `addAufgabe` | Die App kommt nach vorne (oder startet) und das Formular *Neue Aufgabe* ist offen. |
-| `aufgabe Mathe lernen` | Wie oben, der Titel steht schon drin. Gespeichert wird erst mit *Hinzufügen*. |
 | `Aufgaben` | Die heutigen und überfälligen Aufgaben stehen **direkt in der Flick-Leiste** (oben eine Zeile mit Datum und Anzahl). Enter auf einer Zeile öffnet die App im Tab *Aufgaben*, scrollt zu dieser Aufgabe und lässt ihre Karte kurz größer werden und leuchten (bei „Animationen reduzieren“ nur leuchten). |
 | `todo` → `Aufgaben`, `Kalender`, `Wochenplan`, `Statistik`, `Optionen` | Die App öffnet in diesem Tab. Man kann auch gleich `todo kal` tippen. |
 
@@ -48,7 +47,7 @@ Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhake
 3. *Optionen → Flick → Flick-Shortcuts kopieren* antippen. Die App kopiert die Shortcuts, legt ihre drei Symbole in `%LOCALAPPDATA%\ToDo Planer\Flick\Icons` ab und öffnet die Seite **„Flick einrichten“** mit den Schritten, dem Schalter für die Liste und einer Vorschau, was man in Flick eintippen kann (mit den Symbolen). Dort gibt es auch „Nochmal kopieren“.
 4. In Flick `flick config` eintippen (öffnet die `config.toml`), den kopierten Text ans Ende einfügen und speichern. Flick übernimmt das sofort. Waren die Shortcuts schon einmal drin, vorher den alten Block löschen. (Man kann die Shortcuts auch in Flick unter *Settings → Shortcuts* von Hand anlegen.)
 
-Jeder Shortcut hat ein eigenes Symbol (`icon = …` in der `config.toml`): *Aufgabe hinzufügen* für `addAufgabe` und `aufgabe`, *Aufgaben anzeigen* für `Aufgaben`, *ToDo Planer öffnen* für `todo`. Die Dateien liegen in der App unter [`assets/flick`](../assets/flick). Fehlt eine, zeigt Flick sein eigenes Symbol.
+Jeder Shortcut hat ein eigenes Symbol (`icon = …` in der `config.toml`): *Aufgabe hinzufügen* für `addAufgabe`, *Aufgaben anzeigen* für `Aufgaben`, *ToDo Planer öffnen* für `todo`. Die Dateien liegen in der App unter [`assets/flick`](../assets/flick). Fehlt eine, zeigt Flick sein eigenes Symbol.
 
 Die Vorlage mit Erklärungen liegt auch unter [`tool/flick/todo-planer.toml`](../tool/flick/todo-planer.toml) – dort muss man die Pfade bei `pick` und `icon` selbst anpassen; die kopierte Version aus der App hat sie schon richtig.
 

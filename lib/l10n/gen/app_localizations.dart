@@ -2348,12 +2348,6 @@ abstract class AppLocalizations {
   /// **'Neue Aufgabe im ToDo Planer'**
   String get flickAboutAdd;
 
-  /// No description provided for @flickAboutAddTitle.
-  ///
-  /// In de, this message translates to:
-  /// **'Neue Aufgabe mit Titel, z. B. aufgabe Mathe lernen'**
-  String get flickAboutAddTitle;
-
   /// No description provided for @flickAboutToday.
   ///
   /// In de, this message translates to:

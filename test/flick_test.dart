@@ -232,7 +232,6 @@ void main() {
       expect(toml, contains('pick = "C:/Users/Max Mustermann/AppData/Local/ToDo Planer/Flick/Heute"'));
       expect(toml, contains('open = "todoplaner://tab/aufgaben?zeile={name}"'));
       expect(toml, contains('open = "todoplaner://tab/{name}"'));
-      expect(toml, contains('open = "todoplaner://add?title={arg}"'));
       // Jeder Link darin versteht die App.
       for (final m in RegExp(r'open = "([^"]+)"').allMatches(toml)) {
         final link = m.group(1)!.replaceAll('{name}', 'Kalender').replaceAll('{arg}', 'x');

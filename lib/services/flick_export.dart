@@ -227,7 +227,6 @@ String flickShortcuts(AppLocalizations l, String dir) {
     '# ToDo Planer → Flick (https://github.com/Whiskey-Bravo/flick)',
     '',
     shortcut('addAufgabe', l.flickAboutAdd, FlickIcon.add, ['open = "$launchScheme://add"']),
-    shortcut('aufgabe', l.flickAboutAddTitle, FlickIcon.add, ['open = "$launchScheme://add?title={arg}"']),
     // Flick verlangt bei einer Liste {name} im Ziel – die App öffnet damit einfach „Aufgaben“.
     shortcut('Aufgaben', l.flickAboutToday, FlickIcon.today, [
       'pick = ${q(dir.replaceAll(r'\', '/'))}',
