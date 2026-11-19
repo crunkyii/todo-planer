@@ -930,7 +930,7 @@ void main() {
       expect(ui.weekStart, DateTime(2026, 11, 12));
     });
 
-    testWidgets('Spalten: 2, 3, 4 und 5 nebeneinander – genau so viele sind zu sehen', (tester) async {
+    testWidgets('Spalten: 2, 3 und 4 nebeneinander – genau so viele sind zu sehen', (tester) async {
       final l = l10n('de');
       final app = await makeServices();
       seedDemo(app.store, l);
@@ -944,9 +944,7 @@ void main() {
           final shown = [
             for (final g in board.groups) find.bySemanticsLabel(l.sectionCount(g.label, g.items.length)).hitTestable(),
           ].where((f) => f.evaluate().isNotEmpty).map(tester.getRect).toList();
-          // Im kleinen Fenster (1366 px) wären fünf Listen zu schmal zum Lesen: Dort bleiben es vier.
-          final want = size.width < 1500 && n > 4 ? 4 : n;
-          expect(shown, hasLength(want), reason: '$n Spalten bei $size');
+          expect(shown, hasLength(n), reason: '$n Spalten bei $size');
           for (final r in shown) {
             expect(r.left, greaterThanOrEqualTo(area.left), reason: 'ganz im Fenster ($n bei $size)');
             expect(r.right, lessThanOrEqualTo(area.right + 0.5), reason: 'ganz im Fenster ($n bei $size)');
@@ -963,7 +961,7 @@ void main() {
       seedDemo(app.store, l);
       app.settings.updateDevice(
         (s) => s
-          ..boardVisible = 5
+          ..boardVisible = SettingsStore.boardVisibleMax
           ..boardHidden = {
             for (final x in Section.values)
               if (x != Section.today && x != Section.week) x.name,
@@ -1001,12 +999,16 @@ void main() {
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await mouse.addPointer(location: from);
       await tester.pump();
+      final cards = find.byType(TaskCard).evaluate().length;
       await mouse.down(from);
       await tester.pump();
       for (var i = 1; i <= 8; i++) {
         await mouse.moveTo(Offset.lerp(from, to, i / 8)!);
         await tester.pump(const Duration(milliseconds: 16));
       }
+      // Am Zeiger hängt die ganze Liste mit ihren Aufgaben, nicht nur die Überschrift.
+      expect(find.byType(TaskCard).evaluate().length, greaterThan(cards));
+      expect(tester.takeException(), isNull);
       await mouse.up();
       await tester.pump();
       await tester.pumpAndSettle();

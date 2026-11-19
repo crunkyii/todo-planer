@@ -86,6 +86,9 @@ class _ListsState extends State<_Lists> {
   /// Die Maus steht auf einer Überschrift: Ziehen greift dann die Liste, statt zu blättern.
   String? _grab;
 
+  /// Die Liste, die gerade gezogen wird: An ihrem Platz bleibt nur ein blasser Schatten.
+  String? _drag;
+
   @override
   void dispose() {
     _pages.dispose();
@@ -114,6 +117,10 @@ class _ListsState extends State<_Lists> {
                 older: b.showOlder && g.section == Section.done,
                 olderCat: b.olderCat,
                 onDrop: move == null ? null : (id) => move(id, g.id),
+                dragging: _drag == g.id,
+                onDrag: (on) {
+                  if (mounted) setState(() => _drag = on ? g.id : null);
+                },
                 onGrab: (on) {
                   if (!mounted || (!on && _grab != g.id && _grab != null)) return;
                   setState(() => _grab = on ? g.id : null);
@@ -198,6 +205,8 @@ class _ListPanel extends StatelessWidget {
     this.olderCat,
     this.onDrop,
     this.onGrab,
+    this.onDrag,
+    this.dragging = false,
     this.onLeft,
     this.onRight,
   });
@@ -212,11 +221,17 @@ class _ListPanel extends StatelessWidget {
   /// Die Maus kommt auf die Überschrift (`true`) oder verlässt sie.
   final ValueChanged<bool>? onGrab;
 
+  /// Das Ziehen dieser Liste beginnt (`true`) oder endet; [dragging], solange es läuft.
+  final ValueChanged<bool>? onDrag;
+  final bool dragging;
+
   /// Diese Liste um einen Platz verschieben (für Screenreader und Tastatur-Hilfen).
   final VoidCallback? onLeft, onRight;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, box) => _build(context, box.biggest));
+
+  Widget _build(BuildContext context, Size size) {
     final tok = context.tok;
     final l = context.l;
     final g = group;
@@ -252,38 +267,47 @@ class _ListPanel extends StatelessWidget {
       ),
     );
     if (onDrop != null) {
-      // Das Kärtchen, das beim Ziehen am Zeiger hängt.
-      final feedback = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: tok.card,
-          borderRadius: BorderRadius.circular(Sizes.rCard),
-          border: Border.all(color: tok.p),
-          boxShadow: tok.cardShadow,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (g.color != null) ...[Dot(g.color!), const SizedBox(width: 8)],
-            Text(g.label, style: title),
-          ],
+      // Beim Ziehen hängt die ganze Liste am Zeiger – so groß, wie sie dasteht.
+      final plain = header;
+      final feedback = IgnorePointer(
+        child: SizedBox.fromSize(
+          size: size,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Builder(builder: (context) => _panel(context, plain, lifted: true)),
+          ),
         ),
       );
-      final dim = Opacity(opacity: 0.35, child: header);
+      // Die Überschrift sitzt um Rand und Rahmen eingerückt in der Liste.
+      Offset anchor(Draggable<Object> d, BuildContext context, Offset position) =>
+          childDragAnchorStrategy(d, context, position) + const Offset(9, 5);
       // Mit der Maus sofort ziehen; am Touchscreen erst nach langem Druck, damit Wischen
       // weiter zwischen den Listen blättert.
       final touch = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
       // Nach dem Loslassen gilt wieder Blättern, auch wenn die Liste dabei ihren Platz gewechselt hat.
-      void end(DraggableDetails _) => onGrab?.call(false);
+      void end(DraggableDetails _) {
+        onDrag?.call(false);
+        onGrab?.call(false);
+      }
+
+      void start() => onDrag?.call(true);
       final drag = touch
           ? LongPressDraggable<String>(
               data: g.id,
               feedback: feedback,
-              childWhenDragging: dim,
+              dragAnchorStrategy: anchor,
+              onDragStarted: start,
               onDragEnd: end,
               child: header,
             )
-          : Draggable<String>(data: g.id, feedback: feedback, childWhenDragging: dim, onDragEnd: end, child: header);
+          : Draggable<String>(
+              data: g.id,
+              feedback: feedback,
+              dragAnchorStrategy: anchor,
+              onDragStarted: start,
+              onDragEnd: end,
+              child: header,
+            );
       // Die Maus-Fläche liegt außen: Sie bleibt auch stehen, während die Überschrift gezogen wird.
       header = MouseRegion(
         cursor: SystemMouseCursors.grab,
@@ -295,21 +319,26 @@ class _ListPanel extends StatelessWidget {
     return DragTarget<String>(
       onWillAcceptWithDetails: (d) => onDrop != null && d.data != g.id,
       onAcceptWithDetails: (d) => onDrop?.call(d.data),
-      builder: (context, over, _) => _panel(context, header, drop: over.isNotEmpty),
+      builder: (context, over, _) => Opacity(
+        opacity: dragging ? 0.35 : 1,
+        child: _panel(context, header, drop: over.isNotEmpty),
+      ),
     );
   }
 
-  Widget _panel(BuildContext context, Widget header, {required bool drop}) {
+  /// [lifted]: die Liste, wie sie beim Ziehen am Zeiger hängt – deckend und mit Schatten.
+  Widget _panel(BuildContext context, Widget header, {bool drop = false, bool lifted = false}) {
     final tok = context.tok;
     final l = context.l;
     final g = group;
     return Container(
       margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
       decoration: BoxDecoration(
-        color: tok.glass,
+        color: lifted ? tok.card : tok.glass,
         borderRadius: BorderRadius.circular(Sizes.rCardLarge),
         // Leuchtet, solange eine gezogene Liste darüber schwebt: Hier landet sie.
-        border: Border.all(color: drop ? tok.p : tok.glassEdge),
+        border: Border.all(color: drop || lifted ? tok.p : tok.glassEdge),
+        boxShadow: lifted ? tok.cardShadow : null,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

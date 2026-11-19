@@ -71,7 +71,7 @@ class SettingsStore extends ChangeNotifier {
   int weekFirstDay = 0;
 
   /// Aufgaben am PC: wie viele Listen höchstens nebeneinander stehen.
-  static const boardVisibleMin = 2, boardVisibleMax = 5;
+  static const boardVisibleMin = 2, boardVisibleMax = 4;
   int boardVisible = 3;
 
   /// Aufgaben am PC: ausgeblendete Zeitraum-Listen (`Section.name`).
