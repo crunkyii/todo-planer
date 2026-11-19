@@ -408,6 +408,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get close => 'Schließen';
 
   @override
+  String get columnsAllHidden =>
+      'Alle Spalten sind ausgeblendet. Unter ⋮ → Spalten lassen sie sich wieder einschalten.';
+
+  @override
   String get sort => 'Sortieren';
 
   @override

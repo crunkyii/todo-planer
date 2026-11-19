@@ -54,6 +54,10 @@ class _BlockSheetState extends State<BlockSheet> {
   /// bekommt beim Speichern die „Von“-Zeit als Uhrzeit.
   String? _taskId;
 
+  /// „Von“, wie es die gewählte Aufgabe mit ihrer eigenen Uhrzeit vorgegeben hat. Bleibt es
+  /// dabei, wird weder gerundet noch die Uhrzeit der Aufgabe angefasst.
+  int? _taskStart;
+
   /// Offene Aufgaben, die am gewählten Tag der gezeigten Woche fällig sind – nur, wenn genau
   /// ein Tag gewählt ist.
   List<Task> get _dayTasks {
@@ -64,6 +68,7 @@ class _BlockSheetState extends State<BlockSheet> {
   }
 
   void _pickTask(Task t) => setState(() {
+    _taskStart = null;
     if (_taskId == t.id) {
       _taskId = null;
       return;
@@ -77,6 +82,7 @@ class _BlockSheetState extends State<BlockSheet> {
     if (time != null) {
       _start = math.min(time, _lastEnd - _raster);
       _end = math.min(_start + 60, _lastEnd);
+      _taskStart = _start;
     }
   });
 
@@ -108,7 +114,8 @@ class _BlockSheetState extends State<BlockSheet> {
     // Nur gerundet wird, was der User geändert hat – wer einen alten 10:15-Block nach dem
     // Wechsel auf ein 30-Minuten-Raster nur umbenennt, behält 10:15.
     int snap(int v, int orig) => v == orig ? v : (v / r).round() * r;
-    final start = snap(_start, widget.start), end = snap(_end, widget.end);
+    final fromTask = _start == _taskStart;
+    final start = fromTask ? _start : snap(_start, widget.start), end = snap(_end, widget.end);
     String? err;
     if (name.isEmpty) {
       err = l.errName;
@@ -151,7 +158,10 @@ class _BlockSheetState extends State<BlockSheet> {
       );
       // Die gewählte Aufgabe bekommt die Zeit des Blocks – wenn es sie noch gibt.
       final task = _taskId == null ? null : app.store.taskById(_taskId!);
-      if (task != null && !task.done && _dayTasks.any((t) => t.id == task.id)) app.store.setTaskTime(task, start);
+      // Kam „Von“ unverändert von ihrer eigenen Uhrzeit, bleibt die Aufgabe, wie sie ist.
+      if (task != null && !task.done && !fromTask && _dayTasks.any((t) => t.id == task.id)) {
+        app.store.setTaskTime(task, start);
+      }
       Navigator.pop(context);
       app.snack.show(n > 1 ? l.blocksAdded(n) : l.blockAdded);
     }

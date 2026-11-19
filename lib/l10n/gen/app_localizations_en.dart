@@ -405,6 +405,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
+  String get columnsAllHidden => 'All columns are hidden. Turn them back on under ⋮ → Columns.';
+
+  @override
   String get sort => 'Sort';
 
   @override

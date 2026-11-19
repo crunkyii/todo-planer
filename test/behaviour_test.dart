@@ -874,6 +874,60 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Spalten: alles ausgeblendet zeigt einen Hinweis statt einer leeren Seite', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      app.settings.updateDevice((s) => s.boardHidden = {for (final x in Section.values) x.name});
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      expect(find.text(l.columnsAllHidden), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Neuer Block aus einer Aufgabe mit Uhrzeit: 10:07 bleibt 10:07, die Aufgabe bleibt unverändert', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      app.store.addTask(
+        title: 'Zahnarzt',
+        categoryId: app.store.categories.first.id,
+        dueDate: today(),
+        dueTime: 10 * 60 + 7,
+        subs: const [],
+      );
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      await _tap(tester, find.bySemanticsLabel(l.newBlock).last);
+      await _tap(tester, find.widgetWithText(AppChip, 'Zahnarzt'));
+      await _tap(tester, find.text(l.save).last);
+      expect(app.store.blocks.single.start, 10 * 60 + 7);
+      expect(app.store.tasks.single.dueTime, 10 * 60 + 7);
+      await finishApp(tester, app);
+    });
+
+    test('Wochenbeginn umstellen: die gezeigte Woche bleibt, statt fast eine Woche zurückzuspringen', () {
+      useFixedClock(); // Mittwoch, 18.11.2026
+      addTearDown(() => weekFirstDay = 0);
+      weekFirstDay = 0;
+      final ui = UiState()..weekStep(1); // Mo 23. – So 29.
+      expect(ui.weekStart, DateTime(2026, 11, 23));
+      weekFirstDay = 1; // Dienstag
+      ui.weekFirstDayChanged();
+      expect(ui.weekStart, DateTime(2026, 11, 24));
+      // Tagesansicht: derselbe Tag bleibt gewählt, auch über die Wochengrenze.
+      ui.toggleWeekDay(0); // Di 24.
+      weekFirstDay = 3; // Donnerstag
+      ui.weekFirstDayChanged();
+      expect(addDays(ui.weekStart, ui.weekDay!), DateTime(2026, 11, 24));
+      ui.weekStep(-6);
+      expect(addDays(ui.weekStart, ui.weekDay!), DateTime(2026, 11, 18));
+      expect(ui.weekStart, DateTime(2026, 11, 12));
+    });
+
     testWidgets('Aufgabe: Wischen nach links löscht nicht mehr', (tester) async {
       final l = l10n('de');
       final app = await makeServices();

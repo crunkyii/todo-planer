@@ -848,6 +848,12 @@ abstract class AppLocalizations {
   /// **'Schließen'**
   String get close;
 
+  /// No description provided for @columnsAllHidden.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Spalten sind ausgeblendet. Unter ⋮ → Spalten lassen sie sich wieder einschalten.'**
+  String get columnsAllHidden;
+
   /// No description provided for @sort.
   ///
   /// In de, this message translates to:

@@ -126,6 +126,7 @@
   "columnsPeriods": "Time periods",
   "columnsCategories": "Categories as their own column",
   "close": "Close",
+  "columnsAllHidden": "All columns are hidden. Turn them back on under ⋮ → Columns.",
   "sort": "Sort",
   "sortByDate": "By date",
   "sortByCategory": "By category",

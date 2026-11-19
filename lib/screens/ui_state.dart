@@ -91,7 +91,8 @@ class UiState extends ChangeNotifier {
     final wd = weekDay;
     final t = today();
     final hasToday = dayDiff(t, weekStart) >= 0 && dayDiff(t, weekStart) < 7;
-    final d = wd != null ? addDays(weekStart, wd) : (hasToday ? t : weekStart);
+    // Ohne heute zählt die Mitte der gezeigten Woche – so bleibt möglichst viel von ihr stehen.
+    final d = wd != null ? addDays(weekStart, wd) : (hasToday ? t : addDays(weekStart, 3));
     weekStart = weekStartOf(d);
     if (wd != null) weekDay = weekPos(d);
     notifyListeners();

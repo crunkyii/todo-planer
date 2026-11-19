@@ -409,6 +409,10 @@ class _TaskList extends StatelessWidget {
           )
         : null;
 
+    // Am PC alle Spalten ausgeblendet: sagen, woran es liegt, statt eine leere Seite zu zeigen.
+    if (board && groups != null && groups.isEmpty && list.isNotEmpty) {
+      return EmptyState(icon: Ic.week, text: l.columnsAllHidden);
+    }
     if (board && groups != null && groups.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(8, 4, 0, Sizes.wideBottom - 12),
