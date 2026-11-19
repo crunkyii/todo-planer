@@ -94,7 +94,7 @@ void main() {
     await _finish(tester, app);
   });
 
-  testWidgets('Aufgabe über + anlegen, abhaken und per Wischen löschen', (tester) async {
+  testWidgets('Aufgabe über + anlegen, im Formular löschen (Wischen löscht nicht) und abhaken', (tester) async {
     final app = await _services(syncMode: 'local');
     await _pump(tester, app);
 
@@ -106,7 +106,13 @@ void main() {
     expect(find.text('Vokabeln lernen'), findsOneWidget);
     expect(app.store.tasks.single.title, 'Vokabeln lernen');
 
+    // Wischen löscht nicht mehr – gelöscht wird im Formular der Aufgabe.
     await tester.drag(find.text('Vokabeln lernen'), const Offset(-200, 0));
+    await tester.pumpAndSettle();
+    expect(app.store.tasks, hasLength(1));
+    await tester.tap(find.text('Vokabeln lernen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Aufgabe löschen'));
     await tester.pumpAndSettle();
     expect(app.store.tasks, isEmpty);
     expect(find.text('Rückgängig'), findsOneWidget);

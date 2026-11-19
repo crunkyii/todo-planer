@@ -79,14 +79,14 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
 
-    // Zweite Aufgabe: per Wischen löschen und rückgängig machen
+    // Zweite Aufgabe: im Formular löschen und rückgängig machen
     await _tap(tester, find.bySemanticsLabel(l.newTask).last);
     await tester.enterText(find.byType(TextField).first, 'Wegwischen');
     await _tap(tester, find.bySemanticsLabel(l.add));
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
-    await tester.drag(find.text('Wegwischen'), const Offset(-260, 0));
-    await tester.pumpAndSettle();
+    await _tap(tester, find.text('Wegwischen'));
+    await _tap(tester, find.bySemanticsLabel(l.deleteTask));
     expect(find.text('Wegwischen'), findsNothing);
     await _tap(tester, find.text(l.undo));
     expect(find.text('Wegwischen'), findsOneWidget);

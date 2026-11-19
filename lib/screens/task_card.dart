@@ -99,28 +99,6 @@ class TaskCard extends StatefulWidget {
 }
 
 class _TaskCardState extends State<TaskCard> {
-  double _dx = 0;
-  bool _drag = false;
-  bool _gone = false;
-
-  void _end(double width) {
-    if (_dx < -96) {
-      setState(() {
-        _gone = true;
-        _drag = false;
-        _dx = -width * 1.1;
-      });
-      Future.delayed(Motion.of(context, const Duration(milliseconds: 160)), () {
-        if (mounted) deleteTaskWithUndo(context, widget.task);
-      });
-    } else {
-      setState(() {
-        _drag = false;
-        _dx = 0;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = widget.task;
@@ -274,42 +252,10 @@ class _TaskCardState extends State<TaskCard> {
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(Sizes.rCard),
-        child: LayoutBuilder(
-          builder: (context, box) {
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: ExcludeSemantics(
-                    child: Container(
-                      color: _dx < 0 ? tok.errC : Colors.transparent,
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      child: _dx < 0 ? AppIcon(Ic.trash, size: 22, color: tok.onErrC) : null,
-                    ),
-                  ),
-                ),
-                Semantics(
-                  customSemanticsActions: {
-                    CustomSemanticsAction(label: l.deleteTask): () => deleteTaskWithUndo(context, t),
-                  },
-                  child: GestureDetector(
-                    onHorizontalDragStart: _gone ? null : (_) => setState(() => _drag = true),
-                    onHorizontalDragUpdate: _gone
-                        ? null
-                        : (d) => setState(() => _dx = (_dx + d.delta.dx).clamp(-box.maxWidth, 0)),
-                    onHorizontalDragEnd: _gone ? null : (_) => _end(box.maxWidth),
-                    onHorizontalDragCancel: _gone ? null : () => _end(box.maxWidth),
-                    child: AnimatedContainer(
-                      duration: _drag ? Duration.zero : Motion.of(context, Motion.springBack),
-                      curve: Motion.springSoft,
-                      transform: Matrix4.translationValues(_dx, 0, 0),
-                      child: card,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+        // Gelöscht wird im Formular der Aufgabe; Screenreader haben dafür eine eigene Aktion.
+        child: Semantics(
+          customSemanticsActions: {CustomSemanticsAction(label: l.deleteTask): () => deleteTaskWithUndo(context, t)},
+          child: card,
         ),
       ),
     );
