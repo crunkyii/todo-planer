@@ -14,9 +14,9 @@
 
 ### Android: die Erlaubnis beim ersten Update
 
-Android lässt eine App nur dann den Installer öffnen, wenn man ihr das erlaubt hat. Beim ersten Update öffnet die App deshalb einmal die Seite **Unbekannte Apps installieren** – dort den Schalter für *ToDo Planer* einschalten und zurückgehen, das Update läuft dann weiter. Wer das nicht möchte, geht einfach zurück: Die App läuft normal weiter, das Update bleibt in den Optionen stehen. Dasselbe gilt, wenn man im Installer auf **Abbrechen** tippt.
+Android lässt eine App nur dann den Installer öffnen, wenn man ihr das erlaubt hat. Beim ersten Update öffnet die App deshalb einmal die Seite **Unbekannte Apps installieren** – dort den Schalter für *ToDo Planer* einschalten und zurückgehen, das Update läuft dann weiter. (Manche Android-Versionen starten die App beim Einschalten neu – dann in den Optionen noch einmal auf **Installieren** tippen.) Wer das nicht möchte, geht einfach zurück: Die App läuft normal weiter, das Update bleibt in den Optionen stehen. Dasselbe gilt, wenn man im Installer auf **Abbrechen** tippt. Nach dem Aktualisieren die App über **Öffnen** oder ihr Symbol wieder starten.
 
-Die geladene APK liegt nur im eigenen Cache der App. Der Installer bekommt Lesezugriff auf genau diesen einen Ordner; alte Downloads räumt die App beim nächsten Start weg.
+Die geladene APK liegt nur im eigenen Cache der App. Der Installer bekommt Lesezugriff auf genau diese eine Datei; alte Downloads räumt die App beim nächsten Start weg.
 
 ### Wer sich selbst aktualisiert
 
@@ -28,7 +28,7 @@ Die Test-Version (`….debug`) und selbst gebaute Apps bekommen keine Updates ei
 ## Warum das sicher ist
 
 - Jede Update-Datei ist mit **Ed25519** unterschrieben. Der öffentliche Schlüssel steckt in der App ([`lib/services/update_manifest.dart`](../lib/services/update_manifest.dart)), der private liegt nur am Rechner, an dem Releases gebaut werden – nie im Repository.
-- Unterschrieben wird die **Versionsnummer zusammen mit der Prüfsumme** (SHA-256) der Datei. Eine veränderte Datei fällt genauso durch wie eine alte, echte Datei, die als „neue Version“ ausgegeben wird.
+- Unterschrieben wird die **Versionsnummer zusammen mit der Prüfsumme** (SHA-256) der Datei. Eine veränderte Datei fällt genauso durch wie eine alte, echte Datei, die als „neue Version“ ausgegeben wird. Die Signatur der APK trägt außerdem einen eigenen Vermerk – die des Windows-Installers gilt nie für Android und umgekehrt.
 - Die App lädt nur von der Release-Seite dieses Projekts (`https`), nimmt keine niedrigere Version an und bricht bei zu großen Dateien oder zu langem Warten ab.
 - Passt etwas nicht, wird **nichts gestartet** und kein Installer geöffnet; die geladene Datei wird gelöscht und die App läuft einfach weiter.
 - Unter Android kommt die Prüfung des Systems dazu: Es installiert ein Update nur, wenn die APK mit demselben Schlüssel signiert ist wie die installierte App.
