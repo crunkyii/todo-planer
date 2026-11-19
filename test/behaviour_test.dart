@@ -885,14 +885,19 @@ void main() {
         final apk = utf8.encode('APK');
         final updater = (await tester.runAsync(() async {
           final key = await Ed25519().newKeyPair();
-          Future<String> sign(List<int> bytes) async => base64Encode(
-            (await Ed25519().sign(signedMessage('1.1.0', (await Sha256().hash(bytes)).bytes), keyPair: key)).bytes,
-          );
+          Future<String> sign(List<int> bytes, {bool android = false}) async {
+            final message = signedMessage('1.1.0', (await Sha256().hash(bytes)).bytes, android: android);
+            return base64Encode((await Ed25519().sign(message, keyPair: key)).bytes);
+          }
+
           final manifest = jsonEncode({
             'version': '1.1.0',
             'url': '${releaseDownloadBase}v1.1.0/todo-planer-1.1.0-setup.exe',
             'signature': await sign(utf8.encode('Installer')),
-            'android': {'url': '${releaseDownloadBase}v1.1.0/todo-planer-1.1.0.apk', 'signature': await sign(apk)},
+            'android': {
+              'url': '${releaseDownloadBase}v1.1.0/todo-planer-1.1.0.apk',
+              'signature': await sign(apk, android: true),
+            },
           });
           final device = await Updater.forAndroid('1.0.0', const AndroidUpdate());
           return Updater(

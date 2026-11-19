@@ -17,9 +17,15 @@ import 'package:todo_liste/services/update_manifest.dart';
 final _ed = Ed25519();
 final _keyFile = File('build/probe/probe.key');
 
-Future<Map<String, String>> _entry(String name, List<int> bytes, String version, SimpleKeyPair pair) async {
+Future<Map<String, String>> _entry(
+  String name,
+  List<int> bytes,
+  String version,
+  SimpleKeyPair pair, {
+  bool android = false,
+}) async {
   final hash = await Sha256().hash(bytes);
-  final signature = await _ed.sign(signedMessage(version, hash.bytes), keyPair: pair);
+  final signature = await _ed.sign(signedMessage(version, hash.bytes, android: android), keyPair: pair);
   return {'url': '${releaseDownloadBase}v$version/$name', 'signature': base64Encode(signature.bytes)};
 }
 
@@ -38,7 +44,7 @@ Future<void> _serve(String apkPath, String version, {required bool broken}) asyn
   final manifest = jsonEncode({
     'version': version,
     ...await _entry('todo-planer-$version-setup.exe', const [0], version, pair),
-    'android': await _entry(apkName, apk, version, pair),
+    'android': await _entry(apkName, apk, version, pair, android: true),
   });
   UpdateManifest.parse(manifest);
   final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8765);

@@ -47,7 +47,7 @@ class MainActivity : FlutterActivity() {
 
     // Rückkehr aus „Unbekannte Apps installieren“ oder aus dem Installer.
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (appUpdate?.onActivityResult(requestCode) != true) super.onActivityResult(requestCode, resultCode, data)
+        if (appUpdate?.onActivityResult(requestCode, resultCode) != true) super.onActivityResult(requestCode, resultCode, data)
     }
 
     // App wird beendet: Der Kanal führt ins Leere, das Widget soll ihn nicht mehr benutzen.

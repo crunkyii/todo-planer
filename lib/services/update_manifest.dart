@@ -29,9 +29,10 @@ bool isNewer(String candidate, String current) {
 }
 
 /// Was unterschrieben wird: Version **und** Prüfsumme der Datei. So kann niemand eine alte,
-/// echt signierte Datei als „neue Version“ ausgeben.
-List<int> signedMessage(String version, List<int> sha256) =>
-    utf8.encode('todo-planer-update\n$version\n${base64Encode(sha256)}\n');
+/// echt signierte Datei als „neue Version“ ausgeben. Die APK bekommt eine eigene erste Zeile –
+/// die Signatur des Windows-Installers gilt damit nie für Android und umgekehrt.
+List<int> signedMessage(String version, List<int> sha256, {bool android = false}) =>
+    utf8.encode('todo-planer-update${android ? '-android' : ''}\n$version\n${base64Encode(sha256)}\n');
 
 /// App-ID der veröffentlichten Android-App und SHA-256 ihres Signatur-Zertifikats (öffentlich, steht in
 /// jeder APK). Nur diese App aktualisiert sich selbst: Die Test-Kopie und selbst gebaute Apps sind anders

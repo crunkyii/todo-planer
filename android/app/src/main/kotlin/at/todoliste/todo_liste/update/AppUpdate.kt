@@ -37,14 +37,18 @@ class AppUpdate(private val activity: Activity) : MethodChannel.MethodCallHandle
     }
 
     /** Von der Activity weitergereicht; `true`, wenn die Antwort zu einem Update-Schritt gehörte. */
-    fun onActivityResult(requestCode: Int): Boolean {
-        val answer: Boolean = when (requestCode) {
-            REQUEST_PERMISSION -> canInstall()
-            // Wer hier noch läuft, wurde nicht ersetzt: Der Nutzer hat abgebrochen.
-            REQUEST_INSTALL -> false
+    fun onActivityResult(requestCode: Int, resultCode: Int): Boolean {
+        val result = pending
+        when (requestCode) {
+            REQUEST_PERMISSION -> result?.success(canInstall())
+            // Wer hier noch läuft, wurde nicht ersetzt: abgebrochen – oder Android konnte nicht installieren.
+            REQUEST_INSTALL -> when (resultCode) {
+                Activity.RESULT_CANCELED -> result?.success(false)
+                Activity.RESULT_OK -> result?.success(true)
+                else -> result?.error("install", "Installation fehlgeschlagen", null)
+            }
             else -> return false
         }
-        pending?.success(answer)
         pending = null
         return true
     }
@@ -71,6 +75,8 @@ class AppUpdate(private val activity: Activity) : MethodChannel.MethodCallHandle
         val intent = Intent(Intent.ACTION_VIEW)
             .setDataAndType(uri, "application/vnd.android.package-archive")
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            // Damit sich „abgebrochen“ von „fehlgeschlagen“ unterscheiden lässt.
+            .putExtra(Intent.EXTRA_RETURN_RESULT, true)
         open(intent, REQUEST_INSTALL, result)
     }
 

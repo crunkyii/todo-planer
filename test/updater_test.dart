@@ -19,9 +19,9 @@ final _installer = utf8.encode('Das ist der Installer');
 late SimpleKeyPair _key;
 late String _publicKey;
 
-Future<String> _signature(String version, List<int> bytes, {SimpleKeyPair? key}) async {
+Future<String> _signature(String version, List<int> bytes, {SimpleKeyPair? key, bool android = false}) async {
   final hash = await Sha256().hash(bytes);
-  final sig = await Ed25519().sign(signedMessage(version, hash.bytes), keyPair: key ?? _key);
+  final sig = await Ed25519().sign(signedMessage(version, hash.bytes, android: android), keyPair: key ?? _key);
   return base64Encode(sig.bytes);
 }
 
@@ -38,7 +38,8 @@ Future<String> _manifestBody({
   'version': version,
   'url': url,
   'signature': signature ?? await _signature(version, _installer),
-  if (android != null) 'android': {'url': _apkUrl, 'signature': await _signature(version, _apk), ...android},
+  if (android != null)
+    'android': {'url': _apkUrl, 'signature': await _signature(version, _apk, android: true), ...android},
 });
 
 /// Updater wie am Handy: Das Netz ist falsch, statt Android antwortet [_FakeAndroid].
@@ -111,6 +112,9 @@ class _FakeAndroid {
   /// eine Antwort. Sonst hat er abgebrochen.
   final bool confirms;
 
+  /// Meldet Android nach dem Bestätigen, dass die Installation gescheitert ist?
+  var installError = false;
+
   var permissionAsked = 0;
 
   /// Was dem Installer übergeben wurde: Pfad und Inhalt der Datei in diesem Moment.
@@ -132,6 +136,7 @@ class _FakeAndroid {
         final path = call.arguments as String;
         opened.add((path: path, bytes: File(path).readAsBytesSync()));
         if (!installerOpen.isCompleted) installerOpen.complete();
+        if (installError) throw PlatformException(code: 'install');
         return confirms ? Completer<Object?>().future : false;
     }
     throw MissingPluginException();
@@ -417,9 +422,9 @@ void main() {
     });
 
     test('Windows nimmt die APK nicht als Installer an', () async {
-      // Die Signatur oben gilt für den Installer – kommt stattdessen die APK, fällt sie durch.
+      // Oben stehen Adresse und Signatur der APK – echt signiert, aber nur für Android.
       final t = _make(
-        manifest: await _manifestBody(android: {}),
+        manifest: await _manifestBody(signature: await _signature('1.1.0', _apk, android: true), android: {}),
         installer: _apk,
       );
       await t.updater.check();
@@ -461,11 +466,13 @@ void main() {
       final other = await Ed25519().newKeyPair();
       final cases = {
         'veränderte APK': (apk: utf8.encode('Das ist eine andere APK'), signature: null),
-        'fremder Schlüssel': (apk: null, signature: await _signature('1.1.0', _apk, key: other)),
+        'fremder Schlüssel': (apk: null, signature: await _signature('1.1.0', _apk, key: other, android: true)),
         // Die Signatur gilt für 1.0.5 – in latest.json steht aber 1.1.0.
-        'alte APK unter neuer Nummer': (apk: null, signature: await _signature('1.0.5', _apk)),
-        // Echt signiert, aber für die andere Datei des Releases.
-        'Signatur des Windows-Installers': (apk: null, signature: await _signature('1.1.0', _installer)),
+        'alte APK unter neuer Nummer': (apk: null, signature: await _signature('1.0.5', _apk, android: true)),
+        // Echt signiert, aber als Windows-Installer: Der Installer selbst kommt als „APK“ …
+        'Windows-Installer als APK': (apk: _installer, signature: await _signature('1.1.0', _installer)),
+        // … oder die richtige APK trägt eine Signatur ohne den Android-Vermerk.
+        'APK als Windows-Datei signiert': (apk: null, signature: await _signature('1.1.0', _apk)),
       };
       for (final MapEntry(key: what, value: c) in cases.entries) {
         final t = await _makeAndroid(
@@ -525,6 +532,16 @@ void main() {
       await t.updater.install();
       expect(t.updater.state, UpdateState.failed);
       expect(t.android.opened, isEmpty);
+    });
+
+    test('Android kann die APK nicht installieren: Fehler statt stillem Abbruch, die APK ist weg', () async {
+      final t = await _makeAndroid(manifest: await _manifestBody(android: {}));
+      t.android.installError = true;
+      await t.updater.check();
+      await t.updater.install();
+      expect(t.android.opened, hasLength(1));
+      expect(t.updater.state, UpdateState.failed);
+      expect(t.android.dir.listSync(), isEmpty);
     });
 
     test('nur die veröffentlichte App aktualisiert sich: Test-Kopie und selbst gebaute Apps nicht', () async {

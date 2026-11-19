@@ -4,7 +4,7 @@
 // Sie benutzt den echten `Updater` und den echten Android-Teil (`AppUpdate.kt`). Nur zwei Dinge sind
 // anders: Statt GitHub antwortet der PC (tool/probe/serve.dart, über `adb reverse` als 127.0.0.1 am
 // Handy erreichbar), und geprüft wird mit einem Wegwerf-Schlüssel statt mit dem echten.
-// Gebaut wird sie als Debug-Version – also mit der App-ID der Test-Kopie und ohne deren Daten anzufassen.
+// Gebaut wird sie als Debug-Version – also mit der App-ID der Test-Kopie, nie über die echte App.
 import 'package:http/http.dart' as http;
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';

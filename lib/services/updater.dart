@@ -126,7 +126,7 @@ class Updater extends ChangeNotifier {
       file = File('${dir.path}${Platform.pathSeparator}${_platform.fileName(m.version)}');
       final hash = await _downloadTo(file, source.url);
       final ok = await Ed25519().verify(
-        signedMessage(m.version, hash),
+        _platform.message(m.version, hash),
         signature: Signature(source.signature, publicKey: _publicKey),
       );
       if (!ok) throw const FormatException('Signatur passt nicht');

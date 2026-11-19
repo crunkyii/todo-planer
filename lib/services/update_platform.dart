@@ -10,6 +10,9 @@ abstract class UpdatePlatform {
   /// Die Datei für dieses Gerät; `null`, wenn das Release keine dafür hat.
   UpdateFile? fileOf(UpdateManifest manifest);
 
+  /// Was für diese Datei unterschrieben sein muss (siehe [signedMessage]).
+  List<int> message(String version, List<int> sha256);
+
   /// Unter diesem Namen wird der Download gespeichert.
   String fileName(String version);
 
@@ -57,6 +60,9 @@ class WindowsUpdate implements UpdatePlatform {
 
   @override
   UpdateFile? fileOf(UpdateManifest manifest) => manifest.windows;
+
+  @override
+  List<int> message(String version, List<int> sha256) => signedMessage(version, sha256);
 
   @override
   String fileName(String version) => 'todo-planer-$version-setup.exe';
@@ -109,6 +115,9 @@ class AndroidUpdate implements UpdatePlatform {
   UpdateFile? fileOf(UpdateManifest manifest) => manifest.android;
 
   @override
+  List<int> message(String version, List<int> sha256) => signedMessage(version, sha256, android: true);
+
+  @override
   String fileName(String version) => 'todo-planer-$version.apk';
 
   /// Ein Ordner im Cache der App – nur ihn gibt der FileProvider an den Installer weiter.
@@ -127,7 +136,8 @@ class AndroidUpdate implements UpdatePlatform {
       await _channel.invokeMethod<bool>('requestPermission') == true;
 
   /// Öffnet den Installer. Bestätigt der Nutzer, ersetzt Android die App und beendet sie dabei –
-  /// eine Antwort kommt also nur, wenn er abgebrochen hat.
+  /// eine Antwort kommt also nur, wenn er abgebrochen hat (`false`) oder Android die APK nicht
+  /// installieren konnte (Fehler).
   @override
   Future<bool> launch(File file) async => await _channel.invokeMethod<bool>('install', file.path) == true;
 }

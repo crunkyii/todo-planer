@@ -50,9 +50,9 @@ Future<SimpleKeyPair> _loadKey() async {
 }
 
 /// Adresse und Signatur von [file] im Release [version] – so, wie sie in `latest.json` stehen.
-Future<Map<String, String>> _entry(File file, String version, SimpleKeyPair pair) async {
+Future<Map<String, String>> _entry(File file, String version, SimpleKeyPair pair, {bool android = false}) async {
   final hash = await Sha256().hash(file.readAsBytesSync());
-  final signature = await _ed.sign(signedMessage(version, hash.bytes), keyPair: pair);
+  final signature = await _ed.sign(signedMessage(version, hash.bytes, android: android), keyPair: pair);
   return {
     'url': '${releaseDownloadBase}v$version/${file.uri.pathSegments.last}',
     'signature': base64Encode(signature.bytes),
@@ -60,12 +60,12 @@ Future<Map<String, String>> _entry(File file, String version, SimpleKeyPair pair
 }
 
 /// Prüft [entry] gegen [file], wie es die App nach dem Download macht: mit dem eingebauten Schlüssel.
-Future<void> _verify(UpdateFile? entry, File file, String version) async {
+Future<void> _verify(UpdateFile? entry, File file, String version, {bool android = false}) async {
   final hash = await Sha256().hash(file.readAsBytesSync());
   final ok =
       entry != null &&
       await _ed.verify(
-        signedMessage(version, hash.bytes),
+        signedMessage(version, hash.bytes, android: android),
         signature: Signature(
           entry.signature,
           publicKey: SimplePublicKey(base64Decode(updatePublicKey), type: KeyPairType.ed25519),
@@ -95,14 +95,14 @@ Future<void> _sign(String installerPath, String version, String? apkPath) async 
   final manifest = {
     'version': version,
     ...await _entry(installer, version, pair),
-    'android': ?(apk == null ? null : await _entry(apk, version, pair)),
+    'android': ?(apk == null ? null : await _entry(apk, version, pair, android: true)),
   };
   final out = File('${installer.parent.path}${Platform.pathSeparator}latest.json');
   final body = '${const JsonEncoder.withIndent('  ').convert(manifest)}\n';
   // So liest und prüft sie auch die App – was hier nicht durchgeht, käme dort nie an.
   final parsed = UpdateManifest.parse(body);
   await _verify(parsed.windows, installer, version);
-  if (apk != null) await _verify(parsed.android, apk, version);
+  if (apk != null) await _verify(parsed.android, apk, version, android: true);
   out.writeAsStringSync(body);
   stdout.writeln('Geschrieben: ${out.path}${apk == null ? ' (ohne Android)' : ''}');
 }
