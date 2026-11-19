@@ -408,7 +408,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get columnsAllHidden => 'All columns are hidden. Turn them back on under ⋮ → Columns.';
 
   @override
-  String get columnsDragHint => 'Change the order: drag a column by its heading to where you want it.';
+  String get columnsDragHint =>
+      'Change the order: press and hold a column\'s heading, then drag it to where you want it.';
 
   @override
   String get moveLeft => 'Move left';

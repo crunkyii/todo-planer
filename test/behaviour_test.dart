@@ -1162,8 +1162,21 @@ void main() {
       await mouse.addPointer(location: from);
       await tester.pump();
       final cards = find.byType(TaskCard).evaluate().length;
+      // Kurz klicken und gleich ziehen verschiebt nichts – erst langes Halten hebt die Liste an.
       await mouse.down(from);
       await tester.pump();
+      for (var i = 1; i <= 8; i++) {
+        await mouse.moveTo(Offset.lerp(from, to, i / 8)!);
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await mouse.up();
+      await tester.pumpAndSettle();
+      expect(ids(), before, reason: 'ohne langes Halten');
+      expect(saves, 0);
+      await mouse.moveTo(from);
+      await tester.pump();
+      await mouse.down(from);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
       for (var i = 1; i <= 8; i++) {
         await mouse.moveTo(Offset.lerp(from, to, i / 8)!);
         await tester.pump(const Duration(milliseconds: 16));

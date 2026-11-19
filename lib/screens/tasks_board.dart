@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -361,9 +360,8 @@ class _ListPanel extends StatelessWidget {
       // Die Überschrift sitzt um Rand und Rahmen eingerückt in der Liste.
       Offset anchor(Draggable<Object> d, BuildContext context, Offset position) =>
           childDragAnchorStrategy(d, context, position) + const Offset(9, 5);
-      // Mit der Maus sofort ziehen; am Touchscreen erst nach langem Druck, damit Wischen
-      // weiter zwischen den Listen blättert.
-      final touch = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+      // Erst nach langem Halten (Maus und Finger): Ein kurzer Klick oder Wisch verschiebt nichts
+      // aus Versehen, Wischen blättert weiter zwischen den Listen.
       // Nach dem Loslassen gilt wieder Blättern, auch wenn die Liste dabei ihren Platz gewechselt hat.
       void end(DraggableDetails _) {
         onDrag?.call(false);
@@ -371,23 +369,14 @@ class _ListPanel extends StatelessWidget {
       }
 
       void start() => onDrag?.call(true);
-      final drag = touch
-          ? LongPressDraggable<String>(
-              data: g.id,
-              feedback: feedback,
-              dragAnchorStrategy: anchor,
-              onDragStarted: start,
-              onDragEnd: end,
-              child: header,
-            )
-          : Draggable<String>(
-              data: g.id,
-              feedback: feedback,
-              dragAnchorStrategy: anchor,
-              onDragStarted: start,
-              onDragEnd: end,
-              child: header,
-            );
+      final drag = LongPressDraggable<String>(
+        data: g.id,
+        feedback: feedback,
+        dragAnchorStrategy: anchor,
+        onDragStarted: start,
+        onDragEnd: end,
+        child: header,
+      );
       // Die Maus-Fläche liegt außen: Sie bleibt auch stehen, während die Überschrift gezogen wird.
       header = MouseRegion(
         cursor: SystemMouseCursors.grab,

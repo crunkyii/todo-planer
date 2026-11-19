@@ -10,7 +10,7 @@
 - **Notiz**: Über das Notiz-Symbol neben den Unteraufgaben lässt sich ein längerer Text dazuschreiben. Die Karte zeigt die ersten zwei Zeilen, die Suche findet auch Text aus Notizen.
 - **Jährliche Aufgaben**: Steht „Geburtstag“, „Jahrestag“ o. Ä. im Titel, entsteht beim Abhaken dieselbe Aufgabe fürs nächste Jahr.
 - **Suche** und **Rückgängig** nach dem Löschen (gelöscht wird im Formular der Aufgabe).
-- **Am PC** stehen die Gruppen als Listen nebeneinander. Unter ⋮ → *Spalten* stellt man ein, wie viele gleichzeitig zu sehen sind, welche Zeiträume es gibt und welche Kategorien eine eigene Spalte bekommen (gilt nur an diesem Gerät). Die Reihenfolge ändert man, indem man eine Spalte an ihrer Überschrift an die gewünschte Stelle zieht. In einem schmalen Fenster passen weniger Spalten nebeneinander als eingestellt. Am Handy gibt es unter ⋮ → *Spalten* dieselben Zeiträume und Kategorien als Abschnitte; die Reihenfolge ändert man dort mit langem Druck auf eine Überschrift und Ziehen.
+- **Am PC** stehen die Gruppen als Listen nebeneinander. Unter ⋮ → *Spalten* stellt man ein, wie viele gleichzeitig zu sehen sind, welche Zeiträume es gibt und welche Kategorien eine eigene Spalte bekommen (gilt nur an diesem Gerät). Die Reihenfolge ändert man, indem man die Überschrift einer Spalte kurz gedrückt hält (Maus oder Finger) und sie an die gewünschte Stelle zieht – ein kurzer Klick oder Wisch verschiebt nichts. In einem schmalen Fenster passen weniger Spalten nebeneinander als eingestellt. Am Handy gibt es unter ⋮ → *Spalten* dieselben Zeiträume und Kategorien als Abschnitte; die Reihenfolge ändert man dort mit langem Druck auf eine Überschrift und Ziehen.
 
 ## Gewohnheiten
 

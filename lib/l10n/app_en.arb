@@ -127,7 +127,7 @@
   "columnsCategories": "Categories as their own column",
   "close": "Close",
   "columnsAllHidden": "All columns are hidden. Turn them back on under ⋮ → Columns.",
-  "columnsDragHint": "Change the order: drag a column by its heading to where you want it.",
+  "columnsDragHint": "Change the order: press and hold a column's heading, then drag it to where you want it.",
   "moveLeft": "Move left",
   "moveRight": "Move right",
   "columnsNarrowHint": "A narrow window fits fewer columns side by side than set here.",

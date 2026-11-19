@@ -33,8 +33,8 @@ Future<TestGesture> _drag(WidgetTester t, Offset from, Offset to, {bool mouse = 
     await t.pump();
   }
   await g.down(from);
-  // Am Handy: erst lange drücken.
-  if (!mouse) await t.pump(kLongPressTimeout + const Duration(milliseconds: 150));
+  // Erst lange halten (Maus und Finger).
+  await t.pump(kLongPressTimeout + const Duration(milliseconds: 150));
   for (var i = 1; i <= 20; i++) {
     await g.moveTo(Offset.lerp(from, to, i / 20)!);
     await t.pump(const Duration(milliseconds: 16));

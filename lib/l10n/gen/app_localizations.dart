@@ -857,7 +857,7 @@ abstract class AppLocalizations {
   /// No description provided for @columnsDragHint.
   ///
   /// In de, this message translates to:
-  /// **'Reihenfolge ändern: eine Spalte an ihrer Überschrift an die gewünschte Stelle ziehen.'**
+  /// **'Reihenfolge ändern: die Überschrift einer Spalte kurz gedrückt halten und an die gewünschte Stelle ziehen.'**
   String get columnsDragHint;
 
   /// No description provided for @moveLeft.
