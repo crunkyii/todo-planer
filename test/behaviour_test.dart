@@ -1564,20 +1564,14 @@ void main() {
       await finishApp(tester, app);
     });
 
-    testWidgets('Aufgaben: „+ Aufgabe“ in der Liste „Heute“ legt eine Aufgabe für heute an', (tester) async {
+    testWidgets('Aufgaben: in den Listen steht kein eigener Knopf „+ Aufgabe“', (tester) async {
       final l = l10n('de');
       final app = await makeServices();
       app.ensureCategoriesNow(l);
       await pumpApp(tester, app, size: const Size(1366, 705));
-      // Ohne Aufgaben steht nur „Heute“ da – leer, aber mit dem Knopf.
+      // Ohne Aufgaben steht nur „Heute“ da – leer und ohne Knopf; neue Aufgaben kommen über das Plus.
       expect(find.bySemanticsLabel(l.sectionCount(l.today, 0)), findsOneWidget);
-      await _tap(tester, find.widgetWithText(AppButton, l.task));
-      await tester.enterText(find.byType(EditableText).first, 'Direkt in Heute');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pumpAndSettle();
-      final t = app.store.tasks.singleWhere((t) => t.title == 'Direkt in Heute');
-      expect(sameDay(t.dueDate, today()), isTrue);
-      expect(find.bySemanticsLabel(l.sectionCount(l.today, 1)), findsOneWidget);
+      expect(find.descendant(of: find.byType(TasksBoard), matching: find.byType(AppButton)), findsNothing);
       await finishApp(tester, app);
     });
 

@@ -13,7 +13,6 @@ import '../widgets/app_icon.dart';
 import '../widgets/pickers.dart';
 import '../widgets/ui.dart';
 import 'older_done.dart';
-import 'sheets.dart';
 import 'task_card.dart';
 import 'ui_state.dart';
 
@@ -154,13 +153,6 @@ class _ListPanel extends StatelessWidget {
     final l = context.l;
     final g = group;
     final overdue = g.section == Section.overdue;
-    // Neue Aufgabe direkt in dieser Liste – nicht bei „Überfällig“ und „Erledigt“.
-    final addable = g.section != Section.overdue && g.section != Section.done;
-    final preset = switch (g.section) {
-      Section.today => today(),
-      Section.tomorrow => addDays(today(), 1),
-      _ => null,
-    };
     return Container(
       margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
       decoration: BoxDecoration(
@@ -217,22 +209,6 @@ class _ListPanel extends StatelessWidget {
                     ),
                   ),
                 if (older) OlderDoneHint(categoryId: olderCat),
-                if (addable)
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: AppButton(
-                        label: l.task,
-                        icon: Ic.plus,
-                        kind: BtnKind.text,
-                        height: 36,
-                        padding: 10,
-                        fontSize: 13,
-                        onTap: () => Sheets(context, ui).task(null, preset: preset),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
