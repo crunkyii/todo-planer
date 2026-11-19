@@ -73,3 +73,16 @@ Type: filesandordirs; Name: "{app}\data"
 Type: files; Name: "{app}\todo_liste.exe"
 Type: files; Name: "{autoprograms}\Todo-Planer.lnk"
 Type: files; Name: "{autodesktop}\Todo-Planer.lnk"
+
+[Code]
+function AllowSetForegroundWindow(dwProcessId: Cardinal): Boolean;
+  external 'AllowSetForegroundWindow@user32.dll stdcall';
+
+// Die App, die der Installer am Ende startet, darf ihr Fenster nach vorne holen. Ihr Fenster
+// erscheint erst, wenn der Installer schon beendet ist – ohne diese Erlaubnis bliebe es im
+// Hintergrund und blinkte nur in der Taskleiste. $FFFFFFFF = ASFW_ANY.
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if (CurStep = ssPostInstall) or (CurStep = ssDone) then
+    AllowSetForegroundWindow($FFFFFFFF);
+end;

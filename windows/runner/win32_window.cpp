@@ -151,7 +151,13 @@ bool Win32Window::Create(const std::wstring& title,
 
 bool Win32Window::Show() {
   // Die App startet maximiert (ganzer Bildschirm, mit Titelleiste und Taskleiste).
-  return ShowWindow(window_handle_, SW_SHOWMAXIMIZED);
+  const bool shown = ShowWindow(window_handle_, SW_SHOWMAXIMIZED);
+  // Nach vorne holen: Nach einem Update startet der Installer die App, ihr Fenster erscheint
+  // aber erst, wenn er schon beendet ist. Ohne diesen Aufruf bliebe es hinter anderen Fenstern
+  // und blinkte nur in der Taskleiste. Der Installer erlaubt es vorher ausdrücklich
+  // (AllowSetForegroundWindow); sonst lässt Windows es nur zu, wenn die App ohnehin vorne wäre.
+  SetForegroundWindow(window_handle_);
+  return shown;
 }
 
 // static
