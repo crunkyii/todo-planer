@@ -12,6 +12,7 @@ import '../widgets/ui.dart';
 import 'older_done.dart';
 import 'sheets.dart';
 import 'task_card.dart';
+import 'movable_section.dart';
 import 'tasks_board.dart';
 import 'ui_state.dart';
 
@@ -155,7 +156,7 @@ class _ChipBar extends StatelessWidget {
       ('sort', l.sort, Ic.sort),
       ('cats', l.manageCategories, Ic.tag),
       ('hideDone', ui.hideDone ? l.showCompleted : l.hideCompleted, Ic.hide),
-      if (board) ('columns', l.columns, Ic.week),
+      ('columns', l.columns, Ic.week),
       ('clearDone', l.deleteCompleted, Ic.sweep),
     ];
     // Feste Reihenfolge: Jeder Eintrag steht immer an derselben Stelle.
@@ -223,7 +224,7 @@ class _ChipBar extends StatelessWidget {
           s.cats = true;
         });
       case 'columns':
-        Sheets(context, ui).columns();
+        Sheets(context, ui).columns(board: board);
       case 'hideDone':
         ui.set((s) => s.hideDone = !s.hideDone);
         app.snack.show(ui.hideDone ? l.completedHidden : l.completedShown);
@@ -350,10 +351,10 @@ class _TaskList extends StatelessWidget {
           ),
       ].where((g) => g.items.isNotEmpty).toList();
     } else {
-      // Am PC lassen sich Zeiträume ausblenden und Kategorien als eigene Listen dazunehmen
-      // (⋮ → Spalten).
+      // Zeiträume lassen sich ausblenden und Kategorien als eigene Listen dazunehmen
+      // (⋮ → Spalten) – am PC sind das die Spalten, am Handy die Abschnitte.
       final set = context.app.settings;
-      final hiddenSections = board ? set.boardHidden : const <String>{};
+      final hiddenSections = set.boardHidden;
       groups =
           <TaskGroup>[
             for (final s in Section.values)
@@ -375,7 +376,7 @@ class _TaskList extends StatelessWidget {
                 (g.section == Section.done && showOlder) ||
                 (board && g.section == Section.today);
           }).toList();
-      if (board) {
+      {
         for (final id in set.boardCats) {
           final c = store.categoryById(id);
           if (c == null) continue;
@@ -405,8 +406,9 @@ class _TaskList extends StatelessWidget {
           )
         : null;
 
-    // Am PC alle Spalten ausgeblendet: sagen, woran es liegt, statt eine leere Seite zu zeigen.
-    if (board && groups != null && groups.isEmpty && list.isNotEmpty) {
+    // Alle Spalten ausgeblendet: sagen, woran es liegt, statt eine leere Seite zu zeigen.
+    final allHidden = groups != null && groups.isEmpty && list.isNotEmpty;
+    if (board && allHidden) {
       return EmptyState(icon: Ic.week, text: l.columnsAllHidden);
     }
     if (board && groups != null && groups.isNotEmpty) {
@@ -435,27 +437,47 @@ class _TaskList extends StatelessWidget {
     ];
     TaskCard card(Task t) => TaskCard(key: ValueKey(t.id), task: t, ui: ui);
     if (filter != filterHabits) {
-      if (list.isEmpty && !showOlder) {
+      if (allHidden) {
+        children.add(EmptyState(icon: Ic.week, text: l.columnsAllHidden));
+      } else if (list.isEmpty && !showOlder) {
         children.add(EmptyState(icon: searching ? Ic.search : Ic.tasks, text: searching ? l.nothingFound : l.noTasks));
       } else if (groups == null) {
         children
           ..add(const SizedBox(height: 8))
           ..addAll(list.map(card));
       } else {
-        for (final g in groups) {
+        // Nach Datum sortiert lassen sich die Abschnitte mit langem Druck umsortieren.
+        final move = ui.sort == SortMode.date && groups.length > 1 ? context.app.settings.moveBoardColumn : null;
+        final gs = groups;
+        for (final (i, g) in gs.indexed) {
           final open = !ui.collapsed.contains(g.id);
           if (g.section == Section.done && !open) showOlder = false;
+          final head = SectionHead(
+            label: g.label,
+            count: g.items.length,
+            open: open,
+            color: g.color,
+            overdue: g.section == Section.overdue,
+            onTap: () => ui.toggleCollapsed(g.id),
+          );
+          final items = [if (open) ...g.items.map(card)];
+          if (move == null) {
+            children
+              ..add(head)
+              ..addAll(items);
+            continue;
+          }
           children.add(
-            SectionHead(
-              label: g.label,
-              count: g.items.length,
-              open: open,
-              color: g.color,
-              overdue: g.section == Section.overdue,
-              onTap: () => ui.toggleCollapsed(g.id),
+            MovableSection(
+              key: ValueKey('section-${g.id}'),
+              id: g.id,
+              head: head,
+              onDrop: (id) => move(id, g.id),
+              onUp: i == 0 ? null : () => move(g.id, gs[i - 1].id),
+              onDown: i == gs.length - 1 ? null : () => move(g.id, gs[i + 1].id),
+              children: items,
             ),
           );
-          if (open) children.addAll(g.items.map(card));
         }
       }
     }

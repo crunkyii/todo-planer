@@ -420,6 +420,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get columnsNarrowHint => 'A narrow window fits fewer columns side by side than set here.';
 
   @override
+  String get columnsDragHintTouch => 'Change the order: long-press a heading and drag it to where you want it.';
+
+  @override
+  String get moveUp => 'Move up';
+
+  @override
+  String get moveDown => 'Move down';
+
+  @override
   String get sort => 'Sort';
 
   @override

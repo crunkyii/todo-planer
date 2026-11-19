@@ -61,9 +61,13 @@ class Sheets {
     );
   }
 
-  /// Aufgaben am PC: welche Listen nebeneinander stehen.
-  void columns() {
-    showAppSheet<void>(context, label: context.l.columns, builder: (_) => const ColumnsSheet());
+  /// Welche Listen (am PC Spalten, am Handy Abschnitte) es gibt und wie viele nebeneinander stehen.
+  void columns({required bool board}) {
+    showAppSheet<void>(
+      context,
+      label: context.l.columns,
+      builder: (_) => ColumnsSheet(board: board),
+    );
   }
 
   void habit(Habit? h) {

@@ -23,6 +23,7 @@ import 'package:todo_liste/screens/sheets/columns_sheet.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/semantics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_liste/screens/movable_section.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
 import 'package:todo_liste/screens/task_card.dart';
@@ -869,10 +870,105 @@ void main() {
       expect(again.boardHidden, {Section.overdue.name});
       expect(again.boardCats, [cat.id]);
 
-      // Am Handy gibt es den Eintrag nicht.
+      // Am Handy gibt es den Eintrag auch – nur ohne „Nebeneinander sichtbar“.
       await pumpApp(tester, app);
       await _tap(tester, find.bySemanticsLabel(l.moreOptions));
-      expect(find.text(l.columns), findsNothing);
+      await _tap(tester, find.text(l.columns));
+      expect(find.byType(ColumnsSheet), findsOneWidget);
+      expect(find.text(l.columnsVisible), findsNothing);
+      expect(find.text(l.columnsDragHintTouch), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Handy: Zeiträume aus, Kategorie als Abschnitt – gilt auch in der Liste am Handy', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      final cat = app.store.categories.first;
+      app.settings.updateDevice(
+        (s) => s
+          ..boardHidden = {Section.later.name}
+          ..boardCats = [cat.id],
+      );
+      await pumpApp(tester, app);
+      expect(find.bySemanticsLabel(RegExp('^${RegExp.escape(l.later)}')), findsNothing);
+      final n = app.store.tasks.where((t) => t.categoryId == cat.id).length;
+      await tester.scrollUntilVisible(
+        find.bySemanticsLabel(l.sectionCount(cat.name, n)),
+        200,
+        scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).first,
+      );
+      expect(find.bySemanticsLabel(l.sectionCount(cat.name, n)), findsOneWidget);
+
+      // Alles aus: ein Hinweis statt einer leeren Liste – die Gewohnheiten bleiben.
+      app.settings.updateDevice((s) => s.boardHidden = {for (final x in Section.values) x.name});
+      app.settings.updateDevice((s) => s.boardCats = []);
+      await tester.pumpAndSettle();
+      expect(find.text(l.columnsAllHidden), findsOneWidget);
+      expect(find.byType(HabitsTaskCard), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Handy: Abschnitt lange drücken und ziehen ändert die Reihenfolge, die anderen rücken mit', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      List<String> ids() => [
+        for (final m in tester.widgetList<MovableSection>(find.byType(MovableSection, skipOffstage: false))) m.id,
+      ];
+      final before = ids();
+      expect(before.length, greaterThanOrEqualTo(3));
+      final a = before[0], b = before[1];
+      Finder head(String id) => find.descendant(
+        of: find.byWidgetPredicate((w) => w is MovableSection && w.id == id),
+        matching: find.byType(SectionHead),
+      );
+
+      // Die erste Überschrift lange drücken und unter die zweite ziehen.
+      final from = tester.getCenter(head(a));
+      final to = tester.getRect(head(b)).bottomCenter + const Offset(0, 24);
+      final g = await tester.startGesture(from);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
+      for (var i = 1; i <= 10; i++) {
+        await g.moveTo(Offset.lerp(from, to, i / 10)!);
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      // Noch während des Ziehens steht die Reihenfolge schon so da, wie sie nach dem Loslassen wird.
+      expect(ids().take(2), [b, a]);
+      expect(tester.takeException(), isNull);
+      await g.up();
+      await tester.pumpAndSettle();
+      expect(ids().take(2), [b, a]);
+      expect(app.settings.boardColumnOrder().where(before.contains).take(2), [b, a]);
+      // Ein kurzer Tipp klappt weiter nur ein und aus.
+      await _tap(tester, head(b));
+      expect(app.store.tasks, isNotEmpty);
+      expect(tester.takeException(), isNull);
+
+      // Ohne Ziehen: „Nach oben verschieben“ (Screenreader).
+      final handle = tester.ensureSemantics();
+      final node = tester.getSemantics(head(a));
+      final action = node
+          .getSemanticsData()
+          .customSemanticsActionIds!
+          .map(CustomSemanticsAction.getAction)
+          .firstWhere((x) => x!.label == l.moveUp)!;
+      tester.binding.performSemanticsAction(
+        SemanticsActionEvent(
+          type: SemanticsAction.customAction,
+          nodeId: node.id,
+          viewId: tester.view.viewId,
+          arguments: CustomSemanticsAction.getIdentifier(action),
+        ),
+      );
+      await tester.pumpAndSettle();
+      handle.dispose();
+      expect(ids().take(2), [a, b]);
       await finishApp(tester, app);
     });
 

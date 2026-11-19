@@ -240,6 +240,9 @@ abstract final class Sizes {
   static const double boardSide = 340;
   static const double boardListMin = 190;
 
+  /// Am Handy: so hoch ist ein gezogener Abschnitt am Finger höchstens.
+  static const double dragPreviewMax = 320;
+
   /// Seitenleiste: So viel Höhe brauchen „Heute“, der Kopf der Gewohnheiten und der Monat.
   /// Was vom Fenster übrig bleibt, bekommt die Liste der Gewohnheiten – mindestens
   /// [sideHabitsMin]; sind es mehr, scrollt man in der Liste, der Monat bleibt stehen.

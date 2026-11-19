@@ -424,6 +424,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get columnsNarrowHint => 'In einem schmalen Fenster passen weniger Spalten nebeneinander als eingestellt.';
 
   @override
+  String get columnsDragHintTouch =>
+      'Reihenfolge ändern: auf eine Überschrift lange drücken und sie an die gewünschte Stelle ziehen.';
+
+  @override
+  String get moveUp => 'Nach oben verschieben';
+
+  @override
+  String get moveDown => 'Nach unten verschieben';
+
+  @override
   String get sort => 'Sortieren';
 
   @override

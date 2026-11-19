@@ -11,7 +11,10 @@ import 'sheet_parts.dart';
 /// Aufgaben am PC: wie viele Listen nebeneinander stehen, welche Zeiträume es gibt und
 /// welche Kategorien eine eigene Liste bekommen. Jede Änderung gilt sofort (nur an diesem Gerät).
 class ColumnsSheet extends StatelessWidget {
-  const ColumnsSheet({super.key});
+  const ColumnsSheet({super.key, required this.board});
+
+  /// Am PC (Listen nebeneinander) gibt es zusätzlich die Anzahl, die nebeneinander steht.
+  final bool board;
 
   @override
   Widget build(BuildContext context) {
@@ -42,24 +45,25 @@ class ColumnsSheet extends StatelessWidget {
           ],
           children: [
             SheetTitle(l.columns),
-            LabeledField(
-              label: l.columnsVisible,
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Seg<int>(
-                  label: l.columnsVisible,
-                  options: [
-                    for (var n = SettingsStore.boardVisibleMin; n <= SettingsStore.boardVisibleMax; n++) (n, '$n'),
-                  ],
-                  value: s.boardVisible,
-                  onChanged: (v) => s.updateDevice((x) => x.boardVisible = v),
+            if (board)
+              LabeledField(
+                label: l.columnsVisible,
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Seg<int>(
+                    label: l.columnsVisible,
+                    options: [
+                      for (var n = SettingsStore.boardVisibleMin; n <= SettingsStore.boardVisibleMax; n++) (n, '$n'),
+                    ],
+                    value: s.boardVisible,
+                    onChanged: (v) => s.updateDevice((x) => x.boardVisible = v),
+                  ),
                 ),
               ),
-            ),
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                '${l.columnsNarrowHint} ${l.columnsDragHint}',
+                board ? '${l.columnsNarrowHint} ${l.columnsDragHint}' : l.columnsDragHintTouch,
                 style: TextStyle(fontSize: Fs.meta, color: context.tok.sub),
               ),
             ),

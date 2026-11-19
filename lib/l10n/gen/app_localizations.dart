@@ -878,6 +878,24 @@ abstract class AppLocalizations {
   /// **'In einem schmalen Fenster passen weniger Spalten nebeneinander als eingestellt.'**
   String get columnsNarrowHint;
 
+  /// No description provided for @columnsDragHintTouch.
+  ///
+  /// In de, this message translates to:
+  /// **'Reihenfolge ändern: auf eine Überschrift lange drücken und sie an die gewünschte Stelle ziehen.'**
+  String get columnsDragHintTouch;
+
+  /// No description provided for @moveUp.
+  ///
+  /// In de, this message translates to:
+  /// **'Nach oben verschieben'**
+  String get moveUp;
+
+  /// No description provided for @moveDown.
+  ///
+  /// In de, this message translates to:
+  /// **'Nach unten verschieben'**
+  String get moveDown;
+
   /// No description provided for @sort.
   ///
   /// In de, this message translates to:
