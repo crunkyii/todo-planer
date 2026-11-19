@@ -1383,6 +1383,10 @@ void main() {
 
           await _tap(tester, find.text(register ? l.createAccount : l.haveAccount));
           expect(find.text(l.connectDb), findsWidgets, reason: 'ohne Datenbank gibt es kein Konto');
+          // Mit vorhandenem Konto: kurze Seite – nur der Link zu Supabase und die Felder, keine Einrichtung
+          expect(find.text(l.openSupabase), findsOneWidget);
+          expect(find.text(l.copySql), register ? findsOneWidget : findsNothing);
+          expect(find.byType(TextField), findsNWidgets(2));
           final fields = find.byType(TextField);
           await tester.enterText(fields.at(0), 'https://abcdefgh.supabase.co');
           await tester.enterText(fields.at(1), 'sb_publishable_test_key_123');

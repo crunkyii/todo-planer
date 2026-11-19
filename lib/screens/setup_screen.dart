@@ -30,6 +30,9 @@ class _SetupScreenState extends State<SetupScreen> {
 
   /// Nach dem Verbinden „Konto erstellen“ (`true`) oder „Anmelden“ zeigen.
   bool _register = true;
+
+  /// Über „Ich habe schon ein Konto“ gekommen: kurze Seite ohne die Einrichtungsschritte.
+  bool get _existing => !widget.startAtDb && !_register;
   final _url = TextEditingController();
   final _key = TextEditingController();
   String? _error;
@@ -196,39 +199,46 @@ class _SetupScreenState extends State<SetupScreen> {
         ),
       ),
     );
+    final openSupabase = AppButton(
+      label: l.openSupabase,
+      icon: Ic.ext,
+      kind: BtnKind.tonal,
+      height: 34,
+      fontSize: 13,
+      padding: 14,
+      onTap: () => launchUrl(Uri.parse('https://supabase.com/dashboard'), mode: LaunchMode.externalApplication),
+    );
     return AuthLayout(
       topPadding: 8,
       top: TopBar(title: l.connectDb, onBack: _back, backLabel: l.back),
       children: [
-        step(
-          1,
-          l.setupStep1,
-          AppButton(
-            label: l.openSupabase,
-            icon: Ic.ext,
-            kind: BtnKind.tonal,
-            height: 34,
-            fontSize: 13,
-            padding: 14,
-            onTap: () => launchUrl(Uri.parse('https://supabase.com/dashboard'), mode: LaunchMode.externalApplication),
+        // Wer schon ein Konto hat, hat die Datenbank längst eingerichtet: nur erklären, warum
+        // die Verbindung vor der Anmeldung kommt, statt die Einrichtung noch einmal zu zeigen.
+        if (_existing) ...[
+          RichB(l.connectExistingLead, style: stepStyle),
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 18),
+            child: Align(alignment: AlignmentDirectional.centerStart, child: openSupabase),
           ),
-        ),
-        step(
-          2,
-          l.setupStep2,
-          AppButton(
-            label: l.copySql,
-            icon: Ic.copy,
-            kind: BtnKind.tonal,
-            height: 34,
-            fontSize: 13,
-            padding: 14,
-            onTap: _copySql,
+        ] else ...[
+          step(1, l.setupStep1, openSupabase),
+          step(
+            2,
+            l.setupStep2,
+            AppButton(
+              label: l.copySql,
+              icon: Ic.copy,
+              kind: BtnKind.tonal,
+              height: 34,
+              fontSize: 13,
+              padding: 14,
+              onTap: _copySql,
+            ),
           ),
-        ),
-        step(3, l.setupStep3),
-        step(4, l.setupStep4),
-        const SizedBox(height: 4),
+          step(3, l.setupStep3),
+          step(4, l.setupStep4),
+          const SizedBox(height: 4),
+        ],
         AppField(
           label: l.projectUrl,
           controller: _url,

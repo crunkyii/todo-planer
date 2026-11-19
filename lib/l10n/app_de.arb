@@ -42,6 +42,7 @@
   "connectDb": "Datenbank verbinden",
   "connectOtherDb": "Andere Datenbank verbinden",
   "openSupabase": "supabase.com öffnen",
+  "connectExistingLead": "Dein Konto liegt in deiner eigenen Datenbank. Damit dich dieses Gerät anmelden kann, braucht es zuerst ihre <b>Project URL</b> und den <b>Publishable Key</b> – dieselben wie auf deinem ersten Gerät. Beide stehen in deinem Supabase-Projekt.",
   "copySql": "SQL kopieren",
   "sqlCopied": "SQL kopiert – jetzt im SQL Editor einfügen",
   "connect": "Verbinden",

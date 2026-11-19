@@ -136,6 +136,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSupabase => 'Open supabase.com';
 
   @override
+  String get connectExistingLead =>
+      'Your account lives in your own database. Before this device can sign you in, it needs the database\'s <b>Project URL</b> and <b>Publishable Key</b> – the same ones as on your first device. You find both in your Supabase project.';
+
+  @override
   String get copySql => 'Copy SQL';
 
   @override

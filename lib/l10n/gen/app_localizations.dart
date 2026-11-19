@@ -344,6 +344,12 @@ abstract class AppLocalizations {
   /// **'supabase.com öffnen'**
   String get openSupabase;
 
+  /// No description provided for @connectExistingLead.
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Konto liegt in deiner eigenen Datenbank. Damit dich dieses Gerät anmelden kann, braucht es zuerst ihre <b>Project URL</b> und den <b>Publishable Key</b> – dieselben wie auf deinem ersten Gerät. Beide stehen in deinem Supabase-Projekt.'**
+  String get connectExistingLead;
+
   /// No description provided for @copySql.
   ///
   /// In de, this message translates to:

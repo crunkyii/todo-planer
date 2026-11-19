@@ -137,6 +137,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get openSupabase => 'supabase.com öffnen';
 
   @override
+  String get connectExistingLead =>
+      'Dein Konto liegt in deiner eigenen Datenbank. Damit dich dieses Gerät anmelden kann, braucht es zuerst ihre <b>Project URL</b> und den <b>Publishable Key</b> – dieselben wie auf deinem ersten Gerät. Beide stehen in deinem Supabase-Projekt.';
+
+  @override
   String get copySql => 'SQL kopieren';
 
   @override

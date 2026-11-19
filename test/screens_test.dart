@@ -36,6 +36,15 @@ final screens = <Screen>[
     seed: false,
   ),
   Screen(
+    'verbinden-konto',
+    (t, l) async {
+      await _tap(t, find.text(l.haveAccount));
+      expect(find.text(l.connectDb), findsWidgets);
+    },
+    syncMode: null,
+    seed: false,
+  ),
+  Screen(
     'anmeldung',
     (t, l) async => expect(find.text(l.password), findsWidgets),
     syncMode: 'cloud',
