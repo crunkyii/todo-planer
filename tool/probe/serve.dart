@@ -10,6 +10,7 @@
 //       dann nicht öffnen.
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:todo_liste/services/update_manifest.dart';
@@ -40,6 +41,8 @@ Future<void> _serve(String apkPath, String version, {required bool broken}) asyn
   final pair = await _ed.newKeyPairFromSeed(base64Decode(_keyFile.readAsStringSync().trim()));
   final apk = File(apkPath).readAsBytesSync();
   final apkName = 'todo-planer-$version.apk';
+  // Ein einziges verändertes Byte reicht, damit die Signatur nicht mehr passt.
+  final changed = Uint8List.fromList(apk)..[0] ^= 1;
   // Oben muss ein Windows-Eintrag stehen, sonst ist die Datei ungültig – hier nur ein Platzhalter.
   final manifest = jsonEncode({
     'version': version,
@@ -56,8 +59,7 @@ Future<void> _serve(String apkPath, String version, {required bool broken}) asyn
       request.response.write(manifest);
     } else if (name == apkName) {
       request.response.contentLength = apk.length;
-      // Ein einziges verändertes Byte reicht, damit die Signatur nicht mehr passt.
-      request.response.add(broken ? [apk.first ^ 1, ...apk.skip(1)] : apk);
+      request.response.add(broken ? changed : apk);
     } else {
       request.response.statusCode = HttpStatus.notFound;
     }
