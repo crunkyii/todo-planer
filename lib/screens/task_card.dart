@@ -90,9 +90,12 @@ class SectionHead extends StatelessWidget {
 
 /// Karte einer Aufgabe (.task-wrap/.task) – nach links wischen löscht sie.
 class TaskCard extends StatefulWidget {
-  const TaskCard({super.key, required this.task, required this.ui});
+  const TaskCard({super.key, required this.task, required this.ui, this.highlightable = true});
   final Task task;
   final UiState ui;
+
+  /// Reagiert auf [UiState.focusTask] (nur in der Aufgabenliste, nicht im Kalender).
+  final bool highlightable;
 
   @override
   State<TaskCard> createState() => _TaskCardState();
@@ -248,16 +251,121 @@ class _TaskCardState extends State<TaskCard> {
       ),
     );
 
+    final clipped = ClipRRect(
+      borderRadius: BorderRadius.circular(Sizes.rCard),
+      // Gelöscht wird im Formular der Aufgabe; Screenreader haben dafür eine eigene Aktion.
+      child: Semantics(
+        customSemanticsActions: {CustomSemanticsAction(label: l.deleteTask): () => deleteTaskWithUndo(context, t)},
+        child: card,
+      ),
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Sizes.rCard),
-        // Gelöscht wird im Formular der Aufgabe; Screenreader haben dafür eine eigene Aktion.
-        child: Semantics(
-          customSemanticsActions: {CustomSemanticsAction(label: l.deleteTask): () => deleteTaskWithUndo(context, t)},
-          child: card,
-        ),
-      ),
+      child: widget.highlightable
+          ? _FocusPulse(taskId: t.id, focus: widget.ui.focusTask, color: tok.p, child: clipped)
+          : clipped,
+    );
+  }
+}
+
+/// Hebt die Karte hervor, wenn [focus] auf ihre Aufgabe zeigt: ins Bild scrollen, zweimal größer
+/// werden und in [color] leuchten. Danach wird [focus] wieder `null`.
+class _FocusPulse extends StatefulWidget {
+  const _FocusPulse({required this.taskId, required this.focus, required this.color, required this.child});
+  final String taskId;
+  final ValueNotifier<String?> focus;
+  final Color color;
+  final Widget child;
+
+  @override
+  State<_FocusPulse> createState() => _FocusPulseState();
+}
+
+class _FocusPulseState extends State<_FocusPulse> with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(vsync: this, duration: Motion.focus);
+
+  /// Zweimal anschwellen: groß, fast zurück, noch einmal groß, weich zurück.
+  static final _scale = TweenSequence<double>([
+    TweenSequenceItem(tween: Tween<double>(begin: 1, end: 1.06).chain(CurveTween(curve: Curves.easeOut)), weight: 18),
+    TweenSequenceItem(
+      tween: Tween<double>(begin: 1.06, end: 1.01).chain(CurveTween(curve: Curves.easeInOut)),
+      weight: 16,
+    ),
+    TweenSequenceItem(
+      tween: Tween<double>(begin: 1.01, end: 1.06).chain(CurveTween(curve: Curves.easeOut)),
+      weight: 16,
+    ),
+    TweenSequenceItem(
+      tween: Tween<double>(begin: 1.06, end: 1).chain(CurveTween(curve: Motion.springSoft)),
+      weight: 50,
+    ),
+  ]);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focus.addListener(_check);
+    // Die Karte kann erst nach dem Tab-Wechsel entstehen – dann steht der Wunsch schon da.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _check());
+  }
+
+  @override
+  void didUpdateWidget(_FocusPulse old) {
+    super.didUpdateWidget(old);
+    if (old.focus != widget.focus) {
+      old.focus.removeListener(_check);
+      widget.focus.addListener(_check);
+    }
+  }
+
+  void _check() {
+    if (!mounted || widget.focus.value != widget.taskId) return;
+    widget.focus.value = null;
+    // Nach dem Aufbau des neuen Tabs scrollen, sonst stimmt die Position noch nicht.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final ctx = context;
+      await Scrollable.ensureVisible(ctx, alignment: 0.3, duration: Motion.of(ctx, Motion.page), curve: Motion.enter);
+      if (!mounted) return;
+      _c.duration = Motion.of(context, Motion.focus);
+      // „Animationen reduzieren“: nur das Leuchten, ohne Bewegung (siehe build).
+      await _c.forward(from: 0).orCancel.catchError((_) {});
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.focus.removeListener(_check);
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final still = Motion.reduced(context);
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, child) {
+        if (_c.value == 0 || _c.value == 1) return child!;
+        // Leuchten: an, bleibt während beider Hüpfer, klingt am Ende aus.
+        final glow = (_c.value < 0.6 ? 1.0 : 1 - (_c.value - 0.6) / 0.4).clamp(0.0, 1.0);
+        final ring = DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Sizes.rCard),
+            border: Border.all(color: widget.color.withValues(alpha: 0.9 * glow), width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                color: widget.color.withValues(alpha: 0.45 * glow),
+                blurRadius: 18 * glow,
+              ),
+            ],
+          ),
+          child: child,
+        );
+        return still ? ring : Transform.scale(scale: _scale.evaluate(_c), child: ring);
+      },
+      child: widget.child,
     );
   }
 }

@@ -309,6 +309,9 @@ abstract final class Motion {
   static const Duration bar = Duration(milliseconds: 800);
   static const Duration fill = Duration(milliseconds: 900);
 
+  /// Hervorheben einer Aufgabe (zweimal größer werden und leuchten).
+  static const Duration focus = Duration(milliseconds: 1600);
+
   /// „Animationen reduzieren“ des Systems.
   static bool reduced(BuildContext context) => MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 

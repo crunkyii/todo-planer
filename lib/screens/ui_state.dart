@@ -18,6 +18,10 @@ class UiState extends ChangeNotifier {
   final sectionDrag = DragOrder();
   final sectionDragTick = ValueNotifier(0);
 
+  /// Aufgabe, die kurz hervorgehoben werden soll (Flick: Enter auf einer Zeile). Ihre Karte
+  /// scrollt ins Bild, pulsiert und setzt den Wert danach wieder auf `null`.
+  final focusTask = ValueNotifier<String?>(null);
+
   /// Unterseite „Kategorien“ in den Optionen.
   bool cats = false;
 

@@ -127,7 +127,7 @@ class CalendarTab extends StatelessWidget {
                   child: Text(l.nothingDue, style: TextStyle(fontSize: 14, color: tok.sub)),
                 )
               else
-                for (final t in selTasks) TaskCard(key: ValueKey(t.id), task: t, ui: ui),
+                for (final t in selTasks) TaskCard(key: ValueKey(t.id), task: t, ui: ui, highlightable: false),
               OlderDoneHint(dueDay: isoDate(sel)),
             ];
             final bottom = EdgeInsets.only(bottom: ShellLayout.bottomOf(context));

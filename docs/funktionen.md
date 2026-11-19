@@ -38,7 +38,7 @@ Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhake
 |---|---|
 | `addAufgabe` | Die App kommt nach vorne (oder startet) und das Formular *Neue Aufgabe* ist offen. |
 | `aufgabe Mathe lernen` | Wie oben, der Titel steht schon drin. Gespeichert wird erst mit *Hinzufügen*. |
-| `Aufgaben` | Die heutigen und überfälligen Aufgaben stehen **direkt in der Flick-Leiste** (oben eine Zeile mit Datum und Anzahl). Enter auf einer Zeile öffnet die App im Tab *Aufgaben*. |
+| `Aufgaben` | Die heutigen und überfälligen Aufgaben stehen **direkt in der Flick-Leiste** (oben eine Zeile mit Datum und Anzahl). Enter auf einer Zeile öffnet die App im Tab *Aufgaben*, scrollt zu dieser Aufgabe und lässt ihre Karte kurz größer werden und leuchten (bei „Animationen reduzieren“ nur leuchten). |
 | `todo` → `Aufgaben`, `Kalender`, `Wochenplan`, `Statistik`, `Optionen` | Die App öffnet in diesem Tab. Man kann auch gleich `todo kal` tippen. |
 
 **Einrichten (einmal):**

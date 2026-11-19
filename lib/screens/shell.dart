@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
 import '../data/sync_service.dart';
+import '../services/flick_export.dart';
 import '../services/launch_commands.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
@@ -77,7 +78,7 @@ class _AppShellState extends State<AppShell> {
     switch (cmd) {
       case NewTask(:final title):
         _newTask(title: title);
-      case OpenTab(:final tab):
+      case OpenTab(:final tab, :final row):
         // Ein offenes Formular oder Menü bleibt, wie es ist (nichts Getipptes geht verloren);
         // nur ein ⋮-Menü schließt sich, damit man den Tab auch sieht.
         final nav = Navigator.of(context);
@@ -88,7 +89,24 @@ class _AppShellState extends State<AppShell> {
         });
         if (top is AppMenuRoute) nav.pop();
         ui.goTab(tab);
+        if (row != null) _focusFlickRow(row);
     }
+  }
+
+  /// Flick: Enter auf einer Zeile der heutigen Aufgaben – deren Karte sichtbar machen und hervorheben.
+  void _focusFlickRow(String row) {
+    final store = context.app.store;
+    final t = flickTaskForRow(store, context.l, row);
+    if (t == null) return;
+    ui.set((x) {
+      // Nichts darf die Karte verstecken: Suche, Filter, „Erledigte ausblenden“ passt (sie ist offen).
+      x.search = null;
+      x.filter = filterAll;
+      x.collapsed
+        ..remove(sectionOf(t, store.catOf(t.categoryId).offset).name)
+        ..remove('k-${t.categoryId}');
+    });
+    ui.focusTask.value = t.id;
   }
 
   @override

@@ -102,26 +102,42 @@ class FlickExport {
 /// Die Zeilen für Flick: Kopfzeile mit Datum, dann die offenen Aufgaben von heute und die
 /// überfälligen – in derselben Reihenfolge und mit denselben Regeln („In Aufgaben zeigen“
 /// der Kategorie) wie der Abschnitt „Heute“ der App.
-List<String> flickTodayEntries(Store store, AppLocalizations l, {DateTime? now}) {
-  final n = now ?? clock();
+List<String> flickTodayEntries(Store store, AppLocalizations l, {DateTime? now}) => [
+  for (final r in _flickRows(store, l, now ?? clock())) r.name,
+];
+
+/// Die Aufgabe hinter einer Flick-Zeile ([row] = Ordnername, wie Flick ihn als `{name}` schickt).
+/// Zuerst genau, sonst nach dem sichtbaren Text – falls sich die Liste seit dem Schreiben
+/// verschoben hat. `null` = Kopfzeile, „Nichts fällig“ oder nicht mehr offen.
+Task? flickTaskForRow(Store store, AppLocalizations l, String row, {DateTime? now}) {
+  final rows = _flickRows(store, l, now ?? clock());
+  final visible = _stripSortKey(row);
+  return rows.where((r) => r.name == row).firstOrNull?.task ??
+      rows.where((r) => r.task != null && _stripSortKey(r.name) == visible).firstOrNull?.task;
+}
+
+List<({String name, Task? task})> _flickRows(Store store, AppLocalizations l, DateTime n) {
   final f = Fmt(l);
   int offset(Task t) => store.catOf(t.categoryId).offset;
-  final rows = <String>[];
+  final rows = <(Task, String)>[];
   final open = store.tasks.where((t) => !t.done).toList()..sort((a, b) => byDo(a, b, offset));
   for (final t in open) {
     final s = sectionOf(t, offset(t), now: n);
     if (s != Section.overdue && s != Section.today) continue;
     if (!shownInList(store.catOf(t.categoryId).listFrom, s)) continue;
     final title = t.hasTime ? l.flickTimed(f.time(t.dueTime!), t.title) : t.title;
-    rows.add(s == Section.overdue ? l.flickOverdue(title) : title);
+    rows.add((t, s == Section.overdue ? l.flickOverdue(title) : title));
   }
   final shown = rows.take(FlickExport.maxEntries - 1).toList();
   return [
-    flickFolderName(0, l.flickHeader(f.longDate(n), rows.length)),
-    if (shown.isEmpty) flickFolderName(1, l.nothingDue),
-    for (var i = 0; i < shown.length; i++) flickFolderName(i + 1, shown[i]),
+    (name: flickFolderName(0, l.flickHeader(f.longDate(n), rows.length)), task: null),
+    if (shown.isEmpty) (name: flickFolderName(1, l.nothingDue), task: null),
+    for (var i = 0; i < shown.length; i++) (name: flickFolderName(i + 1, shown[i].$2), task: shown[i].$1),
   ];
 }
+
+/// Der Ordnername ohne die unsichtbare Sortiernummer.
+String _stripSortKey(String name) => name.replaceAll(RegExp('^[${_sortDigits.join()}]+'), '');
 
 /// Zeichen, die in Windows-Ordnernamen verboten sind, durch ähnlich aussehende ersetzt.
 const _lookalikes = {':': '∶', '/': '∕', '\\': '∖', '*': '∗', '?': '？', '"': '”', '<': '‹', '>': '›', '|': 'ǀ'};

@@ -12,19 +12,23 @@ sealed class LaunchCommand {
   const LaunchCommand();
 }
 
-/// `todoplaner://tab/<name>` – die App in diesem Tab zeigen.
+/// `todoplaner://tab/<name>` – die App in diesem Tab zeigen. Bei „Aufgaben“ kann `?zeile=…` die
+/// Zeile aus der Flick-Liste mitbringen; deren Aufgabe wird dann hervorgehoben.
 final class OpenTab extends LaunchCommand {
-  const OpenTab(this.tab);
+  const OpenTab(this.tab, {this.row});
   final AppTab tab;
 
-  @override
-  bool operator ==(Object other) => other is OpenTab && other.tab == tab;
+  /// Ordnername der gewählten Flick-Zeile (`lib/services/flick_export.dart`), `null` = keine.
+  final String? row;
 
   @override
-  int get hashCode => tab.hashCode;
+  bool operator ==(Object other) => other is OpenTab && other.tab == tab && other.row == row;
 
   @override
-  String toString() => 'OpenTab(${tab.name})';
+  int get hashCode => Object.hash(tab, row);
+
+  @override
+  String toString() => 'OpenTab(${tab.name}, $row)';
 }
 
 /// `todoplaner://add` (optional `?title=…`) – das Formular „Neue Aufgabe“ öffnen.
@@ -93,7 +97,14 @@ LaunchCommand? parseLaunchCommand(Iterable<String> args) {
         return NewTask(title: title.length > maxLaunchTitle ? title.substring(0, maxLaunchTitle) : title);
       case 'tab' when parts.length > 1:
         final tab = _tabNames[parts[1]];
-        return tab == null ? null : OpenTab(tab);
+        if (tab == null) return null;
+        String? row;
+        try {
+          row = uri.queryParameters['zeile'];
+        } on FormatException {
+          row = null;
+        }
+        return OpenTab(tab, row: tab == AppTab.tasks && row != null && row.isNotEmpty ? row : null);
       case final name:
         // Kurzform `todoplaner://kalender`.
         final tab = _tabNames[name];

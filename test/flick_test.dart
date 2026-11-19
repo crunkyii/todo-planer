@@ -5,12 +5,13 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:material_ui/material_ui.dart' show Scrollable, Size;
+import 'package:material_ui/material_ui.dart' show Scrollable, Size, Transform;
 import 'package:todo_liste/data/models.dart';
 import 'package:todo_liste/screens/calendar_tab.dart';
 import 'package:todo_liste/screens/settings_tab.dart';
 import 'package:todo_liste/screens/sheets/task_sheet.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
+import 'package:todo_liste/screens/tasks_tab.dart';
 import 'package:todo_liste/screens/ui_state.dart';
 import 'package:todo_liste/screens/week_tab.dart';
 import 'package:todo_liste/services/flick_export.dart';
@@ -54,8 +55,14 @@ void main() {
         expect(parseLaunchCommand(['todoplaner://tab/$name']), OpenTab(tab), reason: name);
         expect(parseLaunchCommand(['todoplaner://$name']), OpenTab(tab), reason: name);
       });
-      // Flick hängt bei „Aufgaben“ die gewählte Zeile an – sie wird nicht gebraucht.
-      expect(parseLaunchCommand(['todoplaner://tab/aufgaben?zeile=01%20%C2%B7%20Mathe']), const OpenTab(AppTab.tasks));
+      // Flick hängt bei „Aufgaben“ die gewählte Zeile an (auch die unsichtbare Nummer).
+      expect(
+        parseLaunchCommand(['todoplaner://tab/aufgaben?zeile=%E2%80%8B%E2%80%8CMathe%20lernen']),
+        const OpenTab(AppTab.tasks, row: '​‌Mathe lernen'),
+      );
+      expect(parseLaunchCommand(['todoplaner://tab/aufgaben?zeile=']), const OpenTab(AppTab.tasks));
+      expect(parseLaunchCommand(['todoplaner://tab/kalender?zeile=x']), const OpenTab(AppTab.calendar));
+      expect(parseLaunchCommand(['todoplaner://tab/aufgaben?zeile=%E0%A4%A']), const OpenTab(AppTab.tasks));
     });
 
     test('Unbekanntes startet die App normal', () {
@@ -140,6 +147,12 @@ void main() {
       ]);
       // Flick sortiert nach Namen: Die Reihenfolge muss dabei bleiben.
       expect([...rows]..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())), rows);
+
+      // Enter auf einer Zeile: die Aufgabe dahinter – auch wenn sich die Nummer inzwischen verschoben hat.
+      expect(flickTaskForRow(app.store, l, rows[2])?.title, 'Vokabeln');
+      expect(flickTaskForRow(app.store, l, flickFolderName(7, '⚠ Altlast (überfällig)'))?.title, 'Altlast');
+      expect(flickTaskForRow(app.store, l, rows[0]), isNull, reason: 'Kopfzeile');
+      expect(flickTaskForRow(app.store, l, flickFolderName(1, 'Gibt es nicht')), isNull);
       await app.store.refreshPending();
       await app.store.db.close();
     });
@@ -251,6 +264,40 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TaskSheet), findsOneWidget);
       expect(app.store.tasks.where((t) => t.title == 'Referat'), isEmpty, reason: 'gespeichert wird erst per Knopf');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Enter auf einer Flick-Zeile: Aufgaben-Tab, Karte im Bild, wird größer und leuchtet', (tester) async {
+      useFixedClock();
+      final app = await makeServices();
+      final l = l10n('de');
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      app.launch.deliver(const OpenTab(AppTab.calendar));
+      await tester.pumpAndSettle();
+
+      final rows = flickTodayEntries(app.store, l);
+      final task = flickTaskForRow(app.store, l, rows.last)!;
+      app.launch.deliver(OpenTab(AppTab.tasks, row: rows.last));
+      // Bild für Bild: Tab-Wechsel, Hinscrollen, dann zweimal größer werden.
+      double scaleOf(Finder f) => tester
+          .widgetList<Transform>(find.ancestor(of: f, matching: find.byType(Transform)))
+          .fold(1.0, (m, w) => m * w.transform.getMaxScaleOnAxis());
+      var biggest = 1.0;
+      for (var i = 0; i < 160; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        final f = find.descendant(of: find.byType(TasksTab), matching: find.text(task.title));
+        if (f.evaluate().isNotEmpty) biggest = biggest < scaleOf(f.first) ? scaleOf(f.first) : biggest;
+      }
+      expect(find.byType(TasksTab), findsOneWidget);
+      final title = find.descendant(of: find.byType(TasksTab), matching: find.text(task.title)).first;
+      expect(tester.getRect(title).bottom, lessThanOrEqualTo(915), reason: 'Karte ist im Bild');
+      expect(biggest, greaterThan(1.04), reason: 'Karte wurde größer');
+      await tester.pumpAndSettle();
+      final after = tester
+          .widgetList<Transform>(find.ancestor(of: find.text(task.title).first, matching: find.byType(Transform)))
+          .map((w) => w.transform.getMaxScaleOnAxis());
+      expect(after.every((s) => s <= 1.0001), isTrue, reason: 'danach wieder normal groß');
       await finishApp(tester, app);
     });
 
