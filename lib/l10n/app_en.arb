@@ -149,6 +149,28 @@
   "quickTime": "Quick time",
   "inOneWeek": "In 1 week",
   "prevMonth": "Previous month",
+  "prevLists": "Previous lists",
+  "nextLists": "Next lists",
+  "todayAllDone": "All done",
+  "todayOpen": "{count} open",
+  "@todayOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayOpenLate": "{count} open, {late} overdue",
+  "@todayOpenLate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "late": {
+        "type": "int"
+      }
+    }
+  },
   "nextMonth": "Next month",
   "a11yDone": "Done: {title}",
   "a11yReopen": "Reopen: {title}",

@@ -6,6 +6,7 @@ import 'dart:ui' show PointerDeviceKind, Tristate;
 
 import 'package:cryptography/cryptography.dart';
 
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -19,6 +20,7 @@ import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
+import 'package:todo_liste/screens/tasks_board.dart';
 import 'package:todo_liste/services/export.dart';
 import 'package:todo_liste/services/update_manifest.dart';
 import 'package:todo_liste/services/update_platform.dart';
@@ -261,6 +263,56 @@ void main() {
 
       await _tap(tester, find.text(l.all).first);
       expect(find.text('Müll rausbringen'), findsOneWidget);
+      await finishApp(tester, app);
+    });
+  });
+
+  group('Gewohnheiten', () {
+    testWidgets('Abhaken: nicht durchgestrichen, gleitet ans Ende und beim Öffnen zurück', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      double y(String name) => tester.getTopLeft(find.text(name)).dy;
+      TextDecoration? deco(String name) => tester.renderObject<RenderParagraph>(find.text(name)).text.style?.decoration;
+      // „Wasser“ ist heute schon abgehakt: steht unten und ist nicht durchgestrichen.
+      expect(y('Lesen') < y('Sport') && y('Sport') < y('Wasser'), isTrue);
+      expect(deco('Wasser'), isNot(TextDecoration.lineThrough));
+
+      await tester.tap(find.bySemanticsLabel(l.a11yHabitDoneToday('Lesen')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      // Zuerst sieht man das Abhaken: Die Zeile steht noch an ihrem alten Platz …
+      expect(y('Lesen'), lessThan(y('Sport')));
+      final top = y('Lesen');
+      await tester.pump(const Duration(milliseconds: 160));
+      // … dann gleitet sie – unterwegs ist sie weder oben noch schon unten.
+      final mid = y('Lesen');
+      await tester.pumpAndSettle();
+      expect(y('Sport') < y('Wasser') && y('Wasser') < y('Lesen'), isTrue, reason: 'Erledigte unten');
+      expect(mid, allOf(greaterThan(top + 4), lessThan(y('Lesen') - 4)));
+      expect(deco('Lesen'), isNot(TextDecoration.lineThrough));
+
+      await _tap(tester, find.bySemanticsLabel(l.a11yHabitReopen('Lesen')));
+      expect(y('Lesen') < y('Sport') && y('Sport') < y('Wasser'), isTrue, reason: 'wieder an seinem Platz');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Animationen reduziert: die Zeile steht sofort am neuen Platz', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        disableAnimations: true,
+      );
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await pumpApp(tester, app);
+      double y(String name) => tester.getTopLeft(find.text(name)).dy;
+      await tester.tap(find.bySemanticsLabel(l.a11yHabitDoneToday('Lesen')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(y('Sport') < y('Lesen'), isTrue);
+      await tester.pumpAndSettle();
       await finishApp(tester, app);
     });
   });
@@ -1479,6 +1531,79 @@ void main() {
       await tester.pumpAndSettle();
       expect(app.store.tasks.map((t) => t.title), contains('Am PC angelegt'));
       expect(find.text('Am PC angelegt'), findsOneWidget);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben: Listen nebeneinander, höchstens drei zu sehen, daneben die Seitenleiste', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      const size = Size(1920, 1009);
+      await pumpApp(tester, app, size: size);
+      Finder head(String label, int n) => find.bySemanticsLabel(l.sectionCount(label, n)).hitTestable();
+      // Jeder Zeitraum ist eine eigene Liste: Die Überschriften stehen nebeneinander, nicht untereinander.
+      final a = tester.getRect(head(l.overdue, 1)), b = tester.getRect(head(l.today, 2));
+      final c = tester.getRect(head(l.thisWeek, 2));
+      expect({a.top, b.top, c.top}, hasLength(1));
+      expect(a.left < b.left && b.left < c.left, isTrue);
+      expect(c.right, lessThan(size.width - Sizes.boardSide), reason: 'rechts bleibt Platz für die Seitenleiste');
+      // Die vierte Liste ist noch nicht zu sehen – erst nach dem Weiterblättern.
+      expect(head(l.later, 1), findsNothing);
+      await _tap(tester, find.bySemanticsLabel(l.nextLists));
+      expect(head(l.later, 1), findsOneWidget);
+      expect(head(l.overdue, 1), findsNothing);
+      await _tap(tester, find.bySemanticsLabel(l.prevLists));
+      expect(head(l.overdue, 1), findsOneWidget);
+
+      // Seitenleiste: Stand von heute und die Gewohnheiten (dafür kein eigener Chip mehr)
+      expect(find.text(l.todayOpenLate(3, 1)), findsOneWidget);
+      expect(find.text(l.habits), findsOneWidget);
+      expect(tester.getRect(find.text(l.habits)).left, greaterThan(c.right));
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben: „+ Aufgabe“ in der Liste „Heute“ legt eine Aufgabe für heute an', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      // Ohne Aufgaben steht nur „Heute“ da – leer, aber mit dem Knopf.
+      expect(find.bySemanticsLabel(l.sectionCount(l.today, 0)), findsOneWidget);
+      await _tap(tester, find.widgetWithText(AppButton, l.task));
+      await tester.enterText(find.byType(EditableText).first, 'Direkt in Heute');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      final t = app.store.tasks.singleWhere((t) => t.title == 'Direkt in Heute');
+      expect(sameDay(t.dueDate, today()), isTrue);
+      expect(find.bySemanticsLabel(l.sectionCount(l.today, 1)), findsOneWidget);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben: ein Tag im kleinen Monat öffnet ihn im Kalender', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app, size: const Size(1366, 705));
+      final f = Fmt.of(tester.element(find.byType(TasksSide)));
+      final day = DateTime(today().year, today().month, 10);
+      await tester.ensureVisible(find.bySemanticsLabel(RegExp('^${RegExp.escape(f.dayMonth(day))}')).last);
+      await tester.pumpAndSettle();
+      await _tap(tester, find.bySemanticsLabel(RegExp('^${RegExp.escape(f.dayMonth(day))}')).last);
+      expect(find.text(f.longDate(day)), findsOneWidget, reason: 'Kalender zeigt den gewählten Tag');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben: im schmalen PC-Fenster bleibt die eine Liste mit Abschnitten', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app, size: const Size(1000, 700));
+      expect(find.bySemanticsLabel(l.nextLists), findsNothing);
+      expect(find.text(l.habits), findsNWidgets(2), reason: 'Chip und Karte „Gewohnheiten“');
+      final a = tester.getRect(find.bySemanticsLabel(l.sectionCount(l.overdue, 1)));
+      final b = tester.getRect(find.bySemanticsLabel(l.sectionCount(l.today, 2)));
+      expect(b.top, greaterThan(a.bottom), reason: 'Abschnitte untereinander');
       await finishApp(tester, app);
     });
 

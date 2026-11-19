@@ -5,6 +5,7 @@ import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
 import '../util/holidays.dart';
+import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pickers.dart';
 import '../widgets/swipe.dart';
@@ -35,38 +36,12 @@ class CalendarTab extends StatelessWidget {
         final selHoliday = holidayOn(sel);
         final selTasks = tasks.where((t) => sameDay(t.dueDate, sel)).toList()..sort((a, b) => a.due.compareTo(b.due));
 
-        // Ein Durchlauf: offene Kategorien je Tag (statt pro Zelle alle Aufgaben zu durchsuchen).
-        final catsByDay = <String, Set<String>>{};
-        for (final t in tasks) {
-          if (!t.done) (catsByDay[isoDate(t.dueDate)] ??= <String>{}).add(t.categoryId);
-        }
+        final catsByDay = openCategoriesByDay(tasks);
 
-        Widget dots(DateTime d, bool selected) {
-          final cats = (catsByDay[isoDate(d)] ?? const <String>{}).toList();
-          return SizedBox(
-            height: 9,
-            child: cats.length > 4
-                ? Text(
-                    '${cats.length}',
-                    style: TextStyle(
-                      fontSize: 10,
-                      height: 0.9,
-                      fontWeight: FontWeight.w700,
-                      color: selected ? tok.text : tok.sub,
-                      fontFeatures: Fs.tabular,
-                    ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (var i = 0; i < cats.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 3),
-                        Dot(tok.item(store.catOf(cats[i]).color).c, size: 5),
-                      ],
-                    ],
-                  ),
-          );
-        }
+        Widget dots(DateTime d, bool selected) => DayDots(
+          selected: selected,
+          colors: [for (final id in catsByDay[isoDate(d)] ?? const <String>{}) tok.item(store.catOf(id).color).c],
+        );
 
         void move(int dir) => ui.set((s) => s.calMonth = DateTime(m.year, m.month + dir));
 

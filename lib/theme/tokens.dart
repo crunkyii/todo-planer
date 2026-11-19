@@ -231,6 +231,13 @@ abstract final class Sizes {
 
   /// Breite des Inhalts im breiten Layout: Listen bleiben lesbar schmal, Raster dürfen breiter werden.
   static const double wideList = 860;
+
+  /// Aufgaben am PC: ab dieser Inhaltsbreite stehen die Listen nebeneinander, daneben die
+  /// Seitenleiste ([boardSide]). Eine Liste ist mindestens [boardListMin] breit.
+  static const double wideBoard = 1600;
+  static const double boardMin = 940;
+  static const double boardSide = 340;
+  static const double boardListMin = 290;
   static const double wideGrid = 1240;
   static const double wideWeek = 1600;
   static const double calSide = 400;

@@ -476,6 +476,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prevMonth => 'Previous month';
 
   @override
+  String get prevLists => 'Previous lists';
+
+  @override
+  String get nextLists => 'Next lists';
+
+  @override
+  String get todayAllDone => 'All done';
+
+  @override
+  String todayOpen(int count) {
+    return '$count open';
+  }
+
+  @override
+  String todayOpenLate(int count, int late) {
+    return '$count open, $late overdue';
+  }
+
+  @override
   String get nextMonth => 'Next month';
 
   @override

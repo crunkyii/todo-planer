@@ -189,8 +189,9 @@ class _AppShellState extends State<AppShell> {
   /// Wie breit der Inhalt im breiten Layout wird: Listen bleiben lesbar, Raster nutzen den Platz.
   double get _wideWidth => switch (ui.tab) {
     AppTab.week => Sizes.wideWeek,
+    AppTab.tasks => Sizes.wideBoard,
     AppTab.calendar || AppTab.stats => Sizes.wideGrid,
-    AppTab.tasks || AppTab.settings => Sizes.wideList,
+    AppTab.settings => Sizes.wideList,
   };
 
   Widget _tab() => switch (ui.tab) {

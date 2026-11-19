@@ -201,6 +201,28 @@
   "quickTime": "Schnellauswahl Uhrzeit",
   "inOneWeek": "In 1 Woche",
   "prevMonth": "Voriger Monat",
+  "prevLists": "Vorherige Listen",
+  "nextLists": "Nächste Listen",
+  "todayAllDone": "Alles erledigt",
+  "todayOpen": "{count} offen",
+  "@todayOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayOpenLate": "{count} offen, davon {late} überfällig",
+  "@todayOpenLate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "late": {
+        "type": "int"
+      }
+    }
+  },
   "nextMonth": "Nächster Monat",
   "a11yDone": "Erledigt: {title}",
   "@a11yDone": {

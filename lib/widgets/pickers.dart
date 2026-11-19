@@ -325,6 +325,41 @@ class MonthGrid extends StatelessWidget {
   }
 }
 
+/// Punkte unter einem Kalendertag: je offener Kategorie einer, ab fünf steht die Anzahl da.
+class DayDots extends StatelessWidget {
+  const DayDots({super.key, required this.colors, this.selected = false});
+  final List<Color> colors;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final tok = context.tok;
+    return SizedBox(
+      height: 9,
+      child: colors.length > 4
+          ? Text(
+              '${colors.length}',
+              style: TextStyle(
+                fontSize: 10,
+                height: 0.9,
+                fontWeight: FontWeight.w700,
+                color: selected ? tok.text : tok.sub,
+                fontFeatures: Fs.tabular,
+              ),
+            )
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < colors.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 3),
+                  Dot(colors[i], size: 5),
+                ],
+              ],
+            ),
+    );
+  }
+}
+
 /// Ein Tag im Raster (.cal-day): Zahl im Kreis, heute umrandet, gewählt gefüllt.
 class DayCell extends StatelessWidget {
   const DayCell({

@@ -114,6 +114,16 @@ const filterAll = 'alle';
 /// … oder nur die Gewohnheiten (alles andere ist die ID einer Kategorie).
 const filterHabits = 'habits';
 
+/// Offene Kategorien je Tag (`yyyy-mm-dd`) – für die Punkte im Kalender. Ein Durchlauf, statt
+/// für jeden Tag alle Aufgaben zu durchsuchen.
+Map<String, Set<String>> openCategoriesByDay(Iterable<Task> tasks) {
+  final byDay = <String, Set<String>>{};
+  for (final t in tasks) {
+    if (!t.done) (byDay[isoDate(t.dueDate)] ??= <String>{}).add(t.categoryId);
+  }
+  return byDay;
+}
+
 /// Filtert nach Kategorie ([filterAll] oder eine ID), „Erledigte ausblenden“ und Suchtext
 /// (auch in Notiz und Unteraufgaben).
 List<Task> filterTasks(Iterable<Task> tasks, {required String filter, required bool hideDone, String? search}) {

@@ -986,6 +986,36 @@ abstract class AppLocalizations {
   /// **'Voriger Monat'**
   String get prevMonth;
 
+  /// No description provided for @prevLists.
+  ///
+  /// In de, this message translates to:
+  /// **'Vorherige Listen'**
+  String get prevLists;
+
+  /// No description provided for @nextLists.
+  ///
+  /// In de, this message translates to:
+  /// **'Nächste Listen'**
+  String get nextLists;
+
+  /// No description provided for @todayAllDone.
+  ///
+  /// In de, this message translates to:
+  /// **'Alles erledigt'**
+  String get todayAllDone;
+
+  /// No description provided for @todayOpen.
+  ///
+  /// In de, this message translates to:
+  /// **'{count} offen'**
+  String todayOpen(int count);
+
+  /// No description provided for @todayOpenLate.
+  ///
+  /// In de, this message translates to:
+  /// **'{count} offen, davon {late} überfällig'**
+  String todayOpenLate(int count, int late);
+
   /// No description provided for @nextMonth.
   ///
   /// In de, this message translates to:

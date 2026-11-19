@@ -11,6 +11,7 @@ import '../widgets/layout.dart';
 import '../widgets/ui.dart';
 import 'older_done.dart';
 import 'task_card.dart';
+import 'tasks_board.dart';
 import 'ui_state.dart';
 
 /// Tab „Aufgaben“: Filter-Chips, ⋮-Menü, Suche, Abschnitte und die feste Gewohnheiten-Aufgabe.
@@ -23,25 +24,59 @@ class TasksTab extends StatelessWidget {
     final app = AppScope.of(context);
     return ListenableBuilder(
       listenable: Listenable.merge([app.store, app.sync]),
-      builder: (context, _) => Column(
-        children: [
-          ui.search != null ? _SearchBar(ui: ui) : _ChipBar(ui: ui),
-          Expanded(child: _TaskList(ui: ui)),
-        ],
+      builder: (context, _) => LayoutBuilder(
+        builder: (context, box) {
+          // Am PC mit genug Platz: Listen nebeneinander und rechts die Seitenleiste.
+          final board = ShellLayout.wideOf(context) && box.maxWidth >= Sizes.boardMin;
+          final main = Column(
+            children: [
+              ui.search != null ? _SearchBar(ui: ui) : _ChipBar(ui: ui, board: board),
+              Expanded(
+                child: _TaskList(ui: ui, board: board),
+              ),
+            ],
+          );
+          if (!board) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: Sizes.wideList),
+                child: main,
+              ),
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: main),
+              SizedBox(
+                width: Sizes.boardSide,
+                child: TasksSide(ui: ui),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
+/// Der Filter, der gerade gilt. Am PC stehen die Gewohnheiten immer in der Seitenleiste –
+/// der Chip dafür entfällt dort, ein gemerktes „nur Gewohnheiten“ zählt als „Alle“.
+String _filterOf(UiState ui, Iterable<TaskCategory> categories, {required bool board}) {
+  final f = ui.filterIn(categories);
+  return board && f == filterHabits ? filterAll : f;
+}
+
 class _ChipBar extends StatelessWidget {
-  const _ChipBar({required this.ui});
+  const _ChipBar({required this.ui, required this.board});
   final UiState ui;
+  final bool board;
 
   @override
   Widget build(BuildContext context) {
     const fadeLeft = 16.0, fadeRight = 32.0;
     final categories = context.app.store.categories;
-    final filter = ui.filterIn(categories);
+    final filter = _filterOf(ui, categories, board: board);
     final tok = context.tok;
     final l = context.l;
     return Padding(
@@ -81,13 +116,15 @@ class _ChipBar extends StatelessWidget {
                           onTap: () => ui.set((s) => s.filter = c.id),
                         ),
                       ],
-                      const SizedBox(width: 8),
-                      AppChip(
-                        label: l.habits,
-                        selected: filter == filterHabits,
-                        colors: tok.item(habitColorHex),
-                        onTap: () => ui.set((s) => s.filter = filterHabits),
-                      ),
+                      if (!board) ...[
+                        const SizedBox(width: 8),
+                        AppChip(
+                          label: l.habits,
+                          selected: filter == filterHabits,
+                          colors: tok.item(habitColorHex),
+                          onTap: () => ui.set((s) => s.filter = filterHabits),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -262,16 +299,20 @@ class _SearchBarState extends State<_SearchBar> {
 }
 
 class _TaskList extends StatelessWidget {
-  const _TaskList({required this.ui});
+  const _TaskList({required this.ui, required this.board});
   final UiState ui;
+
+  /// Listen nebeneinander (PC) statt Abschnitte untereinander.
+  final bool board;
 
   @override
   Widget build(BuildContext context) {
     final store = context.app.store;
     final l = context.l;
+    final tok = context.tok;
     int off(Task t) => store.catOf(t.categoryId).offset;
     final searching = ui.search != null && ui.search!.trim().isNotEmpty;
-    final filter = ui.filterIn(store.categories);
+    final filter = _filterOf(ui, store.categories, board: board);
     final now = clock();
     final all = filterTasks(
       store.tasksWithOlder,
@@ -287,91 +328,129 @@ class _TaskList extends StatelessWidget {
         : all;
     final hidden = all.length - list.length;
     list.sort((a, b) => byDo(a, b, off));
-    final showHabits = ui.search == null && (filter == filterAll || filter == filterHabits);
-    final children = <Widget>[
-      if (showHabits) ...[const SizedBox(height: 8), HabitsTaskCard(ui: ui)],
-    ];
-    TaskCard card(Task t) => TaskCard(key: ValueKey(t.id), task: t, ui: ui);
+    // Am PC stehen die Gewohnheiten in der Seitenleiste.
+    final showHabits = !board && ui.search == null && (filter == filterAll || filter == filterHabits);
     // Ältere erledigte liegen nur online: Knopf zum Nachladen bzw. Hinweis am Ende der Liste –
     // außer der Abschnitt „Erledigt“ ist zugeklappt oder Erledigte sind ausgeblendet.
     final olderCat = filter == filterAll || filter == filterHabits ? null : filter;
     var showOlder = filter != filterHabits && !ui.hideDone && store.olderWaiting(categoryId: olderCat) > 0;
 
-    if (filter != filterHabits) {
-      if (list.isEmpty && !showOlder) {
-        children.add(EmptyState(icon: searching ? Ic.search : Ic.tasks, text: searching ? l.nothingFound : l.noTasks));
-      } else if (ui.search != null || ui.sort == SortMode.name) {
-        if (ui.sort == SortMode.name) {
-          list.sort((a, b) => doneLast(a, b) ?? a.title.toLowerCase().compareTo(b.title.toLowerCase()));
-        }
-        children
-          ..add(const SizedBox(height: 8))
-          ..addAll(list.map(card));
-      } else if (ui.sort == SortMode.category) {
-        final tok = context.tok;
-        for (final c in store.categories) {
-          final items = list.where((t) => t.categoryId == c.id).toList()
-            ..sort((a, b) => doneLast(a, b) ?? byDo(a, b, off));
-          if (items.isEmpty) continue;
-          final id = 'k-${c.id}';
-          final open = !ui.collapsed.contains(id);
-          children.add(
-            SectionHead(
-              label: c.name,
-              count: items.length,
-              open: open,
-              color: tok.item(c.color).c,
-              onTap: () => ui.toggleCollapsed(id),
-            ),
-          );
-          if (open) children.addAll(items.map(card));
-        }
-      } else {
-        final labels = {
-          Section.overdue: l.overdue,
-          Section.today: l.today,
-          Section.tomorrow: l.tomorrow,
-          Section.week: l.thisWeek,
-          Section.later: l.later,
-          Section.done: l.done,
-        };
-        for (final s in Section.values) {
-          var items = list.where((t) => sectionOf(t, off(t), now: now) == s).toList();
-          // „Erledigt“ steht auch leer da, solange es ältere zum Nachladen gibt.
-          if (items.isEmpty && !(s == Section.done && showOlder)) continue;
-          if (s == Section.done) items = items.reversed.toList();
-          final id = s.name;
-          final open = !ui.collapsed.contains(id);
-          if (s == Section.done && !open) showOlder = false;
-          children.add(
-            SectionHead(
-              label: labels[s]!,
-              count: items.length,
-              open: open,
-              overdue: s == Section.overdue,
-              onTap: () => ui.toggleCollapsed(id),
-            ),
-          );
-          if (open) children.addAll(items.map(card));
-        }
+    // Gruppen: Zeiträume oder Kategorien. `null` = eine einzige Liste (Suche, nach Name sortiert).
+    List<TaskGroup>? groups;
+    if (ui.search != null || ui.sort == SortMode.name) {
+      if (ui.sort == SortMode.name) {
+        list.sort((a, b) => doneLast(a, b) ?? a.title.toLowerCase().compareTo(b.title.toLowerCase()));
       }
-    }
-    if (hidden > 0 && filter != filterHabits) {
-      children.add(
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          child: Text(
-            l.hiddenByCategory(hidden),
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: Fs.meta, color: context.tok.sub),
+    } else if (ui.sort == SortMode.category) {
+      groups = [
+        for (final c in store.categories)
+          (
+            id: 'k-${c.id}',
+            label: c.name,
+            items: list.where((t) => t.categoryId == c.id).toList()..sort((a, b) => doneLast(a, b) ?? byDo(a, b, off)),
+            color: tok.item(c.color).c,
+            section: null,
           ),
+      ].where((g) => g.items.isNotEmpty).toList();
+    } else {
+      final labels = {
+        Section.overdue: l.overdue,
+        Section.today: l.today,
+        Section.tomorrow: l.tomorrow,
+        Section.week: l.thisWeek,
+        Section.later: l.later,
+        Section.done: l.done,
+      };
+      groups =
+          [
+            for (final s in Section.values)
+              (
+                id: s.name,
+                label: labels[s]!,
+                items: () {
+                  final items = list.where((t) => sectionOf(t, off(t), now: now) == s).toList();
+                  return s == Section.done ? items.reversed.toList() : items;
+                }(),
+                color: null,
+                section: s,
+              ),
+            // Leere Abschnitte entfallen. „Erledigt“ steht auch leer da, solange es ältere zum
+            // Nachladen gibt; am PC bleibt außerdem „Heute“ immer stehen.
+          ].where((g) {
+            return g.items.isNotEmpty ||
+                (g.section == Section.done && showOlder) ||
+                (board && g.section == Section.today);
+          }).toList();
+    }
+
+    final hiddenNote = hidden > 0 && filter != filterHabits
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Text(
+              l.hiddenByCategory(hidden),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: Fs.meta, color: tok.sub),
+            ),
+          )
+        : null;
+
+    if (board && groups != null && groups.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(8, 4, 0, Sizes.wideBottom - 12),
+        child: Column(
+          children: [
+            Expanded(
+              child: TasksBoard(ui: ui, groups: groups, showOlder: showOlder, olderCat: olderCat),
+            ),
+            if (hiddenNote != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: hiddenNote),
+          ],
         ),
       );
     }
+
+    final children = <Widget>[
+      if (showHabits) ...[const SizedBox(height: 8), HabitsTaskCard(ui: ui)],
+    ];
+    TaskCard card(Task t) => TaskCard(key: ValueKey(t.id), task: t, ui: ui);
+    if (filter != filterHabits) {
+      if (list.isEmpty && !showOlder) {
+        children.add(EmptyState(icon: searching ? Ic.search : Ic.tasks, text: searching ? l.nothingFound : l.noTasks));
+      } else if (groups == null) {
+        children
+          ..add(const SizedBox(height: 8))
+          ..addAll(list.map(card));
+      } else {
+        for (final g in groups) {
+          final open = !ui.collapsed.contains(g.id);
+          if (g.section == Section.done && !open) showOlder = false;
+          children.add(
+            SectionHead(
+              label: g.label,
+              count: g.items.length,
+              open: open,
+              color: g.color,
+              overdue: g.section == Section.overdue,
+              onTap: () => ui.toggleCollapsed(g.id),
+            ),
+          );
+          if (open) children.addAll(g.items.map(card));
+        }
+      }
+    }
+    if (hiddenNote != null) children.add(hiddenNote);
     if (showOlder) children.add(OlderDoneHint(categoryId: olderCat));
-    return ListView(
+    final listView = ListView(
       padding: EdgeInsets.only(bottom: ShellLayout.bottomOf(context)),
       children: children,
+    );
+    // Am PC ohne Gruppen (Suche, nach Name): eine Liste in lesbarer Breite statt über den ganzen Platz.
+    if (!board) return listView;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: Sizes.wideList),
+        child: listView,
+      ),
     );
   }
 }
