@@ -20,6 +20,8 @@ import 'package:todo_liste/data/settings_store.dart';
 import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/screens/sheets/columns_sheet.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/semantics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
@@ -926,6 +928,141 @@ void main() {
       ui.weekStep(-6);
       expect(addDays(ui.weekStart, ui.weekDay!), DateTime(2026, 11, 18));
       expect(ui.weekStart, DateTime(2026, 11, 12));
+    });
+
+    testWidgets('Spalten: 2, 3, 4 und 5 nebeneinander – genau so viele sind zu sehen', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      for (final size in const [Size(1920, 1009), Size(1366, 705)]) {
+        for (var n = SettingsStore.boardVisibleMin; n <= SettingsStore.boardVisibleMax; n++) {
+          app.settings.updateDevice((s) => s.boardVisible = n);
+          await pumpApp(tester, app, size: size);
+          final board = tester.widget<TasksBoard>(find.byType(TasksBoard));
+          expect(board.groups.length, greaterThanOrEqualTo(5), reason: 'die Beispieldaten füllen genug Listen');
+          final area = tester.getRect(find.byType(TasksBoard));
+          final shown = [
+            for (final g in board.groups) find.bySemanticsLabel(l.sectionCount(g.label, g.items.length)).hitTestable(),
+          ].where((f) => f.evaluate().isNotEmpty).map(tester.getRect).toList();
+          // Im kleinen Fenster (1366 px) wären fünf Listen zu schmal zum Lesen: Dort bleiben es vier.
+          final want = size.width < 1500 && n > 4 ? 4 : n;
+          expect(shown, hasLength(want), reason: '$n Spalten bei $size');
+          for (final r in shown) {
+            expect(r.left, greaterThanOrEqualTo(area.left), reason: 'ganz im Fenster ($n bei $size)');
+            expect(r.right, lessThanOrEqualTo(area.right + 0.5), reason: 'ganz im Fenster ($n bei $size)');
+          }
+          expect(tester.takeException(), isNull, reason: 'kein Überlauf mit $n Spalten bei $size');
+        }
+      }
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Spalten: weniger Listen als eingestellt füllen die ganze Breite', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      app.settings.updateDevice(
+        (s) => s
+          ..boardVisible = 5
+          ..boardHidden = {
+            for (final x in Section.values)
+              if (x != Section.today && x != Section.week) x.name,
+          },
+      );
+      await pumpApp(tester, app, size: const Size(1920, 1009));
+      final board = tester.widget<TasksBoard>(find.byType(TasksBoard));
+      expect(board.groups, hasLength(2));
+      final area = tester.getRect(find.byType(TasksBoard));
+      final last = board.groups.last;
+      final r = tester.getRect(find.bySemanticsLabel(l.sectionCount(last.label, last.items.length)));
+      expect(r.right, greaterThan(area.right - 60), reason: 'die zweite Liste reicht bis an den Rand');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Spalten: an der Überschrift ziehen ändert die Reihenfolge und bleibt gespeichert', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      // Am PC (im Test sonst Android: dort zieht man erst nach langem Druck).
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await pumpApp(tester, app, size: const Size(1920, 1009));
+      List<String> ids() => [for (final g in tester.widget<TasksBoard>(find.byType(TasksBoard)).groups) g.id];
+      final before = ids();
+      final a = before[0], b = before[1], c = before[2];
+      Finder head(String id) {
+        final g = tester.widget<TasksBoard>(find.byType(TasksBoard)).groups.firstWhere((g) => g.id == id);
+        return find.bySemanticsLabel(l.sectionCount(g.label, g.items.length));
+      }
+
+      // Die erste Liste mit der Maus auf die dritte ziehen: Sie landet dahinter.
+      Offset title(String id) => tester.getRect(head(id)).topCenter + const Offset(0, 28);
+      final from = title(a), to = title(c) + const Offset(0, 200);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: from);
+      await tester.pump();
+      await mouse.down(from);
+      await tester.pump();
+      for (var i = 1; i <= 8; i++) {
+        await mouse.moveTo(Offset.lerp(from, to, i / 8)!);
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await mouse.up();
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(ids().take(3), [b, c, a]);
+      expect(tester.takeException(), isNull);
+      // Geblättert wurde dabei nicht: Die neue erste Liste steht ganz links.
+      expect(head(b).hitTestable(), findsOneWidget);
+
+      // Gespeichert (nur an diesem Gerät) – und neu geladen dieselbe Reihenfolge.
+      late SettingsStore again;
+      await tester.runAsync(() async => again = SettingsStore(await SharedPreferences.getInstance()));
+      expect(again.boardColumnOrder().where(before.contains).take(3), [b, c, a]);
+
+      // Ohne Maus: „Nach links verschieben“ holt sie wieder einen Platz zurück.
+      final handle = tester.ensureSemantics();
+      final node = tester.getSemantics(head(a));
+      final action = node
+          .getSemanticsData()
+          .customSemanticsActionIds!
+          .map(CustomSemanticsAction.getAction)
+          .firstWhere((x) => x!.label == l.moveLeft)!;
+      tester.binding.performSemanticsAction(
+        SemanticsActionEvent(
+          type: SemanticsAction.customAction,
+          nodeId: node.id,
+          viewId: tester.view.viewId,
+          arguments: CustomSemanticsAction.getIdentifier(action),
+        ),
+      );
+      await tester.pumpAndSettle();
+      handle.dispose();
+      expect(ids().take(3), [b, a, c]);
+
+      // Ohne gespeicherte Reihenfolge gilt wieder die übliche.
+      app.settings.updateDevice((s) => s.boardOrder = []);
+      await tester.pumpAndSettle();
+      expect(ids(), before);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('⋮-Menü: die Einträge bleiben in fester Reihenfolge, egal wie oft man sie benutzt', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      for (final label in [l.hideCompleted, l.showCompleted, l.hideCompleted]) {
+        await _tap(tester, find.bySemanticsLabel(l.moreOptions));
+        await _tap(tester, find.text(label));
+      }
+      await _tap(tester, find.bySemanticsLabel(l.moreOptions));
+      final tops = [
+        for (final t in [l.search, l.sort, l.manageCategories, l.showCompleted, l.deleteCompleted])
+          tester.getTopLeft(find.text(t).last).dy,
+      ];
+      expect(tops, [...tops]..sort());
+      await finishApp(tester, app);
     });
 
     testWidgets('Aufgabe: Wischen nach links löscht nicht mehr', (tester) async {

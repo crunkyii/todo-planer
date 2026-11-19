@@ -233,11 +233,12 @@ abstract final class Sizes {
   static const double wideList = 860;
 
   /// Aufgaben am PC: ab dieser Inhaltsbreite stehen die Listen nebeneinander, daneben die
-  /// Seitenleiste ([boardSide]). Eine Liste ist mindestens [boardListMin] breit.
+  /// Seitenleiste ([boardSide]). Schmaler als [boardListMin] wird eine Liste nie – erst
+  /// darunter zeigt das Fenster weniger Listen als eingestellt.
   static const double wideBoard = 1600;
   static const double boardMin = 940;
   static const double boardSide = 340;
-  static const double boardListMin = 290;
+  static const double boardListMin = 190;
 
   /// Seitenleiste: So viel Höhe brauchen „Heute“, der Kopf der Gewohnheiten und der Monat.
   /// Was vom Fenster übrig bleibt, bekommt die Liste der Gewohnheiten – mindestens

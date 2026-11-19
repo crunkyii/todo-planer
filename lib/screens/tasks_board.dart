@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/semantics.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
@@ -31,9 +33,10 @@ String sectionLabel(AppLocalizations l, Section s) => switch (s) {
   Section.done => l.done,
 };
 
-/// Aufgaben am PC: jede Gruppe ist eine eigene Liste nebeneinander. Höchstens [maxVisible]
-/// sind gleichzeitig zu sehen (einstellbar unter ⋮ → Spalten); die übrigen erreicht man durch
-/// Wischen oder mit den Pfeilen.
+/// Aufgaben am PC: jede Gruppe ist eine eigene Liste nebeneinander. [maxVisible] davon sind
+/// gleichzeitig zu sehen (einstellbar unter ⋮ → Spalten); die übrigen erreicht man durch
+/// Wischen oder mit den Pfeilen. Mit [onMove] lassen sich die Listen an ihrer Überschrift
+/// umsortieren.
 class TasksBoard extends StatelessWidget {
   const TasksBoard({
     super.key,
@@ -42,10 +45,14 @@ class TasksBoard extends StatelessWidget {
     required this.showOlder,
     this.olderCat,
     this.maxVisible = 3,
+    this.onMove,
   });
   final UiState ui;
   final List<TaskGroup> groups;
   final int maxVisible;
+
+  /// Liste `id` wurde auf die Liste `target` gezogen. `null` = Reihenfolge steht fest.
+  final void Function(String id, String target)? onMove;
 
   /// Ältere erledigte Aufgaben liegen noch online – der Hinweis steht am Ende von „Erledigt“.
   final bool showOlder;
@@ -54,7 +61,10 @@ class TasksBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      final visible = (box.maxWidth / Sizes.boardListMin).floor().clamp(1, maxVisible);
+      // Die eingestellte Anzahl gilt – weniger nur, wenn es nicht so viele Listen gibt oder
+      // das Fenster dafür wirklich zu schmal ist.
+      final fit = math.max(1, (box.maxWidth / Sizes.boardListMin).floor());
+      final visible = math.max(1, [maxVisible, groups.length, fit].reduce(math.min));
       // Der Schlüssel wechselt mit der Anzahl: Der Seiten-Regler kennt seine Breite nur beim Anlegen.
       return _Lists(key: ValueKey(visible), board: this, visible: visible);
     },
@@ -73,6 +83,9 @@ class _Lists extends StatefulWidget {
 class _ListsState extends State<_Lists> {
   late final _pages = PageController(viewportFraction: 1 / widget.visible);
 
+  /// Die Maus steht auf einer Überschrift: Ziehen greift dann die Liste, statt zu blättern.
+  bool _grab = false;
+
   @override
   void dispose() {
     _pages.dispose();
@@ -88,15 +101,21 @@ class _ListsState extends State<_Lists> {
           child: PageView.builder(
             controller: _pages,
             padEnds: false,
+            physics: _grab ? const NeverScrollableScrollPhysics() : null,
             itemCount: b.groups.length,
             itemBuilder: (context, i) {
               final g = b.groups[i];
+              final move = b.groups.length > 1 ? b.onMove : null;
               return _ListPanel(
                 key: ValueKey(g.id),
                 ui: b.ui,
                 group: g,
                 older: b.showOlder && g.section == Section.done,
                 olderCat: b.olderCat,
+                onDrop: move == null ? null : (id) => move(id, g.id),
+                onGrab: (on) => setState(() => _grab = on),
+                onLeft: move == null || i == 0 ? null : () => move(g.id, b.groups[i - 1].id),
+                onRight: move == null || i == b.groups.length - 1 ? null : () => move(g.id, b.groups[i + 1].id),
               );
             },
           ),
@@ -128,10 +147,18 @@ class _Pager extends StatelessWidget {
           duration: Motion.of(context, Motion.page),
           curve: Curves.easeOutCubic,
         );
+        // Beim Umsortieren blättert ein Pfeil schon, wenn man die Liste darüber hält.
+        Widget hover(int to, Widget child) => DragTarget<String>(
+          onWillAcceptWithDetails: (_) {
+            go(to);
+            return false;
+          },
+          builder: (context, _, _) => child,
+        );
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            IconBtn(Ic.left, label: l.prevLists, onTap: first > 0 ? () => go(first - 1) : null),
+            hover(first - 1, IconBtn(Ic.left, label: l.prevLists, onTap: first > 0 ? () => go(first - 1) : null)),
             ExcludeSemantics(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -150,7 +177,7 @@ class _Pager extends StatelessWidget {
                 ],
               ),
             ),
-            IconBtn(Ic.right, label: l.nextLists, onTap: first < last ? () => go(first + 1) : null),
+            hover(first + 1, IconBtn(Ic.right, label: l.nextLists, onTap: first < last ? () => go(first + 1) : null)),
           ],
         );
       },
@@ -159,11 +186,30 @@ class _Pager extends StatelessWidget {
 }
 
 class _ListPanel extends StatelessWidget {
-  const _ListPanel({super.key, required this.ui, required this.group, required this.older, this.olderCat});
+  const _ListPanel({
+    super.key,
+    required this.ui,
+    required this.group,
+    required this.older,
+    this.olderCat,
+    this.onDrop,
+    this.onGrab,
+    this.onLeft,
+    this.onRight,
+  });
   final UiState ui;
   final TaskGroup group;
   final bool older;
   final String? olderCat;
+
+  /// Eine andere Liste (ihre ID) wurde auf diese gezogen. `null` = Reihenfolge steht fest.
+  final ValueChanged<String>? onDrop;
+
+  /// Die Maus kommt auf die Überschrift (`true`) oder verlässt sie.
+  final ValueChanged<bool>? onGrab;
+
+  /// Diese Liste um einen Platz verschieben (für Screenreader und Tastatur-Hilfen).
+  final VoidCallback? onLeft, onRight;
 
   @override
   Widget build(BuildContext context) {
@@ -171,46 +217,92 @@ class _ListPanel extends StatelessWidget {
     final l = context.l;
     final g = group;
     final overdue = g.section == Section.overdue;
+    final title = TextStyle(
+      fontSize: Fs.task,
+      fontWeight: FontWeight.w500,
+      color: overdue ? tok.err : tok.text,
+      decoration: TextDecoration.none,
+    );
+    Widget header = Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+      child: Semantics(
+        header: true,
+        label: l.sectionCount(g.label, g.items.length),
+        excludeSemantics: true,
+        customSemanticsActions: {
+          CustomSemanticsAction(label: l.moveLeft): ?onLeft,
+          CustomSemanticsAction(label: l.moveRight): ?onRight,
+        },
+        child: Row(
+          children: [
+            if (g.color != null) ...[Dot(g.color!), const SizedBox(width: 8)],
+            Expanded(
+              child: Text(g.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: title),
+            ),
+            Text(
+              '${g.items.length}',
+              style: TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (onDrop != null) {
+      // Das Kärtchen, das beim Ziehen am Zeiger hängt.
+      final feedback = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: tok.card,
+          borderRadius: BorderRadius.circular(Sizes.rCard),
+          border: Border.all(color: tok.p),
+          boxShadow: tok.cardShadow,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (g.color != null) ...[Dot(g.color!), const SizedBox(width: 8)],
+            Text(g.label, style: title),
+          ],
+        ),
+      );
+      final dim = Opacity(opacity: 0.35, child: header);
+      final grab = MouseRegion(
+        cursor: SystemMouseCursors.grab,
+        onEnter: (_) => onGrab?.call(true),
+        onExit: (_) => onGrab?.call(false),
+        child: header,
+      );
+      // Mit der Maus sofort ziehen; am Touchscreen erst nach langem Druck, damit Wischen
+      // weiter zwischen den Listen blättert.
+      final touch = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+      header = touch
+          ? LongPressDraggable<String>(data: g.id, feedback: feedback, childWhenDragging: dim, child: grab)
+          : Draggable<String>(data: g.id, feedback: feedback, childWhenDragging: dim, child: grab);
+    }
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (d) => onDrop != null && d.data != g.id,
+      onAcceptWithDetails: (d) => onDrop?.call(d.data),
+      builder: (context, over, _) => _panel(context, header, drop: over.isNotEmpty),
+    );
+  }
+
+  Widget _panel(BuildContext context, Widget header, {required bool drop}) {
+    final tok = context.tok;
+    final l = context.l;
+    final g = group;
     return Container(
       margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
       decoration: BoxDecoration(
         color: tok.glass,
         borderRadius: BorderRadius.circular(Sizes.rCardLarge),
-        border: Border.all(color: tok.glassEdge),
+        // Leuchtet, solange eine gezogene Liste darüber schwebt: Hier landet sie.
+        border: Border.all(color: drop ? tok.p : tok.glassEdge),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
-            child: Semantics(
-              header: true,
-              label: l.sectionCount(g.label, g.items.length),
-              excludeSemantics: true,
-              child: Row(
-                children: [
-                  if (g.color != null) ...[Dot(g.color!), const SizedBox(width: 8)],
-                  Expanded(
-                    child: Text(
-                      g.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: Fs.task,
-                        fontWeight: FontWeight.w500,
-                        color: overdue ? tok.err : tok.text,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '${g.items.length}',
-                    style: TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          header,
           Expanded(
             child: ListView(
               // Mehrere Listen nebeneinander: keine teilt sich den Scroll-Regler der Seite.

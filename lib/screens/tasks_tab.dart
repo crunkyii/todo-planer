@@ -150,7 +150,6 @@ class _ChipBar extends StatelessWidget {
 
   List<Widget> _mainMenu(BuildContext context, BuildContext menuContext, Rect rect) {
     final l = context.l;
-    final app = context.app;
     final items = <(String, String, Ic)>[
       ('search', l.search, Ic.search),
       ('sort', l.sort, Ic.sort),
@@ -159,21 +158,16 @@ class _ChipBar extends StatelessWidget {
       if (board) ('columns', l.columns, Ic.week),
       ('clearDone', l.deleteCompleted, Ic.sweep),
     ];
-    // Häufig genutzte Einträge wandern nach oben.
-    final order = [for (var i = 0; i < items.length; i++) i]
-      ..sort((a, b) {
-        final n = (app.settings.menuUse[items[b].$1] ?? 0) - (app.settings.menuUse[items[a].$1] ?? 0);
-        return n != 0 ? n : a - b;
-      });
+    // Feste Reihenfolge: Jeder Eintrag steht immer an derselben Stelle.
     return [
-      for (final i in order)
+      for (final (id, label, icon) in items)
         MenuItemRow(
           entry: MenuEntry(
-            label: items[i].$2,
-            icon: items[i].$3,
+            label: label,
+            icon: icon,
             onTap: () {
               Navigator.pop(menuContext);
-              _menuItem(context, items[i].$1, rect);
+              _menuItem(context, id, rect);
             },
           ),
         ),
@@ -183,7 +177,6 @@ class _ChipBar extends StatelessWidget {
   void _menuItem(BuildContext context, String id, Rect rect) {
     final app = context.app;
     final l = context.l;
-    app.settings.countMenu(id);
     switch (id) {
       case 'search':
         ui.set((s) => s.search = '');
@@ -395,6 +388,9 @@ class _TaskList extends StatelessWidget {
             section: null,
           ));
         }
+        // Reihenfolge, wie man sie sich an den Überschriften zurechtgezogen hat.
+        final order = set.boardColumnOrder();
+        groups.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
       }
     }
 
@@ -425,6 +421,7 @@ class _TaskList extends StatelessWidget {
                 showOlder: showOlder,
                 olderCat: olderCat,
                 maxVisible: context.app.settings.boardVisible,
+                onMove: ui.sort == SortMode.date ? context.app.settings.moveBoardColumn : null,
               ),
             ),
             if (hiddenNote != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: hiddenNote),

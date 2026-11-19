@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../util/dates.dart' as dates;
+import '../util/task_logic.dart' show Section;
 import 'models.dart';
 
 /// Wo die Daten liegen: noch nicht gewählt, nur lokal oder in der eigenen Supabase-DB.
@@ -41,7 +42,6 @@ class SettingsStore extends ChangeNotifier {
 
   static const _kSettings = 'settings.v1';
   static const _kSync = 'sync.v1';
-  static const _kMenu = 'menu_use.v1';
   static const _kDevice = 'device.v1';
 
   String lang = 'de';
@@ -65,9 +65,6 @@ class SettingsStore extends ChangeNotifier {
   /// Zeitstempel des letzten Downloads je Tabelle (Server-Zeit `synced_at`).
   Map<String, String> pullCursor = {};
 
-  /// Wie oft welcher Eintrag im ⋮-Menü benutzt wurde (häufig = weiter oben).
-  Map<String, int> menuUse = {};
-
   // ---- Nur an diesem Gerät (nicht synchronisiert): [updateDevice] ----
 
   /// Mit welchem Wochentag die Woche beginnt (0 = Montag … 6 = Sonntag).
@@ -83,6 +80,27 @@ class SettingsStore extends ChangeNotifier {
   /// Aufgaben am PC: Kategorien (IDs), die zusätzlich eine eigene Liste bekommen.
   List<String> boardCats = [];
 
+  /// Aufgaben am PC: Reihenfolge der Listen, wie man sie sich zurechtgezogen hat
+  /// (`Section.name` bzw. `k-<Kategorie-ID>`). Leer = Zeiträume der Reihe nach, dann Kategorien.
+  List<String> boardOrder = [];
+
+  /// Alle möglichen Listen in der eingestellten Reihenfolge; neue stehen hinten.
+  List<String> boardColumnOrder() {
+    final all = [for (final s in Section.values) s.name, for (final id in boardCats) 'k-$id'];
+    return [...boardOrder.where(all.contains), ...all.where((id) => !boardOrder.contains(id))];
+  }
+
+  /// Zieht die Liste [id] an den Platz von [target]; die dazwischen rücken auf.
+  void moveBoardColumn(String id, String target) {
+    final order = boardColumnOrder();
+    final from = order.indexOf(id), to = order.indexOf(target);
+    if (from < 0 || to < 0 || from == to) return;
+    order
+      ..removeAt(from)
+      ..insert(to, id);
+    updateDevice((s) => s.boardOrder = order);
+  }
+
   void _load() {
     final sys = PlatformDispatcher.instance.locale.languageCode;
     lang = sys == 'de' ? 'de' : 'en';
@@ -96,14 +114,13 @@ class SettingsStore extends ChangeNotifier {
       owner = sync['owner'] as String?;
       pullCursor = Map<String, String>.from((sync['cursor'] as Map?) ?? const {});
     }
-    final m = _decode(_kMenu);
-    if (m != null) menuUse = m.map((k, v) => MapEntry(k, (v as num).toInt()));
     final d = _decode(_kDevice);
     if (d != null) {
       weekFirstDay = ((d['week_first'] as num?)?.toInt() ?? 0).clamp(0, 6);
       boardVisible = ((d['board_visible'] as num?)?.toInt() ?? 3).clamp(boardVisibleMin, boardVisibleMax);
       boardHidden = {...?(d['board_hidden'] as List?)?.whereType<String>()};
       boardCats = [...?(d['board_cats'] as List?)?.whereType<String>()];
+      boardOrder = [...?(d['board_order'] as List?)?.whereType<String>()];
     }
     dates.weekFirstDay = weekFirstDay;
   }
@@ -228,13 +245,9 @@ class SettingsStore extends ChangeNotifier {
         'board_visible': boardVisible,
         'board_hidden': boardHidden.toList(),
         'board_cats': boardCats,
+        'board_order': boardOrder,
       }),
     );
     notifyListeners();
-  }
-
-  void countMenu(String id) {
-    menuUse[id] = (menuUse[id] ?? 0) + 1;
-    _prefs.setString(_kMenu, jsonEncode(menuUse));
   }
 }

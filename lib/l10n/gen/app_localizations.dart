@@ -854,6 +854,30 @@ abstract class AppLocalizations {
   /// **'Alle Spalten sind ausgeblendet. Unter ⋮ → Spalten lassen sie sich wieder einschalten.'**
   String get columnsAllHidden;
 
+  /// No description provided for @columnsDragHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Reihenfolge ändern: eine Spalte an ihrer Überschrift an die gewünschte Stelle ziehen.'**
+  String get columnsDragHint;
+
+  /// No description provided for @moveLeft.
+  ///
+  /// In de, this message translates to:
+  /// **'Nach links verschieben'**
+  String get moveLeft;
+
+  /// No description provided for @moveRight.
+  ///
+  /// In de, this message translates to:
+  /// **'Nach rechts verschieben'**
+  String get moveRight;
+
+  /// No description provided for @columnsNarrowHint.
+  ///
+  /// In de, this message translates to:
+  /// **'In einem schmalen Fenster passen weniger Spalten nebeneinander als eingestellt.'**
+  String get columnsNarrowHint;
+
   /// No description provided for @sort.
   ///
   /// In de, this message translates to:

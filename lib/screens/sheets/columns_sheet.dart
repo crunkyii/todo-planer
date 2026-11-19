@@ -56,6 +56,13 @@ class ColumnsSheet extends StatelessWidget {
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                '${l.columnsNarrowHint} ${l.columnsDragHint}',
+                style: TextStyle(fontSize: Fs.meta, color: context.tok.sub),
+              ),
+            ),
             LabeledField(
               label: l.columnsPeriods,
               child: Column(

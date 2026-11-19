@@ -412,6 +412,18 @@ class AppLocalizationsDe extends AppLocalizations {
       'Alle Spalten sind ausgeblendet. Unter ⋮ → Spalten lassen sie sich wieder einschalten.';
 
   @override
+  String get columnsDragHint => 'Reihenfolge ändern: eine Spalte an ihrer Überschrift an die gewünschte Stelle ziehen.';
+
+  @override
+  String get moveLeft => 'Nach links verschieben';
+
+  @override
+  String get moveRight => 'Nach rechts verschieben';
+
+  @override
+  String get columnsNarrowHint => 'In einem schmalen Fenster passen weniger Spalten nebeneinander als eingestellt.';
+
+  @override
   String get sort => 'Sortieren';
 
   @override
