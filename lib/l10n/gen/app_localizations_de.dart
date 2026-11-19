@@ -115,9 +115,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get setupLead => 'Wo sollen deine Aufgaben gespeichert werden?';
 
   @override
-  String get setupCloudTitle => 'Auf allen Geräten';
-
-  @override
   String get setupCloudText =>
       'Eigene kostenlose Supabase-Datenbank. Handy und PC bleiben gleich, auch offline nutzbar.';
 

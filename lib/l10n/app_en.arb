@@ -35,7 +35,6 @@
   "settings": "Settings",
   "welcome": "Welcome",
   "setupLead": "Where should your tasks be stored?",
-  "setupCloudTitle": "On all devices",
   "setupCloudText": "Your own free Supabase database. Phone and PC stay in sync, works offline too.",
   "setupLocalTitle": "Only on this device",
   "setupLocalText": "No account, no setup. You can change this later in the settings.",

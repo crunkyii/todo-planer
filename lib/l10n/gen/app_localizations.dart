@@ -302,12 +302,6 @@ abstract class AppLocalizations {
   /// **'Wo sollen deine Aufgaben gespeichert werden?'**
   String get setupLead;
 
-  /// No description provided for @setupCloudTitle.
-  ///
-  /// In de, this message translates to:
-  /// **'Auf allen Geräten'**
-  String get setupCloudTitle;
-
   /// No description provided for @setupCloudText.
   ///
   /// In de, this message translates to:

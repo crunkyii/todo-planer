@@ -115,9 +115,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupLead => 'Where should your tasks be stored?';
 
   @override
-  String get setupCloudTitle => 'On all devices';
-
-  @override
   String get setupCloudText => 'Your own free Supabase database. Phone and PC stay in sync, works offline too.';
 
   @override

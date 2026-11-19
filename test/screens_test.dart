@@ -29,7 +29,7 @@ final screens = <Screen>[
   Screen(
     'einrichtung',
     (t, l) async {
-      await _tap(t, find.text(l.setupCloudTitle));
+      await _tap(t, find.text(l.createAccount));
       expect(find.text(l.connectDb), findsWidgets);
     },
     syncMode: null,

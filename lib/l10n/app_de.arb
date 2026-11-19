@@ -35,7 +35,6 @@
   "settings": "Einstellungen",
   "welcome": "Willkommen",
   "setupLead": "Wo sollen deine Aufgaben gespeichert werden?",
-  "setupCloudTitle": "Auf allen Geräten",
   "setupCloudText": "Eigene kostenlose Supabase-Datenbank. Handy und PC bleiben gleich, auch offline nutzbar.",
   "setupLocalTitle": "Nur auf diesem Gerät",
   "setupLocalText": "Kein Konto, keine Einrichtung. Später in den Optionen umstellbar.",

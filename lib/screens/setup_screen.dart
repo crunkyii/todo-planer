@@ -13,7 +13,8 @@ import '../widgets/snack.dart';
 import '../widgets/ui.dart';
 import 'auth_layout.dart';
 
-/// Ersteinrichtung: Willkommen (Speicherort + Sprache) und „Datenbank verbinden“.
+/// Ersteinrichtung: Willkommen (Konto erstellen, anmelden oder ohne Konto; Sprache) und
+/// „Datenbank verbinden“.
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key, this.startAtDb = false});
 
@@ -26,6 +27,9 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   late bool _db = widget.startAtDb;
+
+  /// Nach dem Verbinden „Konto erstellen“ (`true`) oder „Anmelden“ zeigen.
+  bool _register = true;
   final _url = TextEditingController();
   final _key = TextEditingController();
   String? _error;
@@ -44,6 +48,13 @@ class _SetupScreenState extends State<SetupScreen> {
     _key.dispose();
     super.dispose();
   }
+
+  /// Weiter zu „Datenbank verbinden“ – ohne eigene Datenbank gibt es kein Konto. [register]
+  /// merkt sich, ob danach „Konto erstellen“ oder „Anmelden“ kommt.
+  void _toDb({required bool register}) => setState(() {
+    _register = register;
+    _db = true;
+  });
 
   void _back() {
     if (widget.startAtDb) {
@@ -81,7 +92,7 @@ class _SetupScreenState extends State<SetupScreen> {
     );
     if (err != null) return;
     setState(() => _connecting = true);
-    final ok = await testConnection(url, key);
+    final ok = await app.cloud.canConnect(url, key);
     if (!mounted) return;
     if (!ok) {
       setState(() {
@@ -92,7 +103,7 @@ class _SetupScreenState extends State<SetupScreen> {
     }
     final c = CloudConfig(url, key);
     try {
-      await app.connectCloud(c);
+      await app.connectCloud(c, register: _register);
     } on Object catch (e) {
       // Ohne das bliebe der Knopf für immer auf „Verbinde …“ stehen.
       debugPrint('Verbinden fehlgeschlagen: ${errorLogLine(e)}');
@@ -135,11 +146,10 @@ class _SetupScreenState extends State<SetupScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        _Choice(
-          icon: Ic.sync,
-          title: l.setupCloudTitle,
-          text: l.setupCloudText,
-          onTap: () => setState(() => _db = true),
+        _Choice(icon: Ic.sync, title: l.createAccount, text: l.setupCloudText, onTap: () => _toDb(register: true)),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: AppButton(label: l.haveAccount, kind: BtnKind.text, onTap: () => _toDb(register: false)),
         ),
         _Choice(icon: Ic.phone, title: l.setupLocalTitle, text: l.setupLocalText, onTap: app.chooseLocal),
         const SizedBox(height: 12),

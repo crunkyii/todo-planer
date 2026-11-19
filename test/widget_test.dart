@@ -80,7 +80,7 @@ void main() {
   testWidgets('Secret Key wird bei der Einrichtung abgelehnt', (tester) async {
     final app = await _services();
     await _pump(tester, app);
-    await tester.tap(find.text('Auf allen Geräten'));
+    await tester.tap(find.text('Konto erstellen'));
     await tester.pumpAndSettle();
     expect(find.text('Datenbank verbinden'), findsOneWidget);
     final fields = find.byType(TextField);

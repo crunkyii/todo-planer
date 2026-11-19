@@ -205,6 +205,12 @@ class FakeCloud extends Cloud {
   @override
   bool get ready => true;
 
+  /// Ergebnis des Verbindungstests in der Einrichtung.
+  bool reachable = true;
+
+  @override
+  Future<bool> canConnect(String url, String key) async => reachable;
+
   @override
   SupabaseClient get client => _client;
 

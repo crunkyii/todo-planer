@@ -14,6 +14,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:todo_liste/data/local_db.dart';
 import 'package:todo_liste/data/models.dart';
+import 'package:todo_liste/data/settings_store.dart';
 import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/screens/shell.dart';
@@ -1242,7 +1243,7 @@ void main() {
       // Einrichtung
       app = await makeServices(syncMode: null);
       await pumpApp(tester, app);
-      await _tap(tester, find.text(l.setupCloudTitle));
+      await _tap(tester, find.text(l.createAccount));
       await tester.ensureVisible(find.byType(TextField).first);
       await tester.pumpAndSettle();
       await type('https://abcdefgh.supabase.co');
@@ -1342,7 +1343,7 @@ void main() {
         final l = l10n(lang);
         final app = await makeServices(lang: lang, syncMode: null);
         await pumpApp(tester, app);
-        await _tap(tester, find.text(l.setupCloudTitle));
+        await _tap(tester, find.text(l.createAccount));
         final fields = find.byType(TextField);
         Future<void> submit(String url, String key) async {
           await tester.ensureVisible(fields.at(0));
@@ -1361,6 +1362,58 @@ void main() {
         expect(app.settings.cloud, isNull, reason: 'nichts davon darf gespeichert werden');
         await finishApp(tester, app);
       }
+    });
+
+    testWidgets('Erster Start: Konto erstellen oder anmelden – beides führt über die Datenbank zur passenden Seite', (
+      tester,
+    ) async {
+      for (final lang in ['de', 'en']) {
+        for (final register in [true, false]) {
+          final l = l10n(lang);
+          final app = await makeServices(
+            lang: lang,
+            syncMode: null,
+            cloud: FakeCloud('http://localhost:1')..signedIn = false,
+          );
+          await pumpApp(tester, app);
+          // Alle drei Wege stehen auf der ersten Seite
+          expect(find.text(l.createAccount), findsOneWidget);
+          expect(find.text(l.haveAccount), findsOneWidget);
+          expect(find.text(l.setupLocalTitle), findsOneWidget);
+
+          await _tap(tester, find.text(register ? l.createAccount : l.haveAccount));
+          expect(find.text(l.connectDb), findsWidgets, reason: 'ohne Datenbank gibt es kein Konto');
+          final fields = find.byType(TextField);
+          await tester.enterText(fields.at(0), 'https://abcdefgh.supabase.co');
+          await tester.enterText(fields.at(1), 'sb_publishable_test_key_123');
+          await tester.ensureVisible(find.text(l.connect));
+          await tester.pumpAndSettle();
+          await _tap(tester, find.text(l.connect));
+
+          expect(app.settings.syncMode, SyncMode.cloud);
+          if (register) {
+            expect(find.text(l.createAccount), findsOneWidget, reason: 'Überschrift „Konto erstellen“');
+            expect(find.text(l.haveAccount), findsOneWidget, reason: 'Link zur Anmeldung');
+          } else {
+            expect(find.text(l.createAccount), findsNothing);
+            expect(find.text(l.signIn), findsNWidgets(2), reason: 'Überschrift und Knopf „Anmelden“');
+            expect(find.text(l.signUp), findsOneWidget, reason: 'Link zum Registrieren');
+          }
+          await finishApp(tester, app);
+        }
+      }
+    });
+
+    testWidgets('Erster Start: Zurück aus „Datenbank verbinden“ zeigt wieder alle Wege', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices(syncMode: null);
+      await pumpApp(tester, app);
+      await _tap(tester, find.text(l.haveAccount));
+      await _tap(tester, find.bySemanticsLabel(l.back));
+      expect(find.text(l.createAccount), findsOneWidget);
+      expect(find.text(l.haveAccount), findsOneWidget);
+      expect(app.settings.syncMode, SyncMode.none);
+      await finishApp(tester, app);
     });
   });
 

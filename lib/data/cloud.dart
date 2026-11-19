@@ -55,6 +55,9 @@ class Cloud {
 
   bool get ready => _active != null;
 
+  /// Sind [url] und [key] eine erreichbare, eingerichtete Datenbank? (siehe [testConnection])
+  Future<bool> canConnect(String url, String key) => testConnection(url, key);
+
   SupabaseClient get client => Supabase.instance.client;
 
   Future<void> init(CloudConfig c) async {

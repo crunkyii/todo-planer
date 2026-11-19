@@ -78,7 +78,7 @@ class AppServices extends ChangeNotifier {
   /// `true` = Einrichtung „Datenbank verbinden“ wurde aus Login/Optionen geöffnet.
   bool setupOpen = false;
 
-  /// Nach der Registrierung direkt im „Konto erstellen“-Modus starten.
+  /// Die Anmeldung nach dem Verbinden im „Konto erstellen“-Modus starten.
   bool registerNext = false;
 
   StreamSubscription<AuthState>? _authSub;
@@ -190,11 +190,12 @@ class AppServices extends ChangeNotifier {
   }
 
   /// Neue Datenbank übernehmen (nach erfolgreichem Verbindungstest).
-  Future<void> connectCloud(CloudConfig c) async {
+  /// Danach kommt die Anmeldung – mit [register] als „Konto erstellen“, sonst als „Anmelden“.
+  Future<void> connectCloud(CloudConfig c, {bool register = true}) async {
     await sync.detach();
     await settings.setCloud(c);
     setupOpen = false;
-    registerNext = true;
+    registerNext = register;
     _userId = null;
     await _initCloud(c);
     notifyListeners();

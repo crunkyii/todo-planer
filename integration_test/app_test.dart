@@ -172,7 +172,7 @@ void main() {
     // Einrichtung: Anleitung in 4 Schritten, „SQL kopieren“ und Eingabeprüfung (ohne Netz)
     var app = await makeServices(syncMode: null);
     await pumpApp(tester, app, size: const Size(412, 915));
-    await _tap(tester, find.text(l.setupCloudTitle));
+    await _tap(tester, find.text(l.createAccount));
     expect(find.text(l.copySql), findsOneWidget);
     final fields = find.byType(TextField);
     await tester.ensureVisible(fields.at(0));
