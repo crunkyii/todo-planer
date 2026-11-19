@@ -20,6 +20,9 @@ import 'package:todo_liste/widgets/ui.dart';
 
 import 'harness.dart';
 
+/// Was Flick anzeigt: der Name ohne die unsichtbaren Sortierzeichen.
+String _visible(String name) => name.replaceAll(RegExp('[​-‍⁠-⁤]'), '');
+
 void main() {
   setUpAll(() => initializeDateFormatting());
 
@@ -85,20 +88,28 @@ void main() {
   });
 
   group('flickFolderName', () {
-    test('Nummer vorne, verbotene Zeichen ersetzt', () {
-      expect(flickFolderName(3, 'Mathe'), '03 · Mathe');
+    test('Keine sichtbare Nummer, verbotene Zeichen ersetzt', () {
+      expect(_visible(flickFolderName(3, 'Mathe')), 'Mathe');
+      expect(flickFolderName(3, 'Mathe').length, 'Mathe'.length + 2, reason: 'zwei unsichtbare Sortierzeichen');
       final n = flickFolderName(1, 'a:b/c\\d*e?f"g<h>i|j\tk\nl');
-      expect(n, '01 · a∶b∕c∖d∗e？f”g‹h›iǀj k l');
+      expect(_visible(n), 'a∶b∕c∖d∗e？f”g‹h›iǀj k l');
       expect(RegExp(r'[<>:"/\\|?*\x00-\x1F]').hasMatch(n), isFalse);
     });
 
     test('Kein Punkt oder Leerzeichen am Ende, nicht zu lang, kein halbes Emoji', () {
-      expect(flickFolderName(2, 'Referat...  '), '02 · Referat');
+      expect(_visible(flickFolderName(2, 'Referat...  ')), 'Referat');
       final long = flickFolderName(4, '😀' * 100);
       expect(long.length, lessThanOrEqualTo(FlickExport.maxName));
       expect(long.endsWith('…'), isTrue);
       final units = long.codeUnits;
       expect((units[units.length - 2] & 0xFC00) == 0xD800, isFalse, reason: 'halbes Emoji vor „…“');
+    });
+
+    test('Die unsichtbare Nummer hält die Reihenfolge – auch bei gleichen Texten und Großbuchstaben', () {
+      final names = [for (var i = 0; i < FlickExport.maxEntries; i++) flickFolderName(i, i.isEven ? 'b' : 'A')];
+      expect(names.toSet(), hasLength(FlickExport.maxEntries), reason: 'eindeutig');
+      // So sortiert Flick: nach Kleinbuchstaben, Zeichen für Zeichen (Codepunkte).
+      expect([...names]..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())), names);
     });
   });
 
@@ -120,12 +131,12 @@ void main() {
       app.store.toggleTask(app.store.tasks.firstWhere((t) => t.title == 'Erledigt'));
 
       final rows = flickTodayEntries(app.store, l);
-      expect(rows, [
-        '00 · Heute, Mittwoch, 18. November · 3 offen',
-        '01 · ⚠ Altlast (überfällig)',
+      expect(rows.map(_visible), [
+        'Heute, Mittwoch, 18. November · 3 offen',
+        '⚠ Altlast (überfällig)',
         // Ohne Uhrzeit zählt der Beginn des Tages – wie in der App.
-        '02 · Vokabeln',
-        '03 · 14∶00 Max Mustermann anrufen',
+        'Vokabeln',
+        '14∶00 Max Mustermann anrufen',
       ]);
       // Flick sortiert nach Namen: Die Reihenfolge muss dabei bleiben.
       expect([...rows]..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())), rows);
@@ -141,9 +152,9 @@ void main() {
       final c = app.store.categories.first;
       app.store.updateCategory(c, name: c.name, color: c.color, offset: c.offset, listFrom: ListFrom.never);
       app.store.addTask(title: 'Hidden', categoryId: c.id, dueDate: today(), dueTime: null, subs: const []);
-      expect(flickTodayEntries(app.store, l), [
-        '00 · Today, Wednesday, November 18 · nothing open',
-        '01 · Nothing due',
+      expect(flickTodayEntries(app.store, l).map(_visible), [
+        'Today, Wednesday, November 18 · nothing open',
+        'Nothing due',
       ]);
       await app.store.refreshPending();
       await app.store.db.close();

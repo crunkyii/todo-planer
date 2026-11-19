@@ -15,8 +15,8 @@ import 'launch_commands.dart';
 /// Flick hat keine Erweiterungen, die Text von einem Programm abholen. Ein Flick-Shortcut mit
 /// `pick = "<Ordner>"` zeigt aber die **Unterordner** eines Ordners als Liste in der Leiste.
 /// Darum legt die App für jede heutige Aufgabe einen leeren Ordner an, dessen Name die Zeile
-/// ist (`01 · 08∶00 Mathe lernen`). Flick sortiert die Ordner nach Namen – die Nummer vorne
-/// hält die Reihenfolge der App. Die Datenbank liest Flick nie.
+/// ist (`08∶00 Mathe lernen`). Flick sortiert die Ordner nach Namen – eine unsichtbare Nummer
+/// vorne hält die Reihenfolge der App. Die Datenbank liest Flick nie.
 ///
 /// Nur unter Windows und nur, wenn „Heutige Aufgaben für Flick“ in den Optionen an ist.
 class FlickExport {
@@ -126,9 +126,16 @@ List<String> flickTodayEntries(Store store, AppLocalizations l, {DateTime? now})
 /// Zeichen, die in Windows-Ordnernamen verboten sind, durch ähnlich aussehende ersetzt.
 const _lookalikes = {':': '∶', '/': '∕', '\\': '∖', '*': '∗', '?': '？', '"': '”', '<': '‹', '>': '›', '|': 'ǀ'};
 
-/// `01 · Text` – ein gültiger Windows-Ordnername. Die zweistellige Nummer hält die Reihenfolge,
-/// weil Flick die Ordner nach Namen sortiert; sie macht den Namen außerdem eindeutig und nie zu
-/// einem reservierten Namen wie `CON`.
+/// Unsichtbare Zeichen (Unicode „default ignorable“, nach Codepunkt aufsteigend) als Ziffern der
+/// Sortiernummer: Flick zeigt sie nicht an, sortiert aber danach.
+const _sortDigits = ['​', '‌', '‍', '⁠', '⁡', '⁢', '⁣', '⁤'];
+
+/// Zwei unsichtbare Ziffern (Basis 8) reichen für [FlickExport.maxEntries] Zeilen.
+String _sortKey(int index) => _sortDigits[index ~/ 8 % 8] + _sortDigits[index % 8];
+
+/// Ein gültiger Windows-Ordnername für Zeile [index]. Vorne steht unsichtbar ihre Nummer – sie hält
+/// die Reihenfolge, weil Flick die Ordner nach Namen sortiert, und macht den Namen eindeutig und nie
+/// zu einem reservierten Namen wie `CON`.
 String flickFolderName(int index, String text) {
   final clean = text
       .split('')
@@ -136,7 +143,7 @@ String flickFolderName(int index, String text) {
       .join()
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
-  var name = '${index.toString().padLeft(2, '0')} · $clean';
+  var name = '${_sortKey(index)}$clean';
   if (name.length > FlickExport.maxName) {
     var cut = FlickExport.maxName - 1;
     // Kein halbes Emoji (UTF-16-Paar) stehen lassen.
