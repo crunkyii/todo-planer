@@ -43,6 +43,21 @@ class Glass extends StatelessWidget {
   }
 }
 
+/// Eigene Seite, die von rechts hereinschiebt (bei „Animationen reduzieren“ ohne Bewegung).
+Route<T> slideInRoute<T>(WidgetBuilder builder) => PageRouteBuilder<T>(
+  transitionDuration: Motion.sheet,
+  reverseTransitionDuration: const Duration(milliseconds: 220),
+  pageBuilder: (context, _, _) => builder(context),
+  transitionsBuilder: (context, a, _, child) {
+    if (Motion.reduced(context)) return child;
+    final curved = CurvedAnimation(parent: a, curve: Motion.sheetUp, reverseCurve: Curves.easeIn);
+    return SlideTransition(
+      position: Tween(begin: const Offset(1, 0), end: Offset.zero).animate(curved),
+      child: child,
+    );
+  },
+);
+
 /// Bottom-Sheet aus dem Prototyp: Milchglas, federt von unten hoch, Scrim dahinter.
 /// Esc und Tipp auf den Scrim schließen es.
 class AppSheetRoute<T> extends PopupRoute<T> {

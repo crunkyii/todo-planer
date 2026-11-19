@@ -6,6 +6,7 @@ import '../../theme/color_math.dart';
 import '../../theme/tokens.dart';
 import '../../util/dates.dart';
 import '../../util/fmt.dart';
+import '../../widgets/overlays.dart';
 import '../../widgets/pickers.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/ui.dart';
@@ -17,21 +18,9 @@ Future<List<String>?> pickTasks(
   required DateTime from,
   required Set<String> exclude,
   required List<String> initial,
-}) => Navigator.of(context).push<List<String>>(
-  PageRouteBuilder(
-    transitionDuration: Motion.sheet,
-    reverseTransitionDuration: const Duration(milliseconds: 220),
-    pageBuilder: (context, _, _) => PickTasksPage(from: from, exclude: exclude, initial: initial),
-    transitionsBuilder: (context, a, _, child) {
-      if (Motion.reduced(context)) return child;
-      final curved = CurvedAnimation(parent: a, curve: Motion.sheetUp, reverseCurve: Curves.easeIn);
-      return SlideTransition(
-        position: Tween(begin: const Offset(1, 0), end: Offset.zero).animate(curved),
-        child: child,
-      );
-    },
-  ),
-);
+}) =>
+    Navigator.of(context)
+        .push<List<String>>(slideInRoute((_) => PickTasksPage(from: from, exclude: exclude, initial: initial)));
 
 /// Alle offenen Aufgaben, die ab [from] fällig sind, nach Datum – mit Filter nach Kategorie.
 /// Was man auswählt, kommt im Blatt „Neuer Block“ zu den Aufgaben an diesem Tag dazu.
