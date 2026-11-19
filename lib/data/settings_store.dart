@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../util/dates.dart' as dates;
 import 'models.dart';
 
 /// Wo die Daten liegen: noch nicht gewählt, nur lokal oder in der eigenen Supabase-DB.
@@ -41,6 +42,7 @@ class SettingsStore extends ChangeNotifier {
   static const _kSettings = 'settings.v1';
   static const _kSync = 'sync.v1';
   static const _kMenu = 'menu_use.v1';
+  static const _kDevice = 'device.v1';
 
   String lang = 'de';
   String theme = 'himmel';
@@ -66,6 +68,21 @@ class SettingsStore extends ChangeNotifier {
   /// Wie oft welcher Eintrag im ⋮-Menü benutzt wurde (häufig = weiter oben).
   Map<String, int> menuUse = {};
 
+  // ---- Nur an diesem Gerät (nicht synchronisiert): [updateDevice] ----
+
+  /// Mit welchem Wochentag die Woche beginnt (0 = Montag … 6 = Sonntag).
+  int weekFirstDay = 0;
+
+  /// Aufgaben am PC: wie viele Listen höchstens nebeneinander stehen.
+  static const boardVisibleMin = 2, boardVisibleMax = 5;
+  int boardVisible = 3;
+
+  /// Aufgaben am PC: ausgeblendete Zeitraum-Listen (`Section.name`).
+  Set<String> boardHidden = {};
+
+  /// Aufgaben am PC: Kategorien (IDs), die zusätzlich eine eigene Liste bekommen.
+  List<String> boardCats = [];
+
   void _load() {
     final sys = PlatformDispatcher.instance.locale.languageCode;
     lang = sys == 'de' ? 'de' : 'en';
@@ -81,6 +98,14 @@ class SettingsStore extends ChangeNotifier {
     }
     final m = _decode(_kMenu);
     if (m != null) menuUse = m.map((k, v) => MapEntry(k, (v as num).toInt()));
+    final d = _decode(_kDevice);
+    if (d != null) {
+      weekFirstDay = ((d['week_first'] as num?)?.toInt() ?? 0).clamp(0, 6);
+      boardVisible = ((d['board_visible'] as num?)?.toInt() ?? 3).clamp(boardVisibleMin, boardVisibleMax);
+      boardHidden = {...?(d['board_hidden'] as List?)?.whereType<String>()};
+      boardCats = [...?(d['board_cats'] as List?)?.whereType<String>()];
+    }
+    dates.weekFirstDay = weekFirstDay;
   }
 
   Map<String, Object?>? _decode(String key) {
@@ -188,6 +213,24 @@ class SettingsStore extends ChangeNotifier {
   Future<void> resetCursors() async {
     pullCursor = {};
     await _saveSync();
+  }
+
+  /// Ändert Einstellungen, die nur an diesem Gerät gelten (kein Upload).
+  void updateDevice(void Function(SettingsStore s) change) {
+    change(this);
+    weekFirstDay = weekFirstDay.clamp(0, 6);
+    dates.weekFirstDay = weekFirstDay;
+    boardVisible = boardVisible.clamp(boardVisibleMin, boardVisibleMax);
+    _prefs.setString(
+      _kDevice,
+      jsonEncode({
+        'week_first': weekFirstDay,
+        'board_visible': boardVisible,
+        'board_hidden': boardHidden.toList(),
+        'board_cats': boardCats,
+      }),
+    );
+    notifyListeners();
   }
 
   void countMenu(String id) {

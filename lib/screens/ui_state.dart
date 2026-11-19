@@ -37,9 +37,12 @@ class UiState extends ChangeNotifier {
 
   DateTime calMonth = DateTime(clock().year, clock().month);
   DateTime calSel = today();
-  DateTime weekStart = monday(clock());
 
-  /// Tagesansicht im Wochenplan (0–6) oder `null` = ganze Woche.
+  /// Erster Tag der gezeigten Woche (nach `weekFirstDay`, nicht immer ein Montag).
+  DateTime weekStart = weekStartOf(clock());
+
+  /// Tagesansicht im Wochenplan: Stelle des Tags in der gezeigten Woche (0–6, ab [weekStart])
+  /// oder `null` = ganze Woche.
   int? weekDay;
   int statRange = 7;
   String? heatSel;
@@ -74,12 +77,23 @@ class UiState extends ChangeNotifier {
     zoomIn = null;
     final wd = weekDay;
     if (wd == null) {
-      weekStart = dir == 0 ? monday(clock()) : addDays(weekStart, 7 * dir);
+      weekStart = dir == 0 ? weekStartOf(clock()) : addDays(weekStart, 7 * dir);
     } else {
       final d = dir == 0 ? today() : addDays(weekStart, wd + dir);
-      weekStart = monday(d);
-      weekDay = wdIndex(d);
+      weekStart = weekStartOf(d);
+      weekDay = weekPos(d);
     }
+    notifyListeners();
+  }
+
+  /// Der Wochenbeginn wurde umgestellt: dieselbe Woche (bzw. denselben Tag) neu ausrichten.
+  void weekFirstDayChanged() {
+    final wd = weekDay;
+    final t = today();
+    final hasToday = dayDiff(t, weekStart) >= 0 && dayDiff(t, weekStart) < 7;
+    final d = wd != null ? addDays(weekStart, wd) : (hasToday ? t : weekStart);
+    weekStart = weekStartOf(d);
+    if (wd != null) weekDay = weekPos(d);
     notifyListeners();
   }
 

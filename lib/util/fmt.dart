@@ -69,7 +69,9 @@ class Fmt {
     return l.weekdayWithDate(wd(wdIndex(d)), dayMon(d));
   }
 
-  String weekLabel(DateTime d) => l.weekNumber(isoWeek(d));
+  /// [d] = erster Tag der gezeigten Woche. Beginnt sie nicht am Montag, zählt die
+  /// Kalenderwoche, in der die meisten ihrer Tage liegen.
+  String weekLabel(DateTime d) => l.weekNumber(isoWeek(addDays(d, 3)));
 
   /// „17.–23. Nov.“ / „Nov 17–23“ / „29. Dez. – 4. Jän.“
   String weekRange(DateTime ws) {

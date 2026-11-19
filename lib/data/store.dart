@@ -482,6 +482,13 @@ class Store extends ChangeNotifier {
     _changed();
   }
 
+  /// Setzt nur die Uhrzeit der Aufgabe (Minuten seit Mitternacht, `null` = ohne Uhrzeit).
+  void setTaskTime(Task t, int? minutes) {
+    if (t.dueTime == minutes) return;
+    _put(t..dueTime = minutes);
+    _changed();
+  }
+
   /// Legt die Unteraufgaben einer neuen Aufgabe in der gegebenen Reihenfolge an.
   void _writeSubs(String taskId, List<({String title, bool done})> subs) {
     for (final (i, s) in subs.indexed) {
@@ -759,7 +766,7 @@ class Store extends ChangeNotifier {
           start: start,
           end: end,
           repeat: repeat,
-          weekStart: repeat ? null : isoDate(weekStart),
+          weekStart: repeat ? null : _blockWeek(weekStart, d),
           updatedAt: nowUtc(),
         ),
       );
@@ -786,7 +793,7 @@ class Store extends ChangeNotifier {
         ..start = start
         ..end = end
         ..repeat = repeat
-        ..weekStart = repeat ? null : isoDate(weekStart),
+        ..weekStart = repeat ? null : _blockWeek(weekStart, day),
     );
     _changed();
   }
@@ -800,7 +807,17 @@ class Store extends ChangeNotifier {
     };
   }
 
-  /// Blöcke eines Wochentags in der Woche ab [weekStart].
+  /// Der Tag mit Wochentag [day] (0 = Montag) in der gezeigten Woche ab [shownStart].
+  static DateTime dayInWeek(DateTime shownStart, int day) => addDays(shownStart, (day - wdIndex(shownStart)) % 7);
+
+  /// Einmalige Blöcke merken sich den Montag ihrer Woche – auch wenn die gezeigte Woche
+  /// an einem anderen Tag beginnt ([shownStart]).
+  static String _blockWeek(DateTime shownStart, int day) => isoDate(monday(dayInWeek(shownStart, day)));
+
+  /// Blöcke am Tag [date]: die wöchentlichen dieses Wochentags und die einmaligen dieser Woche.
+  List<WeekBlock> blocksOn(DateTime date) => blocksFor(wdIndex(date), monday(date));
+
+  /// Blöcke eines Wochentags (0 = Montag) in der Woche ab dem Montag [weekStart].
   List<WeekBlock> blocksFor(int day, DateTime weekStart) {
     final w = isoDate(weekStart);
     return blocks.where((b) => b.day == day && (b.repeat || b.weekStart == w)).toList()

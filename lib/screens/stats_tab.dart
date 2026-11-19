@@ -203,7 +203,7 @@ class _Heatmap extends StatelessWidget {
       count[e.day] = (count[e.day] ?? 0) + 1;
     }
     final now = today();
-    final start = addDays(monday(now), -7 * (heatWeeks - 1));
+    final start = addDays(weekStartOf(now), -7 * (heatWeeks - 1));
     final levels = [
       tok.lineSoft,
       mix(tok.lineSoft, tok.p, 0.3),
@@ -247,7 +247,7 @@ class _Heatmap extends StatelessWidget {
                                 height: cell + (d < 6 ? gap : 0),
                                 child: Align(
                                   alignment: Alignment.topLeft,
-                                  child: Text(d.isEven ? f.wd(d) : '', style: small),
+                                  child: Text(d.isEven ? f.wd(wdAt(d)) : '', style: small),
                                 ),
                               ),
                           ],

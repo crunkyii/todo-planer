@@ -87,6 +87,18 @@ class SettingsTab extends StatelessWidget {
                   ),
                   CapsHeading(l.weeklyPlan),
                   SetRow(
+                    title: l.weekStartsOn,
+                    trailing: _MenuPicker(
+                      label: l.weekStartsOn,
+                      value: s.weekFirstDay,
+                      options: [for (var i = 0; i < 7; i++) (i, Fmt.of(context).wdLong(i))],
+                      onChanged: (v) {
+                        s.updateDevice((x) => x.weekFirstDay = v);
+                        ui.weekFirstDayChanged();
+                      },
+                    ),
+                  ),
+                  SetRow(
                     title: l.grid,
                     trailing: Seg<int>(
                       label: l.grid,
@@ -97,7 +109,7 @@ class SettingsTab extends StatelessWidget {
                   ),
                   SetRow(
                     title: l.dayStarts,
-                    trailing: _HourPicker(
+                    trailing: _MenuPicker.hours(
                       label: l.dayStarts,
                       value: s.dayStart,
                       from: SettingsStore.dayStartMin,
@@ -107,7 +119,7 @@ class SettingsTab extends StatelessWidget {
                   ),
                   SetRow(
                     title: l.dayEnds,
-                    trailing: _HourPicker(
+                    trailing: _MenuPicker.hours(
                       label: l.dayEnds,
                       value: s.dayEnd,
                       from: SettingsStore.dayEndMin,
@@ -359,28 +371,32 @@ class _ThemePreview extends StatelessWidget {
   }
 }
 
-/// Stunden-Auswahl „06:00“ (statt <select>): öffnet ein kleines Menü.
-class _HourPicker extends StatelessWidget {
-  const _HourPicker({
+/// Auswahl wie „06:00“ oder „Montag“ (statt <select>): öffnet ein kleines Menü.
+class _MenuPicker extends StatelessWidget {
+  const _MenuPicker({required this.label, required this.value, required this.options, required this.onChanged});
+
+  /// Stunden von [from] bis [to] als „06:00“.
+  _MenuPicker.hours({
     required this.label,
     required this.value,
-    required this.from,
-    required this.to,
+    required int from,
+    required int to,
     required this.onChanged,
-  });
+  }) : options = [for (var h = from; h <= to; h++) (h, hmString(h * 60))];
+
   final String label;
   final int value;
-  final int from;
-  final int to;
+  final List<(int, String)> options;
   final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
+    final text = options.firstWhere((o) => o.$1 == value, orElse: () => options.first).$2;
     return Builder(
       builder: (btnContext) {
         return Pressable(
-          semanticLabel: '$label: ${hmString(value * 60)}',
+          semanticLabel: '$label: $text',
           excludeChildSemantics: true,
           onTap: () {
             final rect = anchorRect(btnContext);
@@ -391,15 +407,15 @@ class _HourPicker extends StatelessWidget {
                 label: label,
                 scrollBehind: Scrollable.maybeOf(btnContext)?.position,
                 builder: (menuContext) => [
-                  for (var h = from; h <= to; h++)
+                  for (final o in options)
                     MenuItemRow(
                       entry: MenuEntry(
-                        label: hmString(h * 60),
+                        label: o.$2,
                         radio: true,
-                        checked: h == value,
+                        checked: o.$1 == value,
                         onTap: () {
                           Navigator.pop(menuContext);
-                          onChanged(h);
+                          onChanged(o.$1);
                         },
                       ),
                     ),
@@ -419,7 +435,7 @@ class _HourPicker extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  hmString(value * 60),
+                  text,
                   style: TextStyle(fontSize: 14, color: tok.text, fontFeatures: Fs.tabular),
                 ),
                 const SizedBox(width: 4),

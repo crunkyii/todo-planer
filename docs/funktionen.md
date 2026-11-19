@@ -9,7 +9,8 @@
 - **Unteraufgaben** zum einzeln Abhaken.
 - **Notiz**: Über das Notiz-Symbol neben den Unteraufgaben lässt sich ein längerer Text dazuschreiben. Die Karte zeigt die ersten zwei Zeilen, die Suche findet auch Text aus Notizen.
 - **Jährliche Aufgaben**: Steht „Geburtstag“, „Jahrestag“ o. Ä. im Titel, entsteht beim Abhaken dieselbe Aufgabe fürs nächste Jahr.
-- **Suche**, **Wischen zum Löschen** und **Rückgängig** nach dem Löschen.
+- **Suche** und **Rückgängig** nach dem Löschen (gelöscht wird im Formular der Aufgabe).
+- **Am PC** stehen die Gruppen als Listen nebeneinander. Unter ⋮ → *Spalten* stellt man ein, wie viele gleichzeitig zu sehen sind, welche Zeiträume es gibt und welche Kategorien eine eigene Spalte bekommen (gilt nur an diesem Gerät).
 
 ## Gewohnheiten
 
@@ -18,7 +19,9 @@ Tägliche Gewohnheiten zum Abhaken, mit Serien-Flamme für aufeinanderfolgende T
 ## Kalender, Wochenplan, Statistik
 
 - **Kalender** mit allen Aufgaben und den österreichischen Feiertagen.
-- **Wochenplan** mit Zeitblöcken (einmalig oder jede Woche), Raster 5, 15 oder 30 Minuten.
+- **Wochenplan** mit Zeitblöcken (einmalig oder jede Woche), Raster 5, 15 oder 30 Minuten. Beim Anlegen eines Blocks stehen die **Aufgaben des gewählten Tags** zur Auswahl: Antippen übernimmt den Namen, und die Aufgabe bekommt die Von-Zeit als Uhrzeit.
+- **Wochenbeginn** frei wählbar (Optionen → *Woche beginnt am*, gilt nur an diesem Gerät) – für Wochenplan, Kalender und die Gruppe „Diese Woche“.
+- **Uhrzeit am PC tippen**: Im Zeitrad einfach Ziffern eingeben, z. B. `1430`.
 - **Statistik** mit Heatmap, Diagramm der erledigten Aufgaben und Serien.
 
 ## Startbildschirm-Widgets (Android)

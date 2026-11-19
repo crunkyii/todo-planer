@@ -10,6 +10,7 @@ import '../widgets/overlays.dart';
 import '../widgets/layout.dart';
 import '../widgets/ui.dart';
 import 'older_done.dart';
+import 'sheets.dart';
 import 'task_card.dart';
 import 'tasks_board.dart';
 import 'ui_state.dart';
@@ -23,7 +24,7 @@ class TasksTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     return ListenableBuilder(
-      listenable: Listenable.merge([app.store, app.sync]),
+      listenable: Listenable.merge([app.store, app.sync, app.settings]),
       builder: (context, _) => LayoutBuilder(
         builder: (context, box) {
           // Am PC mit genug Platz: Listen nebeneinander und rechts die Seitenleiste.
@@ -155,6 +156,7 @@ class _ChipBar extends StatelessWidget {
       ('sort', l.sort, Ic.sort),
       ('cats', l.manageCategories, Ic.tag),
       ('hideDone', ui.hideDone ? l.showCompleted : l.hideCompleted, Ic.hide),
+      if (board) ('columns', l.columns, Ic.week),
       ('clearDone', l.deleteCompleted, Ic.sweep),
     ];
     // Häufig genutzte Einträge wandern nach oben.
@@ -227,6 +229,8 @@ class _ChipBar extends StatelessWidget {
           s.tab = AppTab.settings;
           s.cats = true;
         });
+      case 'columns':
+        Sheets(context, ui).columns();
       case 'hideDone':
         ui.set((s) => s.hideDone = !s.hideDone);
         app.snack.show(ui.hideDone ? l.completedHidden : l.completedShown);
@@ -353,27 +357,24 @@ class _TaskList extends StatelessWidget {
           ),
       ].where((g) => g.items.isNotEmpty).toList();
     } else {
-      final labels = {
-        Section.overdue: l.overdue,
-        Section.today: l.today,
-        Section.tomorrow: l.tomorrow,
-        Section.week: l.thisWeek,
-        Section.later: l.later,
-        Section.done: l.done,
-      };
+      // Am PC lassen sich Zeiträume ausblenden und Kategorien als eigene Listen dazunehmen
+      // (⋮ → Spalten).
+      final set = context.app.settings;
+      final hiddenSections = board ? set.boardHidden : const <String>{};
       groups =
-          [
+          <TaskGroup>[
             for (final s in Section.values)
-              (
-                id: s.name,
-                label: labels[s]!,
-                items: () {
-                  final items = list.where((t) => sectionOf(t, off(t), now: now) == s).toList();
-                  return s == Section.done ? items.reversed.toList() : items;
-                }(),
-                color: null,
-                section: s,
-              ),
+              if (!hiddenSections.contains(s.name))
+                (
+                  id: s.name,
+                  label: sectionLabel(l, s),
+                  items: () {
+                    final items = list.where((t) => sectionOf(t, off(t), now: now) == s).toList();
+                    return s == Section.done ? items.reversed.toList() : items;
+                  }(),
+                  color: null,
+                  section: s,
+                ),
             // Leere Abschnitte entfallen. „Erledigt“ steht auch leer da, solange es ältere zum
             // Nachladen gibt; am PC bleibt außerdem „Heute“ immer stehen.
           ].where((g) {
@@ -381,6 +382,20 @@ class _TaskList extends StatelessWidget {
                 (g.section == Section.done && showOlder) ||
                 (board && g.section == Section.today);
           }).toList();
+      if (board) {
+        for (final id in set.boardCats) {
+          final c = store.categoryById(id);
+          if (c == null) continue;
+          groups.add((
+            id: 'k-${c.id}',
+            label: c.name,
+            // Alles aus der Kategorie – auch was „In Aufgaben zeigen“ sonst noch zurückhält.
+            items: all.where((t) => t.categoryId == c.id).toList()..sort((a, b) => doneLast(a, b) ?? byDo(a, b, off)),
+            color: tok.item(c.color).c,
+            section: null,
+          ));
+        }
+      }
     }
 
     final hiddenNote = hidden > 0 && filter != filterHabits
@@ -400,7 +415,13 @@ class _TaskList extends StatelessWidget {
         child: Column(
           children: [
             Expanded(
-              child: TasksBoard(ui: ui, groups: groups, showOlder: showOlder, olderCat: olderCat),
+              child: TasksBoard(
+                ui: ui,
+                groups: groups,
+                showOlder: showOlder,
+                olderCat: olderCat,
+                maxVisible: context.app.settings.boardVisible,
+              ),
             ),
             if (hiddenNote != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: hiddenNote),
           ],

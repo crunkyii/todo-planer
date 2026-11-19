@@ -203,13 +203,14 @@ class _DayHeads extends StatelessWidget {
                       ),
                     ),
                   );
+                  final wd = wdIndex(d);
                   final label = Text(
-                    one ? f.wdLong(i) : f.wd(i),
+                    one ? f.wdLong(wd) : f.wd(wd),
                     style: TextStyle(fontSize: one ? 13 : 11, color: one ? tok.text : tok.sub),
                   );
                   return Pressable(
                     onTap: () => ui.toggleWeekDay(i),
-                    semanticLabel: one ? l.backToWeek : l.showDay(f.wdLong(i)),
+                    semanticLabel: one ? l.backToWeek : l.showDay(f.wdLong(wd)),
                     toggled: one,
                     excludeChildSemantics: true,
                     child: one
@@ -279,8 +280,8 @@ class _Grid extends StatelessWidget {
                   narrow: narrow,
                   height: height,
                   ui: ui,
-                  label: f.wdLong(i),
-                  blockLabel: (b) => l.a11yBlock(b.name, f.wdLong(i), f.time(b.start), f.time(b.end)),
+                  label: f.wdLong(wdAt(i)),
+                  blockLabel: (b) => l.a11yBlock(b.name, f.wdLong(wdAt(i)), f.time(b.start), f.time(b.end)),
                 ),
               ),
           ],
@@ -300,6 +301,8 @@ class _DayColumn extends StatelessWidget {
     required this.label,
     required this.blockLabel,
   });
+
+  /// Stelle des Tags in der gezeigten Woche (0–6).
   final int day;
   final bool one;
   final bool narrow;
@@ -315,9 +318,9 @@ class _DayColumn extends StatelessWidget {
     final tok = context.tok;
     final f = Fmt.of(context);
     final startMin = s.dayStart * 60;
-    final blocks = app.store.blocksFor(day, ui.weekStart);
-    final lay = layoutLanes(blocks);
     final d = addDays(ui.weekStart, day);
+    final blocks = app.store.blocksOn(d);
+    final lay = layoutLanes(blocks);
     final now = clock();
     final nm = now.hour * 60 + now.minute;
     final showNow = sameDay(d, now) && nm >= startMin && nm <= s.dayEnd * 60;
@@ -330,7 +333,7 @@ class _DayColumn extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTapUp: (e) {
             final m = ((startMin + e.localPosition.dy / Sizes.hour * 60) / s.raster).floor() * s.raster;
-            Sheets(context, ui).newBlock(day: day, start: m);
+            Sheets(context, ui).newBlock(day: wdIndex(d), start: m);
           },
           child: Semantics(
             label: label,

@@ -8,6 +8,7 @@ import '../util/dates.dart';
 import '../widgets/overlays.dart';
 import 'sheets/block_sheet.dart';
 import 'sheets/category_sheet.dart';
+import 'sheets/columns_sheet.dart';
 import 'sheets/export_sheet.dart';
 import 'sheets/habit_sheet.dart';
 import 'sheets/task_sheet.dart';
@@ -34,7 +35,12 @@ class Sheets {
   void newBlock({int? day, int? start}) {
     final l = context.l;
     final s = context.app.settings;
-    final d = day ?? (ui.weekDay ?? (sameDay(ui.weekStart, monday(clock())) ? wdIndex(clock()) : 0));
+    // Ohne Vorgabe: der gezeigte Tag, in der laufenden Woche heute, sonst der erste Tag der Woche.
+    final wd = ui.weekDay;
+    final shown = wd != null
+        ? addDays(ui.weekStart, wd)
+        : (sameDay(ui.weekStart, weekStartOf(clock())) ? clock() : ui.weekStart);
+    final d = day ?? wdIndex(shown);
     // Spätestes „Bis“ ist der letzte Raster-Schritt vor Mitternacht; „Von“ muss mindestens
     // einen Schritt davor liegen, sonst wäre der Block leer.
     final last = 24 * 60 - s.raster;
@@ -53,6 +59,11 @@ class Sheets {
       label: context.l.editBlock,
       builder: (_) => BlockSheet(block: b, day: b.day, start: b.start, end: b.end, ui: ui),
     );
+  }
+
+  /// Aufgaben am PC: welche Listen nebeneinander stehen.
+  void columns() {
+    showAppSheet<void>(context, label: context.l.columns, builder: (_) => const ColumnsSheet());
   }
 
   void habit(Habit? h) {

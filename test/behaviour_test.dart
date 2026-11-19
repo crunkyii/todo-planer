@@ -19,6 +19,8 @@ import 'package:todo_liste/data/models.dart';
 import 'package:todo_liste/data/settings_store.dart';
 import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
+import 'package:todo_liste/screens/sheets/columns_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
 import 'package:todo_liste/screens/task_card.dart';
@@ -725,6 +727,167 @@ void main() {
     });
   });
 
+  group('Formulare, Wochenbeginn und Spalten', () {
+    testWidgets('Formular: „Speichern“ bleibt zu sehen, auch wenn das Zeitrad offen ist', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      const size = Size(412, 560);
+      await pumpApp(tester, app, size: size);
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      await _tap(tester, find.bySemanticsLabel(l.newBlock).last);
+      await tester.enterText(find.byType(TextField).first, 'Chor');
+      await _tap(tester, find.text(l.to)); // klappt das Zeitrad „Bis“ mit Schnellwahl auf
+      final save = find.text(l.save).hitTestable();
+      expect(save, findsOneWidget, reason: 'ohne Scrollen erreichbar');
+      expect(tester.getRect(save).bottom, lessThanOrEqualTo(size.height));
+      expect(tester.takeException(), isNull);
+      await _tap(tester, save);
+      expect(app.store.blocks.single.name, 'Chor');
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Wochenbeginn Sonntag: Optionen, Wochenplan, „Diese Woche“ und einmalige Blöcke', (tester) async {
+      final l = l10n('de');
+      useFixedClock(); // Mittwoch, 18.11.2026
+      addTearDown(() => weekFirstDay = 0);
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      final f = Fmt.of(tester.element(find.byType(AppShell)));
+      await goTab(tester, l.navSettings);
+      final picker = find.text(f.wdLong(0)); // die Auswahl zeigt den aktuellen Tag
+      await tester.scrollUntilVisible(
+        picker,
+        200,
+        scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last,
+      );
+      await _tap(tester, picker);
+      await _tap(tester, find.text(f.wdLong(6)).last);
+      expect(app.settings.weekFirstDay, 6);
+      expect(weekStartOf(fixedNow), DateTime(2026, 11, 15));
+
+      // Wochenplan: Die Woche läuft von Sonntag, 15. bis Samstag, 21.
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      expect(find.text(f.weekRange(DateTime(2026, 11, 15))), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      // „Diese Woche“ endet am Samstag; der Sonntag danach ist schon „Später“.
+      Task due(int day) => Task(
+        id: 'x$day',
+        title: 'x',
+        categoryId: 'c',
+        dueDate: DateTime(2026, 11, day),
+        dueTime: null,
+        done: false,
+        doneAt: null,
+        createdAt: fixedNow.toUtc(),
+        updatedAt: fixedNow.toUtc(),
+      );
+      expect(sectionOf(due(21), 0, now: fixedNow), Section.week);
+      expect(sectionOf(due(22), 0, now: fixedNow), Section.later);
+
+      // Einmalige Blöcke landen am richtigen Tag der gezeigten Woche – gemerkt wird ihr Montag.
+      app.store.addBlocks(
+        name: 'Nur Montag',
+        color: '#AABBCC',
+        days: [0, 6],
+        start: 600,
+        end: 660,
+        repeat: false,
+        weekStart: DateTime(2026, 11, 15),
+      );
+      expect(app.store.blocksOn(DateTime(2026, 11, 16)).map((b) => b.name), ['Nur Montag']);
+      expect(app.store.blocksOn(DateTime(2026, 11, 15)).map((b) => b.name), ['Nur Montag'], reason: 'der Sonntag');
+      expect(app.store.blocksOn(DateTime(2026, 11, 22)), isEmpty, reason: 'nächster Sonntag: andere Woche');
+      expect(app.store.blocksOn(DateTime(2026, 11, 23)), isEmpty);
+      await tester.pumpAndSettle();
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Neuer Block: Aufgabe des Tages antippen – Block mit ihrem Namen, die Aufgabe bekommt die Zeit', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      useFixedClock(); // Mittwoch
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      final cat = app.store.categories.first;
+      app.store.addTask(
+        title: 'Rasenmähen',
+        categoryId: cat.id,
+        dueDate: addDays(today(), 2), // Freitag
+        dueTime: null,
+        subs: const [],
+      );
+      await pumpApp(tester, app);
+      final f = Fmt.of(tester.element(find.byType(AppShell)));
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      await _tap(tester, find.bySemanticsLabel(l.newBlock).last);
+      // Heute (Mittwoch) ist nichts fällig – erst am Freitag steht die Aufgabe da.
+      expect(find.text(l.tasksThatDay), findsNothing);
+      await _tap(tester, find.bySemanticsLabel(f.wdLong(4)).last);
+      await _tap(tester, find.bySemanticsLabel(f.wdLong(2)).last);
+      expect(find.text(l.tasksThatDay), findsOneWidget);
+      await _tap(tester, find.widgetWithText(AppChip, 'Rasenmähen'));
+      expect(tester.widget<EditableText>(find.byType(EditableText).first).controller.text, 'Rasenmähen');
+      await _tap(tester, find.text(l.save).last);
+      final b = app.store.blocks.single;
+      expect((b.name, b.day, b.repeat, b.weekStart, b.color), ('Rasenmähen', 4, false, '2026-11-16', cat.color));
+      expect(app.store.tasks.single.dueTime, b.start);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben am PC: ⋮ → Spalten stellt Anzahl, Zeiträume und Kategorie-Spalten ein', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app, size: const Size(1920, 1009));
+      TasksBoard board() => tester.widget<TasksBoard>(find.byType(TasksBoard));
+      expect(board().maxVisible, 3);
+      await _tap(tester, find.bySemanticsLabel(l.moreOptions));
+      await _tap(tester, find.text(l.columns));
+      Finder inSheet(Finder f) => find.descendant(of: find.byType(ColumnsSheet), matching: f);
+      await _tap(tester, inSheet(find.text('4')));
+      await _tap(tester, inSheet(find.bySemanticsLabel(l.overdue)).last);
+      final cat = app.store.categories.first;
+      await _tap(tester, inSheet(find.bySemanticsLabel(cat.name)).last);
+      // Gilt sofort, noch bevor das Fenster zu ist.
+      expect(board().maxVisible, 4);
+      expect(board().groups.map((g) => g.id), isNot(contains(Section.overdue.name)));
+      expect(board().groups.last.id, 'k-${cat.id}');
+      expect(board().groups.last.items, isNotEmpty);
+      await _tap(tester, inSheet(find.text(l.close)));
+      expect(find.byType(ColumnsSheet), findsNothing);
+      expect(find.bySemanticsLabel(l.sectionCount(l.overdue, 1)), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      // Bleibt gespeichert (nur an diesem Gerät).
+      final again = SettingsStore((await tester.runAsync(SharedPreferences.getInstance))!);
+      expect(again.boardVisible, 4);
+      expect(again.boardHidden, {Section.overdue.name});
+      expect(again.boardCats, [cat.id]);
+
+      // Am Handy gibt es den Eintrag nicht.
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.moreOptions));
+      expect(find.text(l.columns), findsNothing);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgabe: Wischen nach links löscht nicht mehr', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      final n = app.store.tasks.length;
+      await pumpApp(tester, app);
+      await tester.drag(find.byType(TaskCard).first, const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      expect(app.store.tasks, hasLength(n));
+      expect(find.text(l.undo), findsNothing);
+      await finishApp(tester, app);
+    });
+  });
+
   group('Statistik', () {
     testWidgets('Balken sind sichtbar und Zeitraum lässt sich umschalten', (tester) async {
       final l = l10n('de');
@@ -1247,7 +1410,11 @@ void main() {
       addTearDown(() => saveExportFile = real);
       await pumpApp(tester, app);
       await goTab(tester, l.navSettings);
-      await tester.scrollUntilVisible(find.text(l.exportData), 200, scrollable: find.byType(Scrollable).last);
+      await tester.scrollUntilVisible(
+        find.text(l.exportData),
+        200,
+        scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last,
+      );
       await _tap(tester, find.text(l.exportData));
       expect(find.text(l.exportCsvSub), findsOneWidget);
       await _tap(tester, find.text('CSV'));

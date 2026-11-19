@@ -344,7 +344,8 @@ class QuickRow extends StatelessWidget {
 // Monats-Raster (Kalender-Tab und Mini-Kalender)
 // ---------------------------------------------------------------------------
 
-/// 7 Spalten, Montag zuerst; die 6. Zeile nur, wenn sie noch Tage des Monats enthält.
+/// 7 Spalten ab dem eingestellten Wochenbeginn; die 6. Zeile nur, wenn sie noch Tage des
+/// Monats enthält.
 class MonthGrid extends StatelessWidget {
   const MonthGrid({
     super.key,
@@ -364,7 +365,7 @@ class MonthGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final f = Fmt.of(context);
     final tok = context.tok;
-    final first = monday(DateTime(month.year, month.month));
+    final first = weekStartOf(DateTime(month.year, month.month));
     final days = <DateTime>[];
     for (var i = 0; i < 42; i++) {
       final d = addDays(first, i);
@@ -383,7 +384,7 @@ class MonthGrid extends StatelessWidget {
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: wdPadding),
                       child: Text(
-                        f.wd(i),
+                        f.wd(wdAt(i)),
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: wdFontSize, color: tok.sub),
                       ),

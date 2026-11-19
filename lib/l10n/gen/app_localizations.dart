@@ -818,6 +818,36 @@ abstract class AppLocalizations {
   /// **'Suche schließen'**
   String get closeSearch;
 
+  /// No description provided for @columns.
+  ///
+  /// In de, this message translates to:
+  /// **'Spalten'**
+  String get columns;
+
+  /// No description provided for @columnsVisible.
+  ///
+  /// In de, this message translates to:
+  /// **'Nebeneinander sichtbar'**
+  String get columnsVisible;
+
+  /// No description provided for @columnsPeriods.
+  ///
+  /// In de, this message translates to:
+  /// **'Zeiträume'**
+  String get columnsPeriods;
+
+  /// No description provided for @columnsCategories.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorien als eigene Spalte'**
+  String get columnsCategories;
+
+  /// No description provided for @close.
+  ///
+  /// In de, this message translates to:
+  /// **'Schließen'**
+  String get close;
+
   /// No description provided for @sort.
   ///
   /// In de, this message translates to:
@@ -1436,6 +1466,12 @@ abstract class AppLocalizations {
   /// **'Bitte wähle mindestens einen Tag.'**
   String get errPickDay;
 
+  /// No description provided for @tasksThatDay.
+  ///
+  /// In de, this message translates to:
+  /// **'Aufgaben an diesem Tag'**
+  String get tasksThatDay;
+
   /// No description provided for @blockHint.
   ///
   /// In de, this message translates to:
@@ -1765,6 +1801,12 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Raster (Minuten)'**
   String get grid;
+
+  /// No description provided for @weekStartsOn.
+  ///
+  /// In de, this message translates to:
+  /// **'Woche beginnt am'**
+  String get weekStartsOn;
 
   /// No description provided for @dayStarts.
   ///

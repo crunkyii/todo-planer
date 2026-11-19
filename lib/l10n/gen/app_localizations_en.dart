@@ -390,6 +390,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSearch => 'Close search';
 
   @override
+  String get columns => 'Columns';
+
+  @override
+  String get columnsVisible => 'Visible side by side';
+
+  @override
+  String get columnsPeriods => 'Time periods';
+
+  @override
+  String get columnsCategories => 'Categories as their own column';
+
+  @override
+  String get close => 'Close';
+
+  @override
   String get sort => 'Sort';
 
   @override
@@ -772,6 +787,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errPickDay => 'Please pick at least one day.';
 
   @override
+  String get tasksThatDay => 'Tasks on this day';
+
+  @override
   String get blockHint => 'School, training …';
 
   @override
@@ -967,6 +985,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get grid => 'Grid (minutes)';
+
+  @override
+  String get weekStartsOn => 'Week starts on';
 
   @override
   String get dayStarts => 'Day starts';

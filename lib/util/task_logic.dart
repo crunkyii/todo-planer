@@ -82,7 +82,7 @@ Section sectionOf(Task t, int offset, {DateTime? now}) {
   // Erledigen-Tag heute oder schon vorbei, Abgabe aber noch offen: gehört zu „Heute“.
   if (d <= 0) return Section.today;
   if (d == 1) return Section.tomorrow;
-  if (d <= 6 - wdIndex(n)) return Section.week;
+  if (d <= 6 - weekPos(n)) return Section.week;
   return Section.later;
 }
 

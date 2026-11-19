@@ -4,7 +4,9 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app_services.dart';
 import '../../data/models.dart';
+import '../../data/store.dart';
 import '../../theme/tokens.dart';
+import '../../util/dates.dart';
 import '../../util/fmt.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/pickers.dart';
@@ -47,6 +49,36 @@ class _BlockSheetState extends State<BlockSheet> {
   late bool _repeat = widget.block?.repeat ?? true;
   _Edge? _open;
   String? _error;
+
+  /// Die Aufgabe, aus der dieser Block wird (nur beim Anlegen): Sie gibt den Namen vor und
+  /// bekommt beim Speichern die „Von“-Zeit als Uhrzeit.
+  String? _taskId;
+
+  /// Offene Aufgaben, die am gewählten Tag der gezeigten Woche fällig sind – nur, wenn genau
+  /// ein Tag gewählt ist.
+  List<Task> get _dayTasks {
+    if (widget.block != null || _days.length != 1) return const [];
+    final date = Store.dayInWeek(widget.ui.weekStart, _days.single);
+    return context.app.store.tasks.where((t) => !t.done && sameDay(t.dueDate, date)).toList()
+      ..sort((a, b) => (a.dueTime ?? 24 * 60).compareTo(b.dueTime ?? 24 * 60));
+  }
+
+  void _pickTask(Task t) => setState(() {
+    if (_taskId == t.id) {
+      _taskId = null;
+      return;
+    }
+    _taskId = t.id;
+    _name.text = t.title.length > 60 ? t.title.substring(0, 60) : t.title;
+    _color = context.app.store.catOf(t.categoryId).color;
+    // Eine Aufgabe ist an einem bestimmten Tag dran – der Block gilt nur für diese Woche.
+    _repeat = false;
+    final time = t.dueTime;
+    if (time != null) {
+      _start = math.min(time, _lastEnd - _raster);
+      _end = math.min(_start + 60, _lastEnd);
+    }
+  });
 
   @override
   void dispose() {
@@ -117,6 +149,9 @@ class _BlockSheetState extends State<BlockSheet> {
         repeat: _repeat,
         weekStart: widget.ui.weekStart,
       );
+      // Die gewählte Aufgabe bekommt die Zeit des Blocks – wenn es sie noch gibt.
+      final task = _taskId == null ? null : app.store.taskById(_taskId!);
+      if (task != null && !task.done && _dayTasks.any((t) => t.id == task.id)) app.store.setTaskTime(task, start);
       Navigator.pop(context);
       app.snack.show(n > 1 ? l.blocksAdded(n) : l.blockAdded);
     }
@@ -140,6 +175,8 @@ class _BlockSheetState extends State<BlockSheet> {
     final edit = widget.block != null;
     final dur = _end - _start;
     final durText = dur > 0 ? f.duration(dur) : l.durInvalid;
+    final dayTasks = _dayTasks;
+    final store = context.app.store;
     return SheetBody(
       footer: [
         if (_error != null) SheetError(_error!),
@@ -156,8 +193,9 @@ class _BlockSheetState extends State<BlockSheet> {
           label: edit ? l.day : l.days,
           child: Row(
             children: [
-              for (var i = 0; i < 7; i++) ...[
-                if (i > 0) const SizedBox(width: 6),
+              // In der Reihenfolge der Woche (Wochenbeginn aus den Optionen).
+              for (final i in [for (var p = 0; p < 7; p++) wdAt(p)]) ...[
+                if (i != wdAt(0)) const SizedBox(width: 6),
                 Expanded(
                   child: Pressable(
                     onTap: () => setState(() {
@@ -196,6 +234,25 @@ class _BlockSheetState extends State<BlockSheet> {
             ],
           ),
         ),
+        if (dayTasks.isNotEmpty)
+          LabeledField(
+            label: l.tasksThatDay,
+            child: QuickRow(
+              label: l.tasksThatDay,
+              children: [
+                for (final t in dayTasks)
+                  AppChip(
+                    label: t.title,
+                    selected: _taskId == t.id,
+                    colors: tok.item(store.catOf(t.categoryId).color),
+                    height: 32,
+                    padding: 12,
+                    fontSize: 13,
+                    onTap: () => _pickTask(t),
+                  ),
+              ],
+            ),
+          ),
         LabeledField(
           label: l.timeWithDuration(durText),
           child: Column(

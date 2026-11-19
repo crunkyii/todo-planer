@@ -19,6 +19,20 @@ int wdIndex(DateTime d) => d.weekday - 1;
 
 DateTime monday(DateTime d) => addDays(sod(d), -wdIndex(d));
 
+/// Mit welchem Wochentag die Woche beginnt (0 = Montag … 6 = Sonntag). Stellt man in den
+/// Optionen ein; `SettingsStore` setzt den Wert beim Laden und beim Ändern.
+int weekFirstDay = 0;
+
+/// Der Wochentag (0 = Montag) an Stelle [i] der Woche – bei Wochenbeginn Sonntag ist
+/// Stelle 0 der Sonntag (6).
+int wdAt(int i) => (weekFirstDay + i) % 7;
+
+/// An welcher Stelle der Woche (0–6) der Tag [d] steht.
+int weekPos(DateTime d) => (wdIndex(d) - weekFirstDay) % 7;
+
+/// Erster Tag der Woche, in der [d] liegt – nach [weekFirstDay].
+DateTime weekStartOf(DateTime d) => addDays(sod(d), -weekPos(d));
+
 bool sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Ganze Tage zwischen [a] und [b] (a − b).

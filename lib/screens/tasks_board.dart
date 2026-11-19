@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
 import '../data/models.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
@@ -20,18 +21,35 @@ import 'ui_state.dart';
 /// ([color] gesetzt).
 typedef TaskGroup = ({String id, String label, List<Task> items, Color? color, Section? section});
 
-/// Aufgaben am PC: jede Gruppe ist eine eigene Liste nebeneinander. Höchstens drei sind
-/// gleichzeitig zu sehen; die übrigen erreicht man durch Wischen oder mit den Pfeilen.
+/// Name eines Zeitraums („Heute“, „Diese Woche“ …).
+String sectionLabel(AppLocalizations l, Section s) => switch (s) {
+  Section.overdue => l.overdue,
+  Section.today => l.today,
+  Section.tomorrow => l.tomorrow,
+  Section.week => l.thisWeek,
+  Section.later => l.later,
+  Section.done => l.done,
+};
+
+/// Aufgaben am PC: jede Gruppe ist eine eigene Liste nebeneinander. Höchstens [maxVisible]
+/// sind gleichzeitig zu sehen (einstellbar unter ⋮ → Spalten); die übrigen erreicht man durch
+/// Wischen oder mit den Pfeilen.
 class TasksBoard extends StatelessWidget {
-  const TasksBoard({super.key, required this.ui, required this.groups, required this.showOlder, this.olderCat});
+  const TasksBoard({
+    super.key,
+    required this.ui,
+    required this.groups,
+    required this.showOlder,
+    this.olderCat,
+    this.maxVisible = 3,
+  });
   final UiState ui;
   final List<TaskGroup> groups;
+  final int maxVisible;
 
   /// Ältere erledigte Aufgaben liegen noch online – der Hinweis steht am Ende von „Erledigt“.
   final bool showOlder;
   final String? olderCat;
-
-  static const maxVisible = 3;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
