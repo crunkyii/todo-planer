@@ -6,10 +6,10 @@ Die App zeigt diese Schritte auch selbst an („Datenbank verbinden“).
 2. Im Projekt den **SQL Editor** öffnen. In der App auf **„SQL kopieren“** tippen (oder den Inhalt von [`supabase/schema.sql`](../supabase/schema.sql) nehmen), einfügen und auf **Run** klicken. Das legt alle Tabellen samt Zugriffsschutz (Row Level Security) an. Das Skript kann gefahrlos noch einmal ausgeführt werden.
 3. Unter **Project Settings → API Keys** die **Project URL** (`https://….supabase.co`) und den **Publishable Key** (`sb_publishable_…`, bei älteren Projekten der `anon`-Key `eyJ…`) kopieren und in der App einfügen.
    **Niemals den Secret Key (`sb_secret_…` / `service_role`) eingeben** – die App lehnt ihn ab.
-4. In der App ein Konto erstellen (einmalig, danach bleibt man angemeldet). Auf jedem weiteren Gerät beim ersten Start **„Ich habe schon ein Konto“** wählen, dieselbe URL und denselben Key eingeben und anmelden.
+4. In der App ein Konto erstellen (einmalig, danach bleibt man angemeldet).
 5. Danach in Supabase unter **Authentication → Sign In / Providers** die Option **„Allow new users to sign up“** ausschalten. Dann kann sich niemand sonst ein Konto in deiner Datenbank anlegen.
 
-Auf weiteren Geräten: gleiche URL und gleichen Key eingeben und mit demselben Konto **anmelden**.
+Auf weiteren Geräten: beim ersten Start **„Ich habe schon ein Konto“** wählen, gleiche URL und gleichen Key eingeben und mit demselben Konto **anmelden**.
 
 ## So funktioniert der Abgleich
 

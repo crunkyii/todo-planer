@@ -12,7 +12,7 @@ Aufgaben, Gewohnheiten, Kalender und Wochenplan in einer App – für Android, W
 
 **Selbst bauen** (auch für Linux): siehe [docs/bauen.md](docs/bauen.md).
 
-Beim ersten Start fragt die App, wo die Aufgaben gespeichert werden sollen: **Konto erstellen** bzw. **Ich habe schon ein Konto** (auf allen Geräten, eigene kostenlose Supabase-Datenbank) oder **Nur auf diesem Gerät** (kein Konto, keine Einrichtung).
+Beim ersten Start stehen drei Wege zur Wahl: **Konto erstellen** bzw. **Ich habe schon ein Konto** (auf allen Geräten, eigene kostenlose Supabase-Datenbank) oder **Nur auf diesem Gerät** (kein Konto, keine Einrichtung).
 
 ## Was es kann
 
