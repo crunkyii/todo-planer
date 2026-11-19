@@ -396,5 +396,24 @@
   "flickAboutAddTitle": "New task with a title, e.g. aufgabe Learn maths",
   "flickAboutToday": "Today's tasks from ToDo Planer",
   "flickAboutTab": "Open ToDo Planer on a tab",
-  "flickHeading": "Flick"
+
+  "flickHeading": "Flick",
+  "closeHint": "Close hint",
+  "blockMoved": "Block moved to {time}",
+  "@blockMoved": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "pickCategory": "Category",
+  "addTasksToDay": "More tasks for this day",
+  "pickTasksTitle": "Tasks for this day",
+  "pickTasksInfo": "All open tasks from this day on. The ones you pick show up in the block to choose from.",
+  "pickTasksNone": "No open tasks from this day on.",
+  "applyCount": "Add {count}",
+  "@applyCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }

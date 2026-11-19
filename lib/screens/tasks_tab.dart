@@ -395,13 +395,26 @@ class _TaskList extends StatelessWidget {
       }
     }
 
-    final hiddenNote = hidden > 0 && filter != filterHabits
+    // Der Hinweis kommt nur beim ersten Mal (gemerkt am Gerät) und bleibt dann für diesen
+    // App-Start stehen, bis man ihn schließt.
+    final set = context.app.settings;
+    final showHint = hidden > 0 && filter != filterHabits && (set.hiddenHintNow || !set.hiddenHintSeen);
+    if (showHint && !set.hiddenHintSeen) WidgetsBinding.instance.addPostFrameCallback((_) => set.markHiddenHintSeen());
+    final hiddenNote = showHint
         ? Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            child: Text(
-              l.hiddenByCategory(hidden),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: Fs.meta, color: tok.sub),
+            padding: const EdgeInsets.fromLTRB(16, 8, 4, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    l.hiddenByCategory(hidden),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: Fs.meta, color: tok.sub),
+                  ),
+                ),
+                IconBtn(Ic.x, label: l.closeHint, size: 18, onTap: set.closeHiddenHint),
+              ],
             ),
           )
         : null;

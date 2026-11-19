@@ -316,7 +316,6 @@ class _DayColumn extends StatelessWidget {
     final app = context.app;
     final s = app.settings;
     final tok = context.tok;
-    final f = Fmt.of(context);
     final startMin = s.dayStart * 60;
     final d = addDays(ui.weekStart, day);
     final blocks = app.store.blocksOn(d);
@@ -343,82 +342,16 @@ class _DayColumn extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   for (final b in blocks)
-                    Builder(
-                      builder: (context) {
-                        final top = math.max(0.0, (b.start - startMin) / 60 * Sizes.hour);
-                        final bottom = math.min(height, (b.end - startMin) / 60 * Sizes.hour);
-                        if (bottom <= 0 || top >= height) return const SizedBox.shrink();
-                        final h = math.max(14.0, bottom - top - 2);
-                        final bc = tok.item(b.color);
-                        final fs = one ? 13.0 : (narrow ? 9.5 : 10.0);
-                        final lh = one ? 16.0 : (narrow ? 11.0 : 12.0);
-                        // Die Zeilen mit der Uhrzeit wachsen mit der Systemschrift – also auch
-                        // die Höhe, ab der sie Platz haben.
-                        final ts = MediaQuery.textScalerOf(context).scale(1);
-                        final w = box.maxWidth / lay.lanes[b.id]!;
-                        final timeStyle = TextStyle(
-                          fontSize: one ? 12 : fs,
-                          height: lh / fs,
-                          color: bc.ci.withValues(alpha: 0.85),
-                          fontFeatures: Fs.tabular,
-                        );
-                        return Positioned(
-                          top: top,
-                          height: h,
-                          left: lay.lane[b.id]! * w + 2,
-                          width: w - 4,
-                          child: Pressable(
-                            onTap: () => Sheets(context, ui).block(b),
-                            pressScale: 0.95,
-                            radius: BorderRadius.circular(one ? 8 : Sizes.rBlock),
-                            semanticLabel: blockLabel(b),
-                            excludeChildSemantics: true,
-                            child: Container(
-                              clipBehavior: Clip.hardEdge,
-                              padding: one
-                                  ? const EdgeInsets.symmetric(horizontal: 8, vertical: 5)
-                                  : (narrow ? const EdgeInsets.fromLTRB(2, 2, 1, 2) : const EdgeInsets.all(3)),
-                              decoration: BoxDecoration(
-                                color: bc.ct,
-                                borderRadius: BorderRadius.circular(one ? 8 : Sizes.rBlock),
-                                border: Border(
-                                  left: BorderSide(color: bc.c, width: one ? 4 : 3),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      b.name,
-                                      overflow: TextOverflow.clip,
-                                      style: TextStyle(
-                                        fontSize: fs,
-                                        height: lh / fs,
-                                        fontWeight: FontWeight.w500,
-                                        color: bc.ci,
-                                      ),
-                                    ),
-                                  ),
-                                  if (one && h > 26 * ts) ...[
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      context.l.rangeDash(f.time(b.start), f.time(b.end)),
-                                      maxLines: 1,
-                                      softWrap: false,
-                                      style: timeStyle,
-                                    ),
-                                  ],
-                                  if (!one && h > 40 * ts)
-                                    Text(f.time(b.start), maxLines: 1, softWrap: false, style: timeStyle),
-                                  if (!one && h > 64 * ts)
-                                    Text(f.time(b.end), maxLines: 1, softWrap: false, style: timeStyle),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+                    _BlockTile(
+                      key: ValueKey(b.id),
+                      block: b,
+                      ui: ui,
+                      one: one,
+                      narrow: narrow,
+                      height: height,
+                      left: lay.lane[b.id]! * box.maxWidth / lay.lanes[b.id]!,
+                      width: box.maxWidth / lay.lanes[b.id]!,
+                      semanticLabel: blockLabel(b),
                     ),
                   if (showNow)
                     Positioned(
@@ -444,6 +377,183 @@ class _DayColumn extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Ein Block im Raster. Antippen öffnet ihn; lange drücken und nach oben/unten ziehen legt ihn
+/// auf eine andere Uhrzeit (in Schritten des Rasters aus den Einstellungen, Dauer bleibt gleich).
+class _BlockTile extends StatefulWidget {
+  const _BlockTile({
+    super.key,
+    required this.block,
+    required this.ui,
+    required this.one,
+    required this.narrow,
+    required this.height,
+    required this.left,
+    required this.width,
+    required this.semanticLabel,
+  });
+  final WeekBlock block;
+  final UiState ui;
+  final bool one;
+  final bool narrow;
+
+  /// Höhe des ganzen Tages im Raster.
+  final double height;
+  final double left;
+  final double width;
+  final String semanticLabel;
+
+  @override
+  State<_BlockTile> createState() => _BlockTileState();
+}
+
+class _BlockTileState extends State<_BlockTile> {
+  /// Beim Ziehen: der neue Beginn in Minuten; sonst `null`.
+  int? _drag;
+
+  void _start() {
+    buzz();
+    setState(() => _drag = widget.block.start);
+  }
+
+  void _move(LongPressMoveUpdateDetails e) {
+    final s = context.app.settings;
+    final t = dragTarget(widget.block, e.offsetFromOrigin.dy / Sizes.hour * 60, s.raster, s.dayStart, s.dayEnd);
+    if (t == _drag) return;
+    buzz();
+    setState(() => _drag = t);
+  }
+
+  void _drop() {
+    final t = _drag;
+    setState(() => _drag = null);
+    final app = context.app;
+    final b = app.store.blockById(widget.block.id);
+    if (t == null || b == null || t == b.start) return;
+    final from = b.start, to = b.end;
+    // Die Woche von jetzt merken – das Rückgängig soll auch nach dem Blättern dieselbe treffen.
+    final week = widget.ui.weekStart;
+    void put(int start, int end) => app.store.updateBlock(
+      b,
+      name: b.name,
+      color: b.color,
+      day: b.day,
+      start: start,
+      end: end,
+      repeat: b.repeat,
+      weekStart: week,
+    );
+    put(t, t + to - from);
+    app.snack.show(context.l.blockMoved(Fmt.of(context).time(t)), undo: () => put(from, to));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tok = context.tok;
+    final f = Fmt.of(context);
+    final startMin = context.app.settings.dayStart * 60;
+    final b = widget.block;
+    final one = widget.one, narrow = widget.narrow;
+    final dragging = _drag != null;
+    final bs = _drag ?? b.start, be = bs + b.end - b.start;
+    final top = math.max(0.0, (bs - startMin) / 60 * Sizes.hour);
+    final bottom = math.min(widget.height, (be - startMin) / 60 * Sizes.hour);
+    if (bottom <= 0 || top >= widget.height) return const SizedBox.shrink();
+    final h = math.max(14.0, bottom - top - 2);
+    final bc = tok.item(b.color);
+    final fs = one ? 13.0 : (narrow ? 9.5 : 10.0);
+    final lh = one ? 16.0 : (narrow ? 11.0 : 12.0);
+    // Die Zeilen mit der Uhrzeit wachsen mit der Systemschrift – also auch
+    // die Höhe, ab der sie Platz haben.
+    final ts = MediaQuery.textScalerOf(context).scale(1);
+    final timeStyle = TextStyle(
+      fontSize: one ? 12 : fs,
+      height: lh / fs,
+      color: bc.ci.withValues(alpha: 0.85),
+      fontFeatures: Fs.tabular,
+    );
+    final radius = BorderRadius.circular(one ? 8 : Sizes.rBlock);
+    Widget tile = Container(
+      clipBehavior: Clip.hardEdge,
+      padding: one
+          ? const EdgeInsets.symmetric(horizontal: 8, vertical: 5)
+          : (narrow ? const EdgeInsets.fromLTRB(2, 2, 1, 2) : const EdgeInsets.all(3)),
+      decoration: BoxDecoration(
+        color: bc.ct,
+        borderRadius: radius,
+        border: Border(
+          left: BorderSide(color: bc.c, width: one ? 4 : 3),
+        ),
+        boxShadow: dragging ? tok.popShadow : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            child: Text(
+              b.name,
+              overflow: TextOverflow.clip,
+              style: TextStyle(fontSize: fs, height: lh / fs, fontWeight: FontWeight.w500, color: bc.ci),
+            ),
+          ),
+          if (one && h > 26 * ts) ...[
+            const SizedBox(height: 2),
+            Text(context.l.rangeDash(f.time(bs), f.time(be)), maxLines: 1, softWrap: false, style: timeStyle),
+          ],
+          if (!one && h > 40 * ts) Text(f.time(bs), maxLines: 1, softWrap: false, style: timeStyle),
+          if (!one && h > 64 * ts) Text(f.time(be), maxLines: 1, softWrap: false, style: timeStyle),
+        ],
+      ),
+    );
+    if (dragging) {
+      // Beim Ziehen steht die neue Uhrzeit über dem Block – auch wenn er zu klein dafür ist.
+      tile = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(child: tile),
+          Positioned(
+            left: 0,
+            bottom: h + 2,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: bc.c, borderRadius: BorderRadius.circular(Sizes.rBlock)),
+                child: Text(
+                  f.time(bs),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(fontSize: Fs.tiny, color: bc.ct, fontFeatures: Fs.tabular),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return Positioned(
+      top: top,
+      height: h,
+      left: widget.left + 2,
+      width: widget.width - 4,
+      // Langdruck gewinnt gegen Tippen und Scrollen erst, wenn man den Finger kurz still hält.
+      child: GestureDetector(
+        excludeFromSemantics: true,
+        onLongPressStart: (_) => _start(),
+        onLongPressMoveUpdate: _move,
+        onLongPressEnd: (_) => _drop(),
+        onLongPressCancel: () => setState(() => _drag = null),
+        child: Pressable(
+          onTap: () => Sheets(context, widget.ui).block(b),
+          pressScale: 0.95,
+          radius: radius,
+          semanticLabel: widget.semanticLabel,
+          excludeChildSemantics: true,
+          child: AnimatedScale(scale: dragging ? 1.03 : 1, duration: Motion.fast, child: tile),
+        ),
+      ),
     );
   }
 }

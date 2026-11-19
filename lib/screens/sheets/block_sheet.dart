@@ -14,6 +14,7 @@ import '../../widgets/pickers.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/ui.dart';
 import '../ui_state.dart';
+import 'pick_tasks_page.dart';
 import 'sheet_parts.dart';
 
 /// Welches Zeit-Rad aufgeklappt ist.
@@ -79,6 +80,43 @@ class _BlockSheetState extends State<BlockSheet> {
       final c = sod(a.dueDate).compareTo(sod(b.dueDate));
       return c != 0 ? c : (a.dueTime ?? 24 * 60).compareTo(b.dueTime ?? 24 * 60);
     });
+  }
+
+  /// Über „+“ dazu gewählte Aufgaben (IDs): Sie stehen nur in diesem Blatt als weitere Chips,
+  /// an der Aufgabe selbst ändert sich nichts.
+  final List<String> _extra = [];
+
+  /// Die Chips: die Aufgaben des Tages, dann die dazu gewählten (offen und noch nicht dabei).
+  List<Task> get _rowTasks {
+    final day = _dayTasks;
+    final store = context.app.store;
+    return [
+      ...day,
+      for (final id in _extra)
+        if (store.taskById(id) case final t? when !t.done && !day.any((d) => d.id == id)) t,
+    ];
+  }
+
+  /// „+“: Seite mit allen Aufgaben ab diesem Tag; die gewählten kommen als Chips dazu, die
+  /// erste ist gleich ausgewählt.
+  Future<void> _addTasks() async {
+    final date = _date;
+    if (date == null) return;
+    final from = date.isBefore(today()) ? today() : date;
+    final ids = await pickTasks(
+      context,
+      from: from,
+      exclude: {for (final t in _dayTasks) t.id},
+      initial: List.of(_extra),
+    );
+    if (ids == null || !mounted) return;
+    setState(() {
+      _extra
+        ..clear()
+        ..addAll(ids);
+    });
+    final first = ids.isEmpty ? null : context.app.store.taskById(ids.first);
+    if (first != null && _taskId != first.id) _pickTask(first);
   }
 
   /// Ist [t] am gewählten Tag abzugeben? Nur dann gehören ihre Uhrzeit und der Block zusammen.
@@ -181,7 +219,7 @@ class _BlockSheetState extends State<BlockSheet> {
       final task = _taskId == null ? null : app.store.taskById(_taskId!);
       // Kam „Von“ unverändert von ihrer eigenen Uhrzeit, bleibt die Aufgabe, wie sie ist.
       // Nur am Abgabetag: Ein Block zum Lernen davor verschiebt nicht die Uhrzeit der Abgabe.
-      if (task != null && !task.done && !fromTask && _dueThatDay(task) && _dayTasks.any((t) => t.id == task.id)) {
+      if (task != null && !task.done && !fromTask && _dueThatDay(task) && _rowTasks.any((t) => t.id == task.id)) {
         app.store.setTaskTime(task, start);
       }
       Navigator.pop(context);
@@ -207,7 +245,7 @@ class _BlockSheetState extends State<BlockSheet> {
     final edit = widget.block != null;
     final dur = _end - _start;
     final durText = dur > 0 ? f.duration(dur) : l.durInvalid;
-    final dayTasks = _dayTasks;
+    final dayTasks = _rowTasks;
     final store = context.app.store;
     return SheetBody(
       footer: [
@@ -266,7 +304,8 @@ class _BlockSheetState extends State<BlockSheet> {
             ],
           ),
         ),
-        if (dayTasks.isNotEmpty)
+        // Auch ohne Aufgaben an dem Tag: Über „+“ lassen sich spätere dazunehmen.
+        if (_date != null)
           LabeledField(
             label: l.tasksThatDay,
             child: QuickRow(
@@ -283,6 +322,7 @@ class _BlockSheetState extends State<BlockSheet> {
                     fontSize: 13,
                     onTap: () => _pickTask(t),
                   ),
+                _PlusChip(label: l.addTasksToDay, onTap: _addTasks),
               ],
             ),
           ),
@@ -351,6 +391,36 @@ class _BlockSheetState extends State<BlockSheet> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Der „+“-Chip am Ende der Aufgaben an diesem Tag.
+class _PlusChip extends StatelessWidget {
+  const _PlusChip({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tok = context.tok;
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: label,
+      tooltip: label,
+      excludeChildSemantics: true,
+      radius: BorderRadius.circular(16),
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: tok.surf2,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: tok.line),
+        ),
+        child: AppIcon(Ic.plus, size: 18, color: tok.sub),
+      ),
     );
   }
 }

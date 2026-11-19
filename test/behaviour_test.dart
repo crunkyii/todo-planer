@@ -881,8 +881,8 @@ void main() {
       final f = Fmt.of(tester.element(find.byType(AppShell)));
       await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
       await _tap(tester, find.bySemanticsLabel(l.newBlock).last);
-      // Heute (Mittwoch) ist nichts fällig – erst am Freitag steht die Aufgabe da.
-      expect(find.text(l.tasksThatDay), findsNothing);
+      // Heute (Mittwoch) ist nichts fällig – erst am Freitag steht die Aufgabe da (das „+“ steht immer).
+      expect(find.widgetWithText(AppChip, 'Rasenmähen'), findsNothing);
       await _tap(tester, find.bySemanticsLabel(f.wdLong(4)).last);
       await _tap(tester, find.bySemanticsLabel(f.wdLong(2)).last);
       expect(find.text(l.tasksThatDay), findsOneWidget);

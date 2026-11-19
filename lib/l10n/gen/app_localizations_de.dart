@@ -1342,4 +1342,32 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get flickHeading => 'Flick';
+
+  @override
+  String get closeHint => 'Hinweis schließen';
+
+  @override
+  String blockMoved(String time) {
+    return 'Block verschoben auf $time';
+  }
+
+  @override
+  String get pickCategory => 'Kategorie';
+
+  @override
+  String get addTasksToDay => 'Weitere Aufgaben für diesen Tag';
+
+  @override
+  String get pickTasksTitle => 'Aufgaben für diesen Tag';
+
+  @override
+  String get pickTasksInfo => 'Alle offenen Aufgaben ab diesem Tag. Die gewählten stehen dann im Block zur Auswahl.';
+
+  @override
+  String get pickTasksNone => 'Keine offenen Aufgaben ab diesem Tag.';
+
+  @override
+  String applyCount(int count) {
+    return '$count übernehmen';
+  }
 }

@@ -87,6 +87,30 @@ class SettingsStore extends ChangeNotifier {
   /// Windows: die heutigen Aufgaben für den Launcher Flick bereitstellen (`lib/services/flick_export.dart`).
   bool flick = false;
 
+  /// Der Hinweis „… Aufgaben ausgeblendet – einstellbar bei der Kategorie“ kam schon einmal.
+  bool hiddenHintSeen = false;
+
+  /// Nur für diesen App-Start (nicht gespeichert): Beim ersten Mal bleibt der Hinweis stehen,
+  /// bis man ihn schließt oder die App beendet – danach kommt er nicht wieder.
+  bool hiddenHintNow = false;
+
+  /// Merkt sich, dass der Hinweis jetzt zum ersten Mal dasteht.
+  void markHiddenHintSeen() {
+    if (hiddenHintSeen) return;
+    hiddenHintNow = true;
+    updateDevice((s) => s.hiddenHintSeen = true);
+  }
+
+  /// Schließt den Hinweis (er kam schon und kommt nicht wieder).
+  void closeHiddenHint() {
+    hiddenHintNow = false;
+    if (hiddenHintSeen) {
+      notifyListeners();
+    } else {
+      updateDevice((s) => s.hiddenHintSeen = true);
+    }
+  }
+
   /// Alle möglichen Listen in der eingestellten Reihenfolge; neue stehen hinten.
   List<String> boardColumnOrder() {
     final all = [for (final s in Section.values) s.name, for (final id in boardCats) 'k-$id'];
@@ -142,6 +166,7 @@ class SettingsStore extends ChangeNotifier {
       boardCats = [...?(d['board_cats'] as List?)?.whereType<String>()];
       boardOrder = [...?(d['board_order'] as List?)?.whereType<String>()];
       flick = d['flick'] == true;
+      hiddenHintSeen = d['hidden_hint_seen'] == true;
     }
     dates.weekFirstDay = weekFirstDay;
   }
@@ -268,6 +293,7 @@ class SettingsStore extends ChangeNotifier {
         'board_cats': boardCats,
         'board_order': boardOrder,
         'flick': flick,
+        'hidden_hint_seen': hiddenHintSeen,
       }),
     );
     notifyListeners();

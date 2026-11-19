@@ -2371,6 +2371,54 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Flick'**
   String get flickHeading;
+
+  /// No description provided for @closeHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Hinweis schließen'**
+  String get closeHint;
+
+  /// No description provided for @blockMoved.
+  ///
+  /// In de, this message translates to:
+  /// **'Block verschoben auf {time}'**
+  String blockMoved(String time);
+
+  /// No description provided for @pickCategory.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie'**
+  String get pickCategory;
+
+  /// No description provided for @addTasksToDay.
+  ///
+  /// In de, this message translates to:
+  /// **'Weitere Aufgaben für diesen Tag'**
+  String get addTasksToDay;
+
+  /// No description provided for @pickTasksTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Aufgaben für diesen Tag'**
+  String get pickTasksTitle;
+
+  /// No description provided for @pickTasksInfo.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle offenen Aufgaben ab diesem Tag. Die gewählten stehen dann im Block zur Auswahl.'**
+  String get pickTasksInfo;
+
+  /// No description provided for @pickTasksNone.
+  ///
+  /// In de, this message translates to:
+  /// **'Keine offenen Aufgaben ab diesem Tag.'**
+  String get pickTasksNone;
+
+  /// No description provided for @applyCount.
+  ///
+  /// In de, this message translates to:
+  /// **'{count} übernehmen'**
+  String applyCount(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

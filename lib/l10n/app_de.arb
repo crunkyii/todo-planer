@@ -904,5 +904,24 @@
   "flickAboutAddTitle": "Neue Aufgabe mit Titel, z. B. aufgabe Mathe lernen",
   "flickAboutToday": "Heutige Aufgaben aus dem ToDo Planer",
   "flickAboutTab": "ToDo Planer in einem Tab öffnen",
-  "flickHeading": "Flick"
+
+  "flickHeading": "Flick",
+  "closeHint": "Hinweis schließen",
+  "blockMoved": "Block verschoben auf {time}",
+  "@blockMoved": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "pickCategory": "Kategorie",
+  "addTasksToDay": "Weitere Aufgaben für diesen Tag",
+  "pickTasksTitle": "Aufgaben für diesen Tag",
+  "pickTasksInfo": "Alle offenen Aufgaben ab diesem Tag. Die gewählten stehen dann im Block zur Auswahl.",
+  "pickTasksNone": "Keine offenen Aufgaben ab diesem Tag.",
+  "applyCount": "{count} übernehmen",
+  "@applyCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../data/models.dart';
 
 /// Ordnet überlappende Blöcke eines Tages nebeneinander an: `lane` sagt für jeden Block
@@ -37,4 +39,15 @@ import '../data/models.dart';
   }
   closeGroup();
   return (lane: lane, lanes: lanes);
+}
+
+/// Neuer Beginn von [b] beim Ziehen um [minutes] Minuten (nach oben negativ): in ganzen
+/// Schritten des Rasters [raster], auf das Raster gelegt, die Dauer bleibt. Der Block bleibt im
+/// sichtbaren Tag ([dayStart]–[dayEnd] Uhr) – außer er stand schon vorher darüber hinaus.
+int dragTarget(WeekBlock b, double minutes, int raster, int dayStart, int dayEnd) {
+  final steps = (minutes / raster).round();
+  if (steps == 0) return b.start;
+  final dur = b.end - b.start;
+  final lo = math.min(b.start, dayStart * 60), hi = math.max(b.end, dayEnd * 60) - dur;
+  return (((b.start + steps * raster) / raster).round() * raster).clamp(lo, hi);
 }
