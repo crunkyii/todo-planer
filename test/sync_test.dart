@@ -448,6 +448,31 @@ void main() {
       expect(b.store.olderWaiting(categoryId: other.id), 1);
     });
 
+    test('Nachladen während eines Abgleichs: wartet und zeigt den Stand danach', () async {
+      final a = await device();
+      final t = oldDone(a, 'alt');
+      await a.sync.sync();
+      final b = await device();
+      await b.sync.sync();
+      await tick();
+      // A ändert die Notiz – die Aufgabe bleibt alt erledigt. B gleicht ab und lädt zugleich nach.
+      a.store.updateTask(
+        a.store.taskById(t.id)!,
+        title: 'alt',
+        categoryId: t.categoryId,
+        dueDate: t.dueDate,
+        dueTime: null,
+        subs: const [],
+        notes: 'neu',
+      );
+      await a.sync.sync();
+      final running = b.sync.sync();
+      expect(await b.sync.loadOlderDone(), isTrue);
+      await running;
+      expect(b.store.taskById(t.id)!.notes, 'neu');
+      expect(await localIds(b, tasksTable), isEmpty);
+    });
+
     test('Offline oder Server nicht erreichbar: Nachladen meldet den Fehler, nichts geht verloren', () async {
       final a = await device();
       oldDone(a, 'alt');

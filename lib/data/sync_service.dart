@@ -153,6 +153,9 @@ class SyncService extends ChangeNotifier {
 
   Future<void>? _running;
 
+  /// Zählt die Abgleiche – daran merkt das Nachladen, ob währenddessen einer gelaufen ist.
+  int _syncRuns = 0;
+
   /// Wartet, bis ein gerade laufender Abgleich fertig ist (z. B. vor dem Abmelden).
   Future<void> idle() async {
     while (_running != null) {
@@ -168,6 +171,7 @@ class SyncService extends ChangeNotifier {
       return;
     }
     syncing = true;
+    _syncRuns++;
     notifyListeners();
     final done = Completer<void>();
     _running = done.future;
@@ -308,8 +312,17 @@ class SyncService extends ChangeNotifier {
   bool loadingOlder = false;
 
   /// Aufgaben und Unteraufgaben zu den [ids], beides gleichzeitig abgerufen.
-  Future<(List<Map<String, Object?>>, List<Map<String, Object?>>)> _olderRows(List<String> ids) =>
-      (_rowsFor(tasksTable, 'id', ids), _rowsFor(subtasksTable, 'task_id', ids)).wait;
+  ///
+  /// Nie neben einem Abgleich: Brächte der inzwischen eine Änderung an einer dieser Aufgaben,
+  /// wäre das hier Geholte schon veraltet. Dann wird noch einmal geholt.
+  Future<(List<Map<String, Object?>>, List<Map<String, Object?>>)> _olderRows(List<String> ids) async {
+    for (var attempt = 0; ; attempt++) {
+      await idle();
+      final run = _syncRuns;
+      final rows = await (_rowsFor(tasksTable, 'id', ids), _rowsFor(subtasksTable, 'task_id', ids)).wait;
+      if (run == _syncRuns || attempt == 2) return rows;
+    }
+  }
 
   /// Alle Zeilen von [t], deren [column] einen der Werte [ids] hat.
   Future<List<Map<String, Object?>>> _rowsFor(TableSpec t, String column, List<String> ids) async {
