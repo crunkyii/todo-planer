@@ -84,7 +84,7 @@ class _ListsState extends State<_Lists> {
   late final _pages = PageController(viewportFraction: 1 / widget.visible);
 
   /// Die Maus steht auf einer Überschrift: Ziehen greift dann die Liste, statt zu blättern.
-  bool _grab = false;
+  String? _grab;
 
   @override
   void dispose() {
@@ -101,7 +101,8 @@ class _ListsState extends State<_Lists> {
           child: PageView.builder(
             controller: _pages,
             padEnds: false,
-            physics: _grab ? const NeverScrollableScrollPhysics() : null,
+            // Nur solange es die Liste unter der Maus noch gibt.
+            physics: b.groups.any((g) => g.id == _grab) ? const NeverScrollableScrollPhysics() : null,
             itemCount: b.groups.length,
             itemBuilder: (context, i) {
               final g = b.groups[i];
@@ -113,7 +114,10 @@ class _ListsState extends State<_Lists> {
                 older: b.showOlder && g.section == Section.done,
                 olderCat: b.olderCat,
                 onDrop: move == null ? null : (id) => move(id, g.id),
-                onGrab: (on) => setState(() => _grab = on),
+                onGrab: (on) {
+                  if (!mounted || (!on && _grab != g.id && _grab != null)) return;
+                  setState(() => _grab = on ? g.id : null);
+                },
                 onLeft: move == null || i == 0 ? null : () => move(g.id, b.groups[i - 1].id),
                 onRight: move == null || i == b.groups.length - 1 ? null : () => move(g.id, b.groups[i + 1].id),
               );
@@ -266,18 +270,27 @@ class _ListPanel extends StatelessWidget {
         ),
       );
       final dim = Opacity(opacity: 0.35, child: header);
-      final grab = MouseRegion(
-        cursor: SystemMouseCursors.grab,
-        onEnter: (_) => onGrab?.call(true),
-        onExit: (_) => onGrab?.call(false),
-        child: header,
-      );
       // Mit der Maus sofort ziehen; am Touchscreen erst nach langem Druck, damit Wischen
       // weiter zwischen den Listen blättert.
       final touch = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
-      header = touch
-          ? LongPressDraggable<String>(data: g.id, feedback: feedback, childWhenDragging: dim, child: grab)
-          : Draggable<String>(data: g.id, feedback: feedback, childWhenDragging: dim, child: grab);
+      // Nach dem Loslassen gilt wieder Blättern, auch wenn die Liste dabei ihren Platz gewechselt hat.
+      void end(DraggableDetails _) => onGrab?.call(false);
+      final drag = touch
+          ? LongPressDraggable<String>(
+              data: g.id,
+              feedback: feedback,
+              childWhenDragging: dim,
+              onDragEnd: end,
+              child: header,
+            )
+          : Draggable<String>(data: g.id, feedback: feedback, childWhenDragging: dim, onDragEnd: end, child: header);
+      // Die Maus-Fläche liegt außen: Sie bleibt auch stehen, während die Überschrift gezogen wird.
+      header = MouseRegion(
+        cursor: SystemMouseCursors.grab,
+        onEnter: (_) => onGrab?.call(true),
+        onExit: (_) => onGrab?.call(false),
+        child: drag,
+      );
     }
     return DragTarget<String>(
       onWillAcceptWithDetails: (d) => onDrop != null && d.data != g.id,

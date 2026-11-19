@@ -1012,6 +1012,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(ids().take(3), [b, c, a]);
       expect(tester.takeException(), isNull);
+      // Danach lässt sich wieder blättern.
+      expect(tester.widget<PageView>(find.byType(PageView)).physics, isNull);
       // Geblättert wurde dabei nicht: Die neue erste Liste steht ganz links.
       expect(head(b).hitTestable(), findsOneWidget);
 
