@@ -1,0 +1,36 @@
+# ToDo Planer → Flick (https://github.com/Whiskey-Bravo/flick)
+#
+# Shortcuts für die config.toml von Flick (in Flick „flick config“ eintippen, das hier ans Ende
+# einfügen, speichern). Einfacher: in der App Optionen → Flick → „Flick-Shortcuts kopieren“ –
+# dann steht bei `pick` schon der richtige Pfad. Hier DEIN-NAME durch den Windows-Benutzer ersetzen.
+#
+# Voraussetzungen: App mit dem Installer installiert (trägt todoplaner:// ein) und in der App
+# Optionen → Flick → „Heutige Aufgaben für Flick“ eingeschaltet. Erklärung: docs/funktionen.md.
+#
+# test/flick_test.dart prüft, dass diese Datei zu dem passt, was die App kopiert.
+
+# addAufgabe → Formular „Neue Aufgabe“
+[[shortcut]]
+name = "addAufgabe"
+about = "Neue Aufgabe im ToDo Planer"
+open = "todoplaner://add"
+
+# aufgabe Mathe lernen → Formular mit Titel
+[[shortcut]]
+name = "aufgabe"
+about = "Neue Aufgabe mit Titel, z. B. aufgabe Mathe lernen"
+open = "todoplaner://add?title={arg}"
+
+# Aufgaben → heutige Aufgaben in der Leiste (Flick verlangt {name} im Ziel; die App braucht es nicht)
+[[shortcut]]
+name = "Aufgaben"
+about = "Heutige Aufgaben aus dem ToDo Planer"
+pick = "C:/Users/DEIN-NAME/AppData/Local/ToDo Planer/Flick/Heute"
+open = "todoplaner://tab/aufgaben?zeile={name}"
+
+# todo Kalender, todo Wochenplan … → App in diesem Tab
+[[shortcut]]
+name = "todo"
+about = "ToDo Planer in einem Tab öffnen"
+choices = ["Aufgaben", "Kalender", "Wochenplan", "Statistik", "Optionen"]
+open = "todoplaner://tab/{name}"

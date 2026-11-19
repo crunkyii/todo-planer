@@ -28,6 +28,33 @@ Tägliche Gewohnheiten zum Abhaken, mit Serien-Flamme für aufeinanderfolgende T
 
 Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhaken. Form, Farbe und Durchsichtigkeit sind einstellbar.
 
+## Steuern über Flick (Windows)
+
+[Flick](https://github.com/Whiskey-Bravo/flick) ist ein Tastatur-Launcher für Windows (Alt+Leertaste, MIT-Lizenz). Die App lässt sich darüber öffnen und steuern:
+
+| In Flick eintippen | Was passiert |
+|---|---|
+| `addAufgabe` | Die App kommt nach vorne (oder startet) und das Formular *Neue Aufgabe* ist offen. |
+| `aufgabe Mathe lernen` | Wie oben, der Titel steht schon drin. Gespeichert wird erst mit *Hinzufügen*. |
+| `Aufgaben` | Die heutigen und überfälligen Aufgaben stehen **direkt in der Flick-Leiste** (oben eine Zeile mit Datum und Anzahl). Enter auf einer Zeile öffnet die App im Tab *Aufgaben*. |
+| `todo` → `Aufgaben`, `Kalender`, `Wochenplan`, `Statistik`, `Optionen` | Die App öffnet in diesem Tab. Man kann auch gleich `todo kal` tippen. |
+
+**Einrichten (einmal):**
+
+1. Die App mit dem Installer ab dieser Version installieren – er trägt die Links `todoplaner://…` in Windows ein.
+2. In der App: *Optionen → Flick → Heutige Aufgaben für Flick* einschalten.
+3. *Optionen → Flick → Flick-Shortcuts kopieren* antippen.
+4. In Flick `flick config` eintippen (öffnet die `config.toml`), den kopierten Text ans Ende einfügen und speichern. Flick übernimmt das sofort. (Man kann die Shortcuts auch in Flick unter *Settings → Shortcuts* von Hand anlegen.)
+
+Die Vorlage mit Erklärungen liegt auch unter [`tool/flick/todo-planer.toml`](../tool/flick/todo-planer.toml) – dort muss man den Pfad bei `pick` selbst anpassen; die kopierte Version aus der App hat ihn schon richtig.
+
+**So funktioniert es:**
+
+- **Links:** `todoplaner://add`, `todoplaner://add?title=…` und `todoplaner://tab/<Tab>` (Tabs deutsch oder englisch: `aufgaben`/`tasks`, `kalender`/`calendar`, `woche`/`wochenplan`/`week`, `statistik`/`stats`, `optionen`/`settings`). Ein Link kann nur etwas **zeigen**, nie etwas speichern oder löschen – auch wenn eine Webseite so einen Link anbietet, passiert nichts ohne eigenes Tippen.
+- **Nur eine App:** Läuft die App schon, startet ein Link keine zweite. Der zweite Start reicht den Link an das offene Fenster weiter, holt es nach vorne und beendet sich gleich wieder. Ist gerade ein Formular offen, bleibt es offen (nichts Getipptes geht verloren).
+- **Heutige Aufgaben:** Flick kann keine Daten von einem Programm abfragen. Ein Flick-Shortcut mit `pick` zeigt aber die Unterordner eines Ordners als Liste. Darum legt die App bei jeder Änderung (und um Mitternacht) in `%LOCALAPPDATA%\ToDo Planer\Flick\Heute` für jede Zeile einen leeren Ordner an – z. B. `01 · 14∶00 Max Mustermann anrufen`. Die Nummer vorne hält die Reihenfolge, Zeichen, die in Ordnernamen verboten sind, werden durch ähnlich aussehende ersetzt. Flick liest nur diese Ordner, nie die Datenbank oder Supabase. Schaltet man die Option aus, löscht die App die Ordner wieder (nur leere – eigene Dateien darin bleiben).
+- **Grenzen:** Die Liste ist so aktuell wie die App: Ist die App geschlossen, steht dort der letzte Stand (die Kopfzeile zeigt das Datum). Flick liest den Ordner beim Öffnen der Liste neu ein und sonst alle 5 Minuten – direkt nach einer Änderung kann einmal noch der alte Stand kommen. Höchstens 49 Aufgaben passen in die Liste.
+
 ## Export
 
 Alle Daten als PDF, Text oder CSV (für Excel).

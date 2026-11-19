@@ -17,6 +17,7 @@ flutter test
 | `test/behaviour_test.dart`, `test/widget_test.dart` | Die ganze App wird bedient: Formulare, Menüs, Tastatur, Schriftgrößen, Barrierefreiheit |
 | `test/screens_test.dart` | Bildvergleich jedes Tabs (Goldens in `test/goldens/`) |
 | `test/export_test.dart`, `test/home_widgets_test.dart`, `test/widget_config_test.dart` | Export, Daten für die Startbildschirm-Widgets und deren Einstellungen |
+| `test/flick_test.dart` | Anbindung an Flick: `todoplaner://`-Links, Ordnerliste der heutigen Aufgaben, kopierte Shortcuts (passt zu `tool/flick/todo-planer.toml`), Tab-Wechsel und Formular in der App |
 | `test/updater_test.dart` | Auto-Update für Windows und Android: Versionsvergleich, `latest.json` mit und ohne `android`, Signaturprüfung (veränderte Datei, fremder Schlüssel, alte Datei unter neuer Nummer); Android: fehlende Erlaubnis, Abbruch im Installer, offline, Test-Kopie ohne Updates. Android selbst wird dabei durch ein Double ersetzt – der echte Installer lässt sich nur am Handy ausprobieren. |
 
 Hat sich das Aussehen absichtlich geändert, die Vergleichsbilder neu erzeugen:
@@ -30,6 +31,18 @@ Ein Durchlauf der echten App am PC (Fenster geht auf, die App wird durchgeklickt
 ```bash
 flutter test integration_test -d windows
 ```
+
+Darin prüft `integration_test/launch_test.dart` die Links in der echten Windows-App: Die Test-App startet sich ein zweites Mal mit `todoplaner://…`, der zweite Start reicht den Link ans offene Fenster weiter und beendet sich. Den Weg über Windows (`start todoplaner://…`, so öffnet Flick Links) prüft er nur, wenn das Schema in der Registry auf das Test-Programm zeigt – zum Beispiel so (danach wieder löschen):
+
+```powershell
+$exe = (Resolve-Path build\windows\x64\runner\Debug).Path + "\todo_planer.exe"
+reg add HKCU\Software\Classes\todoplaner /v "URL Protocol" /d "" /f
+reg add HKCU\Software\Classes\todoplaner\shell\open\command /ve /d "`"$exe`" `"%1`"" /f
+$env:TODO_IT_SCHEME = "1"; flutter test integration_test/launch_test.dart -d windows
+reg delete HKCU\Software\Classes\todoplaner /f
+```
+
+Ist die echte App installiert, zeigt das Schema auf sie – der Eintrag oben überschreibt das, bis man die App neu installiert.
 
 ## Android-Update am Handy ausprobieren
 

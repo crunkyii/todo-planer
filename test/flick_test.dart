@@ -203,6 +203,16 @@ void main() {
     });
   });
 
+  test('Vorlage tool/flick/todo-planer.toml passt zu dem, was die App kopiert', () {
+    List<String> lines(String s) => [
+      for (final line in s.split('\n'))
+        if (line.trim().isNotEmpty && !line.startsWith('#')) line.trimRight(),
+    ];
+    final file = File('tool/flick/todo-planer.toml').readAsStringSync().replaceAll('\r\n', '\n');
+    final app = flickShortcuts(l10n('de'), r'C:\Users\DEIN-NAME\AppData\Local\ToDo Planer\Flick\Heute');
+    expect(lines(file), lines(app));
+  });
+
   group('App', () {
     testWidgets('Links wechseln den Tab und öffnen das Formular mit Titel', (tester) async {
       useFixedClock();
