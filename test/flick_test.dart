@@ -40,6 +40,10 @@ void main() {
       expect(parseLaunchCommand(['todoplaner://add?title=%E0%A4%A']), const NewTask());
       final long = parseLaunchCommand(['todoplaner://add?title=${'a' * 500}'])! as NewTask;
       expect(long.title, hasLength(maxLaunchTitle));
+      // Ein Emoji genau an der Grenze wird nicht halbiert.
+      final emoji =
+          parseLaunchCommand(['todoplaner://add?title=${'a' * (maxLaunchTitle - 1)}%F0%9F%98%80'])! as NewTask;
+      expect(emoji.title, 'a' * (maxLaunchTitle - 1));
     });
 
     test('Tabs auf Deutsch und Englisch', () {

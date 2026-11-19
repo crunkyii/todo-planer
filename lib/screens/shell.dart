@@ -58,20 +58,28 @@ class _AppShellState extends State<AppShell> {
   void _newTask({String? title}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final nav = Navigator.of(context);
-      // Liefert die oberste Route, ohne etwas zu schließen.
-      Route<dynamic>? top;
-      nav.popUntil((route) {
-        top = route;
-        return true;
-      });
       // Schon ein Formular offen (z. B. mehrmals auf „+“ getippt): kein zweites darüber.
-      if (top is AppSheetRoute) return;
+      if (_topRoute() is AppSheetRoute) return;
       // Ein offenes ⋮-Menü zuerst schließen, sonst läge das Formular über dem Menü.
-      if (top is AppMenuRoute) nav.pop();
+      _closeMenu();
       Sheets(context, ui).task(null, title: title);
     });
     WidgetsBinding.instance.scheduleFrame();
+  }
+
+  /// Die oberste Route, ohne etwas zu schließen.
+  Route<dynamic>? _topRoute() {
+    Route<dynamic>? top;
+    Navigator.of(context).popUntil((route) {
+      top = route;
+      return true;
+    });
+    return top;
+  }
+
+  /// Schließt ein offenes ⋮-Menü (sonst nichts).
+  void _closeMenu() {
+    if (_topRoute() is AppMenuRoute) Navigator.of(context).pop();
   }
 
   void _onLaunch(LaunchCommand cmd) {
@@ -81,13 +89,7 @@ class _AppShellState extends State<AppShell> {
       case OpenTab(:final tab, :final row):
         // Ein offenes Formular oder Menü bleibt, wie es ist (nichts Getipptes geht verloren);
         // nur ein ⋮-Menü schließt sich, damit man den Tab auch sieht.
-        final nav = Navigator.of(context);
-        Route<dynamic>? top;
-        nav.popUntil((route) {
-          top = route;
-          return true;
-        });
-        if (top is AppMenuRoute) nav.pop();
+        _closeMenu();
         ui.goTab(tab);
         if (row != null) _focusFlickRow(row);
     }

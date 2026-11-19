@@ -94,7 +94,7 @@ LaunchCommand? parseLaunchCommand(Iterable<String> args) {
         }
         final title = (query['title'] ?? '').replaceAll(RegExp(r'\s+'), ' ').trim();
         if (title.isEmpty) return const NewTask();
-        return NewTask(title: title.length > maxLaunchTitle ? title.substring(0, maxLaunchTitle) : title);
+        return NewTask(title: _cut(title, maxLaunchTitle));
       case 'tab' when parts.length > 1:
         final tab = _tabNames[parts[1]];
         if (tab == null) return null;
@@ -112,6 +112,13 @@ LaunchCommand? parseLaunchCommand(Iterable<String> args) {
     }
   }
   return null;
+}
+
+/// Kürzt [s] auf höchstens [max] UTF-16-Einheiten, ohne ein Emoji (Surrogat-Paar) zu zerteilen.
+String _cut(String s, int max) {
+  if (s.length <= max) return s;
+  final end = (s.codeUnitAt(max - 1) & 0xFC00) == 0xD800 ? max - 1 : max;
+  return s.substring(0, end);
 }
 
 /// Nimmt Aufrufe von außen an: beim Start über die Argumente, danach vom Windows-Runner, wenn die
