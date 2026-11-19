@@ -485,6 +485,19 @@
   },
   "newBlock": "Neuer Block",
   "editBlock": "Block bearbeiten",
+  "blockView": "Block",
+  "edit": "Bearbeiten",
+  "blockOnlyWeek": "Nur in der Woche {range}",
+  "@blockOnlyWeek": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "blockTask": "Aufgabe dazu",
+  "blockTaskGone": "Die Aufgabe dazu gibt es nicht mehr.",
+  "blockGone": "Diesen Block gibt es nicht mehr.",
   "blockAdded": "Block angelegt",
   "blocksAdded": "{count} Blöcke angelegt",
   "@blocksAdded": {
@@ -903,7 +916,6 @@
   "flickAboutAdd": "Neue Aufgabe im ToDo Planer",
   "flickAboutToday": "Heutige Aufgaben aus dem ToDo Planer",
   "flickAboutTab": "ToDo Planer in einem Tab öffnen",
-
   "flickGuideTitle": "Flick einrichten",
   "flickGuideIntro": "Die Shortcuts sind kopiert. So kommen sie in Flick:",
   "flickStep1": "Flick öffnen",
@@ -922,7 +934,9 @@
   "blockMoved": "Block verschoben auf {time}",
   "@blockMoved": {
     "placeholders": {
-      "time": {"type": "String"}
+      "time": {
+        "type": "String"
+      }
     }
   },
   "pickCategory": "Kategorie",
@@ -933,7 +947,9 @@
   "applyCount": "{count} übernehmen",
   "@applyCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   }
 }

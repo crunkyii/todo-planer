@@ -1,8 +1,10 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/gestures.dart';
+import 'package:material_ui/material_ui.dart' show EditableText;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:todo_liste/data/models.dart';
+import 'package:todo_liste/screens/sheets/block_view_sheet.dart';
 import 'package:todo_liste/theme/tokens.dart';
 import 'package:todo_liste/util/dates.dart';
 import 'package:todo_liste/util/fmt.dart';
@@ -138,10 +140,113 @@ void main() {
       await tester.pumpAndSettle();
       expect((app.store.blocks.single.start, app.store.blocks.single.end), (9 * 60, 10 * 60));
 
-      // Kurz antippen öffnet weiter den Block.
+      // Kurz antippen öffnet weiter den Block – erst die Ansicht.
       await tester.tap(find.text('Lernen').first);
       await tester.pumpAndSettle();
+      expect(find.byType(BlockViewSheet), findsOneWidget);
+      await finishApp(tester, app);
+    });
+  });
+
+  group('Ansicht eines Blocks', () {
+    testWidgets('zeigt Zeit und die Aufgabe dazu; ⋮ → Bearbeiten und Löschen', (tester) async {
+      final l = l10n('de');
+      useFixedClock(); // Mittwoch, 18.11.2026
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      final t = app.store.addTask(
+        title: 'Referat Max Mustermann',
+        notes: 'Folien mitnehmen',
+        categoryId: app.store.categories.first.id,
+        dueDate: addDays(today(), 2),
+        dueTime: null,
+        subs: [(title: 'Gliederung', done: true), (title: 'Folien', done: false)],
+      );
+      app.store.addBlocks(
+        name: 'Referat lernen',
+        color: '#AABBCC',
+        days: [2],
+        start: 13 * 60 + 10,
+        end: 14 * 60 + 50,
+        repeat: true,
+        weekStart: monday(today()),
+        taskId: t.id,
+      );
+      await pumpApp(tester, app);
+      await tester.tap(find.bySemanticsLabel(l.weeklyPlan));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Referat lernen').first);
+      await tester.pumpAndSettle();
+
+      // Nicht gleich bearbeiten: kein Formular, keine Tastatur.
+      expect(find.byType(BlockViewSheet), findsOneWidget);
+      expect(find.text(l.editBlock), findsNothing);
+      expect(find.byType(EditableText), findsNothing);
+      final f = Fmt(l);
+      Finder inView(Finder x) => find.descendant(of: find.byType(BlockViewSheet), matching: x);
+      expect(inView(find.text(f.wdLong(2))), findsOneWidget);
+      expect(inView(find.textContaining('13:10')), findsOneWidget);
+      expect(inView(find.text(l.everyWeek)), findsOneWidget);
+      // Die Aufgabe mit Unteraufgaben und Notiz, ohne sie heraussuchen zu müssen.
+      expect(inView(find.text('Referat Max Mustermann')), findsOneWidget);
+      expect(inView(find.text('Folien')), findsOneWidget);
+      expect(inView(find.text('Folien mitnehmen')), findsOneWidget);
+
+      // ⋮ → Bearbeiten öffnet das Formular.
+      await tester.tap(inView(find.bySemanticsLabel(l.moreOptions)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l.edit));
+      await tester.pumpAndSettle();
+      expect(find.byType(BlockViewSheet), findsNothing);
       expect(find.text(l.editBlock), findsOneWidget);
+      await tester.tap(find.text(l.cancel));
+      await tester.pumpAndSettle();
+
+      // ⋮ → Löschen, mit Rückgängig.
+      await tester.tap(find.text('Referat lernen').first);
+      await tester.pumpAndSettle();
+      await tester.tap(inView(find.bySemanticsLabel(l.moreOptions)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l.delete));
+      await tester.pumpAndSettle();
+      expect(app.store.blocks, isEmpty);
+      expect(app.store.taskById(t.id), isNotNull, reason: 'die Aufgabe bleibt');
+      await tester.tap(find.text(l.undo).last);
+      await tester.pumpAndSettle();
+      expect(app.store.blocks.single.taskId, t.id);
+      expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgabe gelöscht: die Ansicht sagt es', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      final t = app.store.addTask(
+        title: 'Weg',
+        categoryId: app.store.categories.first.id,
+        dueDate: today(),
+        dueTime: null,
+        subs: [],
+      );
+      app.store.addBlocks(
+        name: 'Block',
+        color: '#AABBCC',
+        days: [2],
+        start: 600,
+        end: 660,
+        repeat: true,
+        weekStart: monday(today()),
+        taskId: t.id,
+      );
+      app.store.deleteTask(t);
+      await pumpApp(tester, app);
+      await tester.tap(find.bySemanticsLabel(l.weeklyPlan));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Block').first);
+      await tester.pumpAndSettle();
+      expect(find.text(l.blockTaskGone), findsOneWidget);
       await finishApp(tester, app);
     });
   });

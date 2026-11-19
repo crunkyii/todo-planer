@@ -81,6 +81,16 @@ final screens = <Screen>[
     await _tap(t, find.bySemanticsLabel(l.newBlock).last);
     expect(find.text(l.everyWeek), findsOneWidget);
   }),
+  Screen('block-ansicht', (t, l) async {
+    await _tap(t, find.bySemanticsLabel(l.weeklyPlan));
+    // In der Tagesansicht: In der schmalen Woche liegen „Training“ und „Lernen“ übereinander.
+    await _tap(t, find.text('18').first);
+    // Am kleinen Handy liegt 17:30 unterhalb des Bildes.
+    await t.ensureVisible(find.text('Lernen').first);
+    await t.pumpAndSettle();
+    await _tap(t, find.text('Lernen').first);
+    expect(find.text('Referat Geschichte'), findsWidgets);
+  }),
   Screen('statistik', (t, l) async {
     await _tap(t, find.bySemanticsLabel(l.statistics));
     expect(find.text(l.activity), findsOneWidget);

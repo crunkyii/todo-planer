@@ -775,6 +775,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get editBlock => 'Block bearbeiten';
 
   @override
+  String get blockView => 'Block';
+
+  @override
+  String get edit => 'Bearbeiten';
+
+  @override
+  String blockOnlyWeek(String range) {
+    return 'Nur in der Woche $range';
+  }
+
+  @override
+  String get blockTask => 'Aufgabe dazu';
+
+  @override
+  String get blockTaskGone => 'Die Aufgabe dazu gibt es nicht mehr.';
+
+  @override
+  String get blockGone => 'Diesen Block gibt es nicht mehr.';
+
+  @override
   String get blockAdded => 'Block angelegt';
 
   @override

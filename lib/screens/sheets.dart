@@ -7,6 +7,7 @@ import '../data/models.dart';
 import '../util/dates.dart';
 import '../widgets/overlays.dart';
 import 'sheets/block_sheet.dart';
+import 'sheets/block_view_sheet.dart';
 import 'sheets/category_sheet.dart';
 import 'sheets/columns_sheet.dart';
 import 'sheets/export_sheet.dart';
@@ -54,7 +55,16 @@ class Sheets {
     );
   }
 
+  /// Antippen eines Blocks: erst die Ansicht; Bearbeiten und Löschen stehen dort im ⋮-Menü.
   void block(WeekBlock b) {
+    showAppSheet<void>(
+      context,
+      label: context.l.blockView,
+      builder: (_) => BlockViewSheet(blockId: b.id, ui: ui, onEdit: editBlock),
+    );
+  }
+
+  void editBlock(WeekBlock b) {
     showAppSheet<void>(
       context,
       label: context.l.editBlock,

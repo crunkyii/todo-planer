@@ -214,6 +214,8 @@ class _BlockSheetState extends State<BlockSheet> {
         end: end,
         repeat: _repeat,
         weekStart: widget.ui.weekStart,
+        // Die Ansicht des Blocks zeigt später diese Aufgabe (mit Abgabe, Unteraufgaben, Notiz).
+        taskId: _taskId,
       );
       // Die gewählte Aufgabe bekommt die Zeit des Blocks – wenn es sie noch gibt.
       final task = _taskId == null ? null : app.store.taskById(_taskId!);
@@ -254,7 +256,8 @@ class _BlockSheetState extends State<BlockSheet> {
       ],
       children: [
         SheetTitle(edit ? l.editBlock : l.newBlock),
-        AppField(label: l.name, controller: _name, hint: l.blockHint, maxLength: 60, autofocus: true),
+        // Nur ein neuer Block startet im Namensfeld; beim Bearbeiten öffnet sich nicht gleich die Tastatur.
+        AppField(label: l.name, controller: _name, hint: l.blockHint, maxLength: 60, autofocus: !edit),
         LabeledField(
           label: l.color,
           child: ColorChoice(value: _color, onChanged: (c) => setState(() => _color = c)),

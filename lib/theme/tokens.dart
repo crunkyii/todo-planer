@@ -243,6 +243,9 @@ abstract final class Sizes {
   static const double boardSide = 340;
   static const double boardListMin = 190;
 
+  /// Farbpunkt neben einem großen Titel (Ansicht eines Blocks).
+  static const double dotLarge = 14;
+
   /// Am Handy: so hoch ist ein gezogener Abschnitt am Finger höchstens.
   static const double dragPreviewMax = 320;
 

@@ -115,7 +115,12 @@ void seedDemo(Store store, AppLocalizations l) {
 
   add('Mathe S. 42 Nr. 3–7', 0, -1);
   add('Müll rausbringen', 1, 0, time: 18 * 60);
-  add('Referat Geschichte', 0, 1, subs: [(title: 'Quellen suchen', done: true), (title: 'Folien bauen', done: false)]);
+  final referat = add(
+    'Referat Geschichte',
+    0,
+    1,
+    subs: [(title: 'Quellen suchen', done: true), (title: 'Folien bauen', done: false)],
+  );
   add('Englisch-Test', 2, 4);
   add('Zahnarzt', 3, 2, time: 15 * 60 + 30);
   add('Ein sehr langer Titel, der zeigen soll, dass nichts überläuft und sauber umbricht <>&"\'', 1, 9);
@@ -158,6 +163,7 @@ void seedDemo(Store store, AppLocalizations l) {
     end: 19 * 60,
     repeat: false,
     weekStart: ws,
+    taskId: referat.id,
   );
 }
 

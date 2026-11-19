@@ -1436,6 +1436,42 @@ abstract class AppLocalizations {
   /// **'Block bearbeiten'**
   String get editBlock;
 
+  /// No description provided for @blockView.
+  ///
+  /// In de, this message translates to:
+  /// **'Block'**
+  String get blockView;
+
+  /// No description provided for @edit.
+  ///
+  /// In de, this message translates to:
+  /// **'Bearbeiten'**
+  String get edit;
+
+  /// No description provided for @blockOnlyWeek.
+  ///
+  /// In de, this message translates to:
+  /// **'Nur in der Woche {range}'**
+  String blockOnlyWeek(String range);
+
+  /// No description provided for @blockTask.
+  ///
+  /// In de, this message translates to:
+  /// **'Aufgabe dazu'**
+  String get blockTask;
+
+  /// No description provided for @blockTaskGone.
+  ///
+  /// In de, this message translates to:
+  /// **'Die Aufgabe dazu gibt es nicht mehr.'**
+  String get blockTaskGone;
+
+  /// No description provided for @blockGone.
+  ///
+  /// In de, this message translates to:
+  /// **'Diesen Block gibt es nicht mehr.'**
+  String get blockGone;
+
   /// No description provided for @blockAdded.
   ///
   /// In de, this message translates to:
