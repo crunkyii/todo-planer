@@ -238,6 +238,12 @@ abstract final class Sizes {
   static const double boardMin = 940;
   static const double boardSide = 340;
   static const double boardListMin = 290;
+
+  /// Seitenleiste: So viel Höhe brauchen „Heute“, der Kopf der Gewohnheiten und der Monat.
+  /// Was vom Fenster übrig bleibt, bekommt die Liste der Gewohnheiten – mindestens
+  /// [sideHabitsMin]; sind es mehr, scrollt man in der Liste, der Monat bleibt stehen.
+  static const double sideFixed = 600;
+  static const double sideHabitsMin = 132;
   static const double wideGrid = 1240;
   static const double wideWeek = 1600;
   static const double calSide = 400;

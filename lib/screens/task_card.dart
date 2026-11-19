@@ -318,8 +318,12 @@ class _TaskCardState extends State<TaskCard> {
 
 /// Feste Aufgabe „Gewohnheiten“ ganz oben: jede Gewohnheit ist eine Unteraufgabe für heute.
 class HabitsTaskCard extends StatelessWidget {
-  const HabitsTaskCard({super.key, required this.ui});
+  const HabitsTaskCard({super.key, required this.ui, this.listMaxHeight});
   final UiState ui;
+
+  /// Höchste Höhe der Liste; darüber scrollt sie in sich (Seitenleiste am PC). `null` = so
+  /// hoch wie nötig.
+  final double? listMaxHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -334,6 +338,14 @@ class HabitsTaskCard extends StatelessWidget {
     final open = !ui.collapsed.contains(UiState.habitsCard);
     final cc = tok.item(habitColorHex);
     final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular);
+    // Abgehakte rutschen nach unten; innerhalb bleibt die eigene Reihenfolge.
+    final Widget rows = FlipColumn(
+      children: [
+        for (final h in [...hs.where((h) => !store.habitDone(h.id, k)), ...hs.where((h) => store.habitDone(h.id, k))])
+          _HabitSub(key: ValueKey(h.id), habit: h, day: k, ui: ui),
+      ],
+    );
+    final maxH = listMaxHeight;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
@@ -428,16 +440,13 @@ class HabitsTaskCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Abgehakte rutschen nach unten; innerhalb bleibt die eigene Reihenfolge.
-                            FlipColumn(
-                              children: [
-                                for (final h in [
-                                  ...hs.where((h) => !store.habitDone(h.id, k)),
-                                  ...hs.where((h) => store.habitDone(h.id, k)),
-                                ])
-                                  _HabitSub(key: ValueKey(h.id), habit: h, day: k, ui: ui),
-                              ],
-                            ),
+                            if (maxH == null)
+                              rows
+                            else
+                              ConstrainedBox(
+                                constraints: BoxConstraints(maxHeight: maxH),
+                                child: SingleChildScrollView(primary: false, child: rows),
+                              ),
                             AppButton(
                               label: l.habit,
                               icon: Ic.plus,

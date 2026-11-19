@@ -224,14 +224,20 @@ class TasksSide extends StatelessWidget {
   final UiState ui;
 
   @override
-  Widget build(BuildContext context) => ListView(
-    primary: false,
-    padding: const EdgeInsets.fromLTRB(0, 14, 4, Sizes.wideBottom),
-    children: [
-      const _TodayPanel(),
-      HabitsTaskCard(ui: ui),
-      _MonthPanel(ui: ui),
-    ],
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) => ListView(
+      primary: false,
+      padding: const EdgeInsets.fromLTRB(0, 14, 4, Sizes.wideBottom),
+      children: [
+        const _TodayPanel(),
+        // Viele Gewohnheiten schieben den Monat nicht aus dem Fenster: Die Liste scrollt in sich.
+        HabitsTaskCard(
+          ui: ui,
+          listMaxHeight: (box.maxHeight - Sizes.sideFixed).clamp(Sizes.sideHabitsMin, double.infinity),
+        ),
+        _MonthPanel(ui: ui),
+      ],
+    ),
   );
 }
 

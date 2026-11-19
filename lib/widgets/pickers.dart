@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -19,6 +20,10 @@ typedef QuickTime = ({int? minutes, String label});
 
 /// Zwei Räder (Stunde : Minute), drehen mit Schwung und rasten ein (.wheels).
 /// [step] = Minutenschritt (5 für Aufgaben, das Raster für Blöcke).
+///
+/// Mit der Tastatur: Ziffern tippen (z. B. `1430` für 14:30 – nach der Stunde springt die
+/// Eingabe zu den Minuten), Pfeil hoch/runter dreht, Pfeil links/rechts wechselt das Rad.
+/// Am PC ist das Stunden-Rad beim Öffnen schon ausgewählt.
 class TimeWheel extends StatefulWidget {
   const TimeWheel({
     super.key,
@@ -47,7 +52,19 @@ class TimeWheel extends StatefulWidget {
 class _TimeWheelState extends State<TimeWheel> {
   late FixedExtentScrollController _h;
   late FixedExtentScrollController _m;
+  final _hFocus = FocusNode(debugLabel: 'Stunde'), _mFocus = FocusNode(debugLabel: 'Minute');
   bool _lock = false;
+
+  /// Erste getippte Ziffer, solange die zweite noch kommen kann – und in welchem Rad.
+  int? _typed;
+  FixedExtentScrollController? _typedIn;
+  DateTime _typedAt = DateTime(0);
+  int _typing = 0;
+
+  static bool get _desktop => switch (defaultTargetPlatform) {
+    TargetPlatform.windows || TargetPlatform.linux || TargetPlatform.macOS => true,
+    _ => false,
+  };
 
   int get _mCount => 60 ~/ widget.step;
 
@@ -63,6 +80,12 @@ class _TimeWheelState extends State<TimeWheel> {
     final v = widget.value ?? 8 * 60;
     _h = FixedExtentScrollController(initialItem: _hIdx(v));
     _m = FixedExtentScrollController(initialItem: _mIdx(v));
+    // Am PC gleich lostippen können. Am Handy bleibt der Fokus, wo er ist (Tastatur!).
+    if (_desktop) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _hFocus.requestFocus();
+      });
+    }
   }
 
   @override
@@ -85,6 +108,8 @@ class _TimeWheelState extends State<TimeWheel> {
   void dispose() {
     _h.dispose();
     _m.dispose();
+    _hFocus.dispose();
+    _mFocus.dispose();
     super.dispose();
   }
 
@@ -103,14 +128,65 @@ class _TimeWheelState extends State<TimeWheel> {
     }
   }
 
+  /// Dreht [c] nach einer getippten Ziffer auf [index]. Solange das Rad noch läuft, wird nichts
+  /// gemeldet – sonst käme bei „14“ zuerst 01:00 an und das Rad würde dorthin zurückdrehen.
+  void _typeTo(FixedExtentScrollController c, int index) {
+    final t = ++_typing;
+    _lock = true;
+    c.animateToItem(index, duration: const Duration(milliseconds: 150), curve: Curves.easeOut).whenComplete(() {
+      if (t != _typing || !mounted) return;
+      _lock = false;
+      _commit();
+      setState(() {});
+    });
+  }
+
+  /// Eine Ziffer im Stunden- oder Minuten-Rad. Zwei Ziffern ergeben den Wert; passt keine
+  /// zweite mehr (Stunde ab 3, Minute ab 6), gilt schon die erste.
+  void _digit(FixedExtentScrollController c, int count, int mult, int d) {
+    final hour = identical(c, _h);
+    final max = hour ? 23 : 59;
+    final now = DateTime.now();
+    final first = identical(_typedIn, c) && now.difference(_typedAt) < const Duration(seconds: 2) ? _typed : null;
+    final second = first != null && first * 10 + d <= max;
+    final n = second ? first * 10 + d : d;
+    final done = second || n * 10 > max;
+    _typed = done ? null : n;
+    _typedIn = c;
+    _typedAt = now;
+    // Die erste Minuten-Ziffer zählt als Zehner: „3“ zeigt gleich 30, „35“ dann 35.
+    final shown = !hour && !done ? n * 10 : n;
+    _typeTo(c, (shown / mult).round().clamp(0, count - 1));
+    if (done && hour) _mFocus.requestFocus();
+  }
+
   Widget _col(FixedExtentScrollController c, int count, int mult, String label) {
     final tok = context.tok;
+    final hour = identical(c, _h);
+    final focus = hour ? _hFocus : _mFocus;
     return Focus(
+      focusNode: focus,
+      onFocusChange: (_) => setState(() => _typed = null),
       onKeyEvent: (node, e) {
         if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
-        final dir = e.logicalKey == LogicalKeyboardKey.arrowDown
+        final key = e.logicalKey;
+        if (key == LogicalKeyboardKey.arrowRight && hour) {
+          _mFocus.requestFocus();
+          return KeyEventResult.handled;
+        }
+        if (key == LogicalKeyboardKey.arrowLeft && !hour) {
+          _hFocus.requestFocus();
+          return KeyEventResult.handled;
+        }
+        final ch = e.character;
+        final d = ch != null && ch.length == 1 ? int.tryParse(ch) : null;
+        if (d != null) {
+          _digit(c, count, mult, d);
+          return KeyEventResult.handled;
+        }
+        final dir = key == LogicalKeyboardKey.arrowDown
             ? 1
-            : e.logicalKey == LogicalKeyboardKey.arrowUp
+            : key == LogicalKeyboardKey.arrowUp
             ? -1
             : 0;
         if (dir == 0) return KeyEventResult.ignored;
@@ -127,45 +203,49 @@ class _TimeWheelState extends State<TimeWheel> {
           return Semantics(
             label: label,
             value: pad2((c.hasClients ? c.selectedItem : c.initialItem) * mult),
-            child: Container(
-              width: 72,
-              height: Sizes.wheelH,
-              decoration: focused
-                  ? BoxDecoration(
-                      border: Border.all(color: tok.p, width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                    )
-                  : null,
-              child: ShaderMask(
-                shaderCallback: (r) => const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x00000000), Color(0xFF000000), Color(0xFF000000), Color(0x00000000)],
-                  stops: [0, 0.3, 0.7, 1],
-                ).createShader(r),
-                blendMode: BlendMode.dstIn,
-                child: NotificationListener<ScrollEndNotification>(
-                  onNotification: (_) {
-                    Future.delayed(const Duration(milliseconds: 90), () {
-                      if (!mounted) return;
-                      _commit();
-                      // Screenreader lesen den Wert des Rads vor – nach dem Drehen neu melden.
-                      setState(() {});
-                    });
-                    return false;
-                  },
-                  child: ListWheelScrollView.useDelegate(
-                    controller: c,
-                    itemExtent: Sizes.wheelItem,
-                    diameterRatio: 1000,
-                    physics: const FixedExtentScrollPhysics(),
-                    overAndUnderCenterOpacity: 1,
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: count,
-                      builder: (context, i) => Center(
-                        child: Text(
-                          pad2(i * mult),
-                          style: TextStyle(fontSize: Fs.wheel, color: tok.text, fontFeatures: Fs.tabular),
+            // Ein Klick wählt das Rad aus – danach gehen Ziffern und Pfeiltasten dorthin.
+            child: Listener(
+              onPointerDown: (_) => focus.requestFocus(),
+              child: Container(
+                width: 72,
+                height: Sizes.wheelH,
+                // Der Rahmen ist immer da (sonst nur durchsichtig): Käme er erst mit dem Fokus
+                // dazu, würde das Rad darunter neu aufgebaut und spränge auf den Startwert.
+                decoration: BoxDecoration(
+                  border: Border.all(color: focused ? tok.p : const Color(0x00000000), width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ShaderMask(
+                  shaderCallback: (r) => const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x00000000), Color(0xFF000000), Color(0xFF000000), Color(0x00000000)],
+                    stops: [0, 0.3, 0.7, 1],
+                  ).createShader(r),
+                  blendMode: BlendMode.dstIn,
+                  child: NotificationListener<ScrollEndNotification>(
+                    onNotification: (_) {
+                      Future.delayed(const Duration(milliseconds: 90), () {
+                        if (!mounted) return;
+                        _commit();
+                        // Screenreader lesen den Wert des Rads vor – nach dem Drehen neu melden.
+                        setState(() {});
+                      });
+                      return false;
+                    },
+                    child: ListWheelScrollView.useDelegate(
+                      controller: c,
+                      itemExtent: Sizes.wheelItem,
+                      diameterRatio: 1000,
+                      physics: const FixedExtentScrollPhysics(),
+                      overAndUnderCenterOpacity: 1,
+                      childDelegate: ListWheelChildBuilderDelegate(
+                        childCount: count,
+                        builder: (context, i) => Center(
+                          child: Text(
+                            pad2(i * mult),
+                            style: TextStyle(fontSize: Fs.wheel, color: tok.text, fontFeatures: Fs.tabular),
+                          ),
                         ),
                       ),
                     ),

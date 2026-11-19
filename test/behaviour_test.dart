@@ -6,6 +6,7 @@ import 'dart:ui' show PointerDeviceKind, Tristate;
 
 import 'package:cryptography/cryptography.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,7 @@ import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/l10n/gen/app_localizations.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
+import 'package:todo_liste/screens/task_card.dart';
 import 'package:todo_liste/screens/tasks_board.dart';
 import 'package:todo_liste/screens/ui_state.dart';
 import 'package:todo_liste/services/export.dart';
@@ -505,6 +507,51 @@ void main() {
       final wheels = tester.widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView)).toList();
       int item(int i) => (wheels[i].controller! as FixedExtentScrollController).selectedItem;
       expect((item(0), item(1) * 30), (11, 0));
+    });
+
+    testWidgets('Zeit-Rad am PC: Ziffern tippen stellt die Uhrzeit, die Stunde springt zu den Minuten', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final got = <int>[];
+      int? value = 8 * 60;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme('himmel', dark: false),
+          locale: const Locale('de'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates],
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, set) => TimeWheel(
+                value: value,
+                step: 5,
+                onChanged: (v) => set(() {
+                  value = v;
+                  got.add(v);
+                }),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // Ohne Klick: Das Stunden-Rad ist schon ausgewählt.
+      for (final ch in ['1', '4', '3', '5']) {
+        await tester.sendKeyEvent(LogicalKeyboardKey(ch.codeUnitAt(0)), character: ch);
+        await tester.pump(const Duration(milliseconds: 30));
+      }
+      await tester.pumpAndSettle();
+      expect(value, 14 * 60 + 35);
+      expect(got.contains(60), isFalse, reason: 'die halbe Eingabe „1“ wird nicht gemeldet');
+      // Einstellige Stunde: „9“ gilt sofort, dann Minuten „07“ – im 5er-Schritt wird daraus 05.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      for (final ch in ['9', '0', '7']) {
+        await tester.sendKeyEvent(LogicalKeyboardKey(ch.codeUnitAt(0)), character: ch);
+        await tester.pumpAndSettle();
+      }
+      expect(value, 9 * 60 + 5);
+      debugDefaultTargetPlatformOverride = null;
     });
 
     testWidgets('Mehr als 4 Kategorien an einem Tag: Kalender zeigt die Anzahl', (tester) async {
@@ -1646,6 +1693,35 @@ void main() {
       final first = app.store.categories.first;
       expect(find.bySemanticsLabel(RegExp('^${RegExp.escape(first.name)} \\(')), findsWidgets);
       expect(tester.takeException(), isNull);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Aufgaben: viele Gewohnheiten scrollen in ihrer Karte, der Monat bleibt im Fenster', (tester) async {
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      for (var i = 0; i < 20; i++) {
+        app.store.addHabit(name: 'Gewohnheit $i', color: '#AABBCC');
+      }
+      for (final size in const [Size(1920, 1009), Size(1366, 705)]) {
+        await pumpApp(tester, app, size: size);
+        final f = Fmt.of(tester.element(find.byType(TasksSide)));
+        final month = find.text(f.monthYear(today()));
+        expect(tester.getRect(month).top, lessThan(size.height - 80), reason: 'Monat sichtbar bei $size');
+        expect(find.text('Gewohnheit 19').hitTestable(), findsNothing, reason: 'unten in der Liste');
+        // Im großen Fenster passt der ganze Monat darunter.
+        final grid = tester.getRect(find.descendant(of: find.byType(TasksSide), matching: find.byType(MonthGrid)));
+        if (size.height > 1000) expect(grid.bottom, lessThanOrEqualTo(size.height));
+        expect(tester.takeException(), isNull);
+      }
+      // In der Karte lässt sich bis zur letzten scrollen.
+      await tester.scrollUntilVisible(
+        find.text('Gewohnheit 19'),
+        80,
+        scrollable: find.descendant(of: find.byType(HabitsTaskCard), matching: find.byType(Scrollable)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Gewohnheit 19').hitTestable(), findsOneWidget);
       await finishApp(tester, app);
     });
 
