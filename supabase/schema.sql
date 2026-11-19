@@ -84,6 +84,7 @@ create table if not exists public.week_blocks (
   end_min     smallint    not null check (end_min between 1 and 1440),
   repeat      boolean     not null default true,
   week_start  date,
+  task_id     uuid,
   updated_at  timestamptz not null default now(),
   synced_at   timestamptz not null default now(),
   deleted     boolean     not null default false,
@@ -131,6 +132,8 @@ alter table public.tasks       add column if not exists field_times jsonb;
 alter table public.subtasks    add column if not exists field_times jsonb;
 alter table public.habits      add column if not exists field_times jsonb;
 alter table public.week_blocks add column if not exists field_times jsonb;
+-- Die Aufgabe, aus der ein Block entstanden ist (ohne Fremdschlüssel: sie kann gelöscht sein).
+alter table public.week_blocks add column if not exists task_id uuid;
 
 -- 2) Sync-Regeln: je Feld gewinnt der neuere Wert, synced_at setzt der Server ---
 --
@@ -256,7 +259,7 @@ declare
     "tasks":       {"title": ["title"], "notes": ["notes"], "category": ["category_id"], "due": ["due_date", "due_time"], "done": ["done", "done_at"], "deleted": ["deleted"]},
     "subtasks":    {"title": ["title"], "done": ["done"], "position": ["position"], "deleted": ["deleted"]},
     "habits":      {"name": ["name"], "color": ["color"], "position": ["position"], "deleted": ["deleted"]},
-    "week_blocks": {"name": ["name"], "color": ["color"], "time": ["day", "start_min", "end_min", "repeat", "week_start"], "deleted": ["deleted"]}
+    "week_blocks": {"name": ["name"], "color": ["color"], "time": ["day", "start_min", "end_min", "repeat", "week_start"], "task": ["task_id"], "deleted": ["deleted"]}
   }';
 begin
   foreach t in array array['categories', 'tasks', 'subtasks', 'habits', 'habit_logs', 'week_blocks', 'settings'] loop

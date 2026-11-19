@@ -775,6 +775,7 @@ class Store extends ChangeNotifier {
     required int end,
     required bool repeat,
     required DateTime weekStart,
+    String? taskId,
   }) {
     for (final d in days) {
       _put(
@@ -787,6 +788,7 @@ class Store extends ChangeNotifier {
           end: end,
           repeat: repeat,
           weekStart: repeat ? null : _blockWeek(weekStart, d),
+          taskId: taskId,
           updatedAt: nowUtc(),
         ),
       );
@@ -1007,7 +1009,16 @@ class Store extends ChangeNotifier {
 
   /// Die Zeile, die nach dem Abruf von [r] hier gelten soll – `null`, wenn [r] nichts Neues
   /// bringt. `ahead` = sie enthält lokale Änderungen, die der Server noch nicht hat.
-  ({Map<String, Object?> row, bool ahead})? _merge(TableSpec t, Map<String, Object?> r) {
+  ({Map<String, Object?> row, bool ahead})? _merge(TableSpec t, Map<String, Object?> remote) {
+    // Fehlt dem Server eine neuere Spalte (älteres `schema.sql`), bleibt ihr Wert am Gerät –
+    // sonst löschte jeder Abruf, was nur hier gespeichert ist. `field_times` nicht: Ohne sie
+    // gilt die Zeile vom Server als Ganzes.
+    final saved = _saved[_savedKey(t, remote['id'])];
+    final r = {
+      for (final k in t.columns.keys)
+        if (!remote.containsKey(k) && k != fieldTimesColumn && saved != null) k: saved[k],
+      ...remote,
+    };
     Map<String, Object?> columns() => {for (final k in t.columns.keys) k: r[k]};
     if (t.groups.isEmpty) {
       // Gewohnheits-Haken: nur ein Feld, die neuere Zeile gewinnt.
@@ -1015,7 +1026,7 @@ class Store extends ChangeNotifier {
       final newer = existing == null || DateTime.parse(r['updated_at'] as String).toUtc().isAfter(existing.updatedAt);
       return newer ? (row: columns(), ahead: false) : null;
     }
-    final local = _saved[_savedKey(t, r['id'])];
+    final local = saved;
     if (local == null) return (row: columns(), ahead: false);
     // Über das Modell gelesen, damit die Werte so aussehen wie die gespeicherten (z. B. Uhrzeit).
     final same = switch (t.name) {

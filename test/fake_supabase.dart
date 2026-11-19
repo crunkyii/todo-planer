@@ -27,6 +27,9 @@ class FakeSupabase {
   /// `false` = Server mit älterem `schema.sql`: Er kennt die Spalte `field_times` nicht.
   bool knowsFieldTimes = true;
 
+  /// Weitere Spalten, die dieser Server noch nicht kennt (älteres `schema.sql`).
+  final Set<String> unknownColumns = {};
+
   /// `true` = Abrufe scheitern (Server nicht erreichbar).
   bool failReads = false;
 
@@ -75,11 +78,15 @@ class FakeSupabase {
       if (reject != null && list.any((r) => reject!(table, r))) {
         status = 400;
         out = {'code': '23514', 'message': 'check constraint', 'details': null, 'hint': null};
-      } else if (!knowsFieldTimes && list.any((r) => r.containsKey(fieldTimesColumn))) {
+      } else if ({
+            ...unknownColumns,
+            if (!knowsFieldTimes) fieldTimesColumn,
+          }.where((c) => list.any((r) => r.containsKey(c))).firstOrNull
+          case final col?) {
         status = 400;
         out = {
           'code': 'PGRST204',
-          'message': "Could not find the 'field_times' column of '$table' in the schema cache",
+          'message': "Could not find the '$col' column of '$table' in the schema cache",
           'details': null,
           'hint': null,
         };

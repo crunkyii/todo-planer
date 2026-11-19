@@ -289,11 +289,16 @@ class WeekBlock {
     required this.weekStart,
     required this.updatedAt,
     this.deleted = false,
+    this.taskId,
   });
 
   final String id;
   String name;
   String color;
+
+  /// Die Aufgabe, aus der der Block entstanden ist (`null` = freier Block). Sie kann inzwischen
+  /// gelöscht oder nur noch online sein – dann zeigt die Ansicht des Blocks sie nicht.
+  String? taskId;
 
   /// Wochentag 0 = Montag … 6 = Sonntag.
   int day;
@@ -317,6 +322,7 @@ class WeekBlock {
     'end_min': end,
     'repeat': repeat,
     'week_start': weekStart,
+    'task_id': taskId,
     'updated_at': _ts(updatedAt),
     'deleted': deleted,
   };
@@ -330,6 +336,7 @@ class WeekBlock {
     end: (j['end_min'] as num).toInt(),
     repeat: _b(j['repeat']),
     weekStart: (j['week_start'] as String?)?.substring(0, 10),
+    taskId: j['task_id'] as String?,
     updatedAt: _t(j['updated_at']),
     deleted: _b(j['deleted']),
   );

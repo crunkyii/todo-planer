@@ -843,6 +843,48 @@ void main() {
       expect(events.whereType<SchemaOutdated>(), hasLength(1));
     });
 
+    test('Server ohne week_blocks.task_id: Blöcke gehen ohne die Aufgabe hoch', () async {
+      server.unknownColumns.add('task_id');
+      final a = await device();
+      final t = add(a, 'Referat');
+      a.store.addBlocks(
+        name: 'Referat',
+        color: '#3D9BE9',
+        days: [0],
+        start: 480,
+        end: 540,
+        repeat: false,
+        weekStart: today(),
+        taskId: t.id,
+      );
+      await a.sync.sync();
+      final row = server.tables['week_blocks']!.single;
+      expect(row.containsKey('task_id'), isFalse);
+      expect(await a.pending(), 0);
+      expect(a.sync.rejected, 0);
+      // Am Gerät bleibt die Verbindung zur Aufgabe.
+      expect(a.store.blocks.single.taskId, t.id);
+    });
+
+    test('Block aus einer Aufgabe: die Verbindung kommt auf dem anderen Gerät an', () async {
+      final a = await device();
+      final t = add(a, 'Referat');
+      a.store.addBlocks(
+        name: 'Referat',
+        color: '#3D9BE9',
+        days: [0],
+        start: 480,
+        end: 540,
+        repeat: true,
+        weekStart: today(),
+        taskId: t.id,
+      );
+      await a.sync.sync();
+      final b = await device();
+      await b.sync.sync();
+      expect(b.store.blocks.single.taskId, t.id);
+    });
+
     test('Speichern ohne Änderung lässt Zeitstempel und updated_at, wie sie sind', () async {
       final a = await device();
       final t = add(a, 'Start');

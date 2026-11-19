@@ -199,21 +199,27 @@ class SyncService extends ChangeNotifier {
   }
 
   /// Die Zeile, wie Supabase sie erwartet: Wahrheitswerte als `true`/`false`, die Zeitstempel
-  /// je Feld als JSON-Objekt (lokal stehen sie als Text). Kennt der Server die Spalte
-  /// `field_times` noch nicht, bleibt sie weg – dann gilt dort wie früher die ganze Zeile.
+  /// je Feld als JSON-Objekt (lokal stehen sie als Text). Spalten, die der Server noch nicht
+  /// kennt ([_missing]), bleiben weg – ohne `field_times` gilt dort wie früher die ganze Zeile.
   Map<String, Object?> _remote(TableSpec t, Map<String, Object?> row) => {
     for (final k in t.columns.keys)
-      if (k != fieldTimesColumn)
-        k: t.bools.contains(k) ? row[k] == 1 || row[k] == true : row[k]
-      else if (_serverMergesFields)
-        k: decodeFieldTimes(row[k]),
+      if (!_missing.contains(k))
+        k: k == fieldTimesColumn
+            ? decodeFieldTimes(row[k])
+            : t.bools.contains(k)
+            ? row[k] == 1 || row[k] == true
+            : row[k],
   };
 
-  /// `false`, sobald der Server die Spalte `field_times` ablehnt (älteres `schema.sql`).
-  bool _serverMergesFields = true;
+  /// Spalten, die spätere Versionen von `schema.sql` dazubringen. Fehlen sie am Server (das neue
+  /// `schema.sql` ist noch nicht ausgeführt), geht der Abgleich ohne sie weiter.
+  static const _optionalColumns = {fieldTimesColumn, 'task_id'};
 
-  /// Der Server kennt eine Spalte nicht: einmal je App-Start melden. Ist es `field_times`,
-  /// geht es ohne diese Spalte weiter, statt die Warteschlange zu blockieren.
+  /// Die davon, die der Server abgelehnt hat (bis zum nächsten App-Start).
+  final Set<String> _missing = {};
+
+  /// Der Server kennt eine Spalte nicht: einmal je App-Start melden. Ist es eine der
+  /// [_optionalColumns], geht es ohne sie weiter, statt die Warteschlange zu blockieren.
   /// Gibt zurück, ob es sich lohnt, das Hochladen gleich noch einmal zu versuchen.
   bool _unknownColumn(PostgrestException e) {
     if (e.code != 'PGRST204') return false; // „Spalte nicht gefunden“
@@ -221,9 +227,10 @@ class SyncService extends ChangeNotifier {
       _schemaHintShown = true;
       _events.add(const SchemaOutdated());
     }
-    final retry = _serverMergesFields && e.message.contains(fieldTimesColumn);
-    if (retry) _serverMergesFields = false;
-    return retry;
+    final col = _optionalColumns.where((c) => !_missing.contains(c) && e.message.contains("'$c'")).firstOrNull;
+    if (col == null) return false;
+    _missing.add(col);
+    return true;
   }
 
   Future<void> _push() async {

@@ -158,6 +158,7 @@ const blocksTable = TableSpec(
     'end_min': 'INTEGER NOT NULL',
     'repeat': 'INTEGER NOT NULL',
     'week_start': 'TEXT',
+    'task_id': 'TEXT',
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
     ..._fieldTimes,
@@ -168,6 +169,7 @@ const blocksTable = TableSpec(
     'name': ['name'],
     'color': ['color'],
     'time': ['day', 'start_min', 'end_min', 'repeat', 'week_start'],
+    'task': ['task_id'],
     'deleted': ['deleted'],
   },
 );
@@ -186,9 +188,10 @@ class LocalDb extends GeneratedDatabase {
 
   /// Bei jeder Änderung an den Spalten um eins erhöhen und unten in `onUpgrade` nachziehen.
   /// 2: `tasks.notes` · 3: `categories.list_from` · 4: Tabelle `done_archive` ·
-  /// 5: `field_times` (Zeitstempel je Feld-Gruppe) · 6: leere `list_from`/`notes` auffüllen.
+  /// 5: `field_times` (Zeitstempel je Feld-Gruppe) · 6: leere `list_from`/`notes` auffüllen ·
+  /// 7: `week_blocks.task_id`.
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   /// Merkzettel der erledigten Aufgaben, die nur noch online liegen (siehe [ArchivedDone]).
   /// Nur am Gerät – diese Tabelle wird nie abgeglichen.
@@ -224,6 +227,7 @@ class LocalDb extends GeneratedDatabase {
         await customStatement("UPDATE \"categories\" SET \"list_from\" = 'always' WHERE \"list_from\" IS NULL");
         await customStatement("UPDATE \"tasks\" SET \"notes\" = '' WHERE \"notes\" IS NULL");
       }
+      if (from < 7) await _addColumn('week_blocks', 'task_id', 'TEXT');
     },
   );
 
