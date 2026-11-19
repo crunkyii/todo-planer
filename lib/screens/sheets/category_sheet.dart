@@ -79,9 +79,11 @@ class _CategorySheetState extends State<CategorySheet> {
     final f = Fmt.of(context);
     final edit = widget.cat != null;
     final canDelete = edit && context.app.store.categories.length > 1;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+    return SheetBody(
+      footer: [
+        if (_error != null) SheetError(_error!),
+        SheetActions(onSave: _save, onDelete: canDelete ? _delete : null),
+      ],
       children: [
         SheetTitle(edit ? l.editCategory : l.newCategory),
         AppField(
@@ -116,8 +118,6 @@ class _CategorySheetState extends State<CategorySheet> {
             onChanged: (v) => setState(() => _listFrom = v),
           ),
         ),
-        if (_error != null) SheetError(_error!),
-        SheetActions(onSave: _save, onDelete: canDelete ? _delete : null),
       ],
     );
   }

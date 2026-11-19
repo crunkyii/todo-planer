@@ -140,9 +140,11 @@ class _BlockSheetState extends State<BlockSheet> {
     final edit = widget.block != null;
     final dur = _end - _start;
     final durText = dur > 0 ? f.duration(dur) : l.durInvalid;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+    return SheetBody(
+      footer: [
+        if (_error != null) SheetError(_error!),
+        SheetActions(onSave: _save, onDelete: edit ? _delete : null),
+      ],
       children: [
         SheetTitle(edit ? l.editBlock : l.newBlock),
         AppField(label: l.name, controller: _name, hint: l.blockHint, maxLength: 60, autofocus: true),
@@ -258,8 +260,6 @@ class _BlockSheetState extends State<BlockSheet> {
             ],
           ),
         ),
-        if (_error != null) SheetError(_error!),
-        SheetActions(onSave: _save, onDelete: edit ? _delete : null),
       ],
     );
   }

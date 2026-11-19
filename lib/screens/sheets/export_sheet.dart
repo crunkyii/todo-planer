@@ -48,9 +48,7 @@ class _ExportSheetState extends State<ExportSheet> {
     final l = context.l;
     Widget row(ExportFormat f, String sub) =>
         SetRow(title: f.ext.toUpperCase(), subtitle: sub, chevron: true, onTap: () => _export(f));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+    return SheetBody(
       children: [
         SheetTitle(l.exportData),
         Opacity(

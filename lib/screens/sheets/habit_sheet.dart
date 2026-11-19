@@ -62,9 +62,11 @@ class _HabitSheetState extends State<HabitSheet> {
   Widget build(BuildContext context) {
     final l = context.l;
     final edit = widget.habit != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+    return SheetBody(
+      footer: [
+        if (_error != null) SheetError(_error!),
+        SheetActions(onSave: _save, onDelete: edit ? _delete : null),
+      ],
       children: [
         SheetTitle(edit ? l.editHabit : l.newHabit),
         AppField(
@@ -79,8 +81,6 @@ class _HabitSheetState extends State<HabitSheet> {
           label: l.color,
           child: ColorChoice(value: _color, onChanged: (c) => setState(() => _color = c)),
         ),
-        if (_error != null) SheetError(_error!),
-        SheetActions(onSave: _save, onDelete: edit ? _delete : null),
       ],
     );
   }

@@ -30,6 +30,46 @@ void closeSheetItemGone(BuildContext context) {
   app.snack.show(l.itemGone);
 }
 
+/// Inhalt eines Sheets: [children] scrollen, wenn das Formular höher ist als der Platz;
+/// [footer] (Fehlermeldung, Speichern) bleibt darunter immer zu sehen.
+class SheetBody extends StatelessWidget {
+  const SheetBody({super.key, required this.children, this.footer = const []});
+  final List<Widget> children;
+  final List<Widget> footer;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    // Mit Tastatur liegt das Sheet schon über dem Rand; sonst Platz für die Gestenleiste.
+    final bottom = 14.0 + (mq.viewInsets.bottom > 0 ? 0 : mq.padding.bottom);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, footer.isEmpty ? bottom : 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: children,
+            ),
+          ),
+        ),
+        if (footer.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, bottom),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: footer,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// Überschrift eines Sheets.
 class SheetTitle extends StatelessWidget {
   const SheetTitle(this.text, {super.key});

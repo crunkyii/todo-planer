@@ -99,10 +99,9 @@ class AppSheetRoute<T> extends PopupRoute<T> {
               shadow: tok.sheetShadow,
               child: Material(
                 type: MaterialType.transparency,
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 14 + (mq.viewInsets.bottom > 0 ? 0 : mq.padding.bottom)),
-                  child: builder(context),
-                ),
+                // Scrollen und Innenabstand macht der Inhalt selbst (`SheetBody`): So bleibt
+                // der Fuß mit „Speichern“ stehen, während das Formular darüber scrollt.
+                child: builder(context),
               ),
             ),
           ),
