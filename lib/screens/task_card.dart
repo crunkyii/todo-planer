@@ -8,6 +8,7 @@ import '../util/dates.dart';
 import '../util/fmt.dart';
 import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
+import '../widgets/flip.dart';
 import '../widgets/pressable.dart';
 import '../widgets/ui.dart';
 import 'sheets.dart';
@@ -375,13 +376,7 @@ class HabitsTaskCard extends StatelessWidget {
                                 children: [
                                   Text(
                                     l.habits,
-                                    style: TextStyle(
-                                      fontSize: Fs.task,
-                                      height: 21 / 15.5,
-                                      color: all ? tok.sub : tok.text,
-                                      decoration: all ? TextDecoration.lineThrough : null,
-                                      decorationColor: tok.sub,
-                                    ),
+                                    style: TextStyle(fontSize: Fs.task, height: 21 / 15.5, color: tok.text),
                                   ),
                                   const SizedBox(height: 4),
                                   Wrap(
@@ -393,7 +388,7 @@ class HabitsTaskCard extends StatelessWidget {
                                         children: [
                                           AppIcon(Ic.subtasks, size: 14, color: tok.sub),
                                           const SizedBox(width: 4),
-                                          Text(l.progress(done, hs.length), style: metaStyle),
+                                          _Rolling(text: l.progress(done, hs.length), style: metaStyle),
                                         ],
                                       ),
                                     ],
@@ -418,28 +413,45 @@ class HabitsTaskCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (open)
-              Transform.translate(
-                offset: const Offset(0, -4),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 0, 12, 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final h in hs) _HabitSub(habit: h, day: k, ui: ui),
-                      AppButton(
-                        label: l.habit,
-                        icon: Ic.plus,
-                        kind: BtnKind.text,
-                        height: 34,
-                        padding: 8,
-                        fontSize: 13,
-                        onTap: () => Sheets(context, ui).habit(null),
+            // Auf- und Zuklappen wächst weich, statt zu springen.
+            Transform.translate(
+              offset: const Offset(0, -4),
+              child: AnimatedSize(
+                // Nie ganz 0: Damit käme AnimatedSize beim Umklappen nicht zurecht.
+                duration: Motion.reduced(context) ? const Duration(milliseconds: 1) : Motion.pop,
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: !open
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                        padding: const EdgeInsets.fromLTRB(32, 0, 12, 6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Abgehakte rutschen nach unten; innerhalb bleibt die eigene Reihenfolge.
+                            FlipColumn(
+                              children: [
+                                for (final h in [
+                                  ...hs.where((h) => !store.habitDone(h.id, k)),
+                                  ...hs.where((h) => store.habitDone(h.id, k)),
+                                ])
+                                  _HabitSub(key: ValueKey(h.id), habit: h, day: k, ui: ui),
+                              ],
+                            ),
+                            AppButton(
+                              label: l.habit,
+                              icon: Ic.plus,
+                              kind: BtnKind.text,
+                              height: 34,
+                              padding: 8,
+                              fontSize: 13,
+                              onTap: () => Sheets(context, ui).habit(null),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
               ),
+            ),
           ],
         ),
       ),
@@ -448,7 +460,7 @@ class HabitsTaskCard extends StatelessWidget {
 }
 
 class _HabitSub extends StatelessWidget {
-  const _HabitSub({required this.habit, required this.day, required this.ui});
+  const _HabitSub({super.key, required this.habit, required this.day, required this.ui});
   final Habit habit;
   final String day;
   final UiState ui;
@@ -462,58 +474,132 @@ class _HabitSub extends StatelessWidget {
     final on = store.habitDone(h.id, day);
     final st = store.habitStreak(h.id);
     final hc = tok.item(h.color);
-    return Row(
-      children: [
-        CheckMark(
-          small: true,
-          on: on,
-          colors: hc,
-          label: on ? l.a11yHabitReopen(h.name) : l.a11yHabitDoneToday(h.name),
-          onTap: () {
-            if (store.toggleHabitDay(h.id, day)) buzz();
-          },
-        ),
-        Expanded(
-          child: Pressable(
-            onTap: () => Sheets(context, ui).habit(h),
-            pressScale: 0.97,
-            glow: false,
-            semanticLabel: l.editHabit,
-            excludeChildSemantics: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Text(
-                h.name,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: on ? tok.sub : tok.text,
-                  decoration: on ? TextDecoration.lineThrough : null,
-                  decorationColor: tok.sub,
+    return _CheckFlash(
+      on: on,
+      color: hc.c,
+      child: Row(
+        children: [
+          CheckMark(
+            small: true,
+            on: on,
+            colors: hc,
+            label: on ? l.a11yHabitReopen(h.name) : l.a11yHabitDoneToday(h.name),
+            onTap: () {
+              if (store.toggleHabitDay(h.id, day)) buzz();
+            },
+          ),
+          Expanded(
+            child: Pressable(
+              onTap: () => Sheets(context, ui).habit(h),
+              pressScale: 0.97,
+              glow: false,
+              semanticLabel: l.editHabit,
+              excludeChildSemantics: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                // Abgehakt wird nur blasser – durchgestrichen sähe nach „gestrichen“ aus, nicht nach „geschafft“.
+                child: AnimatedDefaultTextStyle(
+                  duration: Motion.of(context, Motion.pop),
+                  style: DefaultTextStyle.of(context).style.copyWith(fontSize: 14, color: on ? tok.sub : tok.text),
+                  child: Text(h.name),
                 ),
               ),
             ),
           ),
-        ),
-        if (st > 0)
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: Semantics(
-              label: l.streakDays(st),
-              excludeSemantics: true,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppIcon(Ic.flame, size: 13, stroke: 2, color: hc.c),
-                  const SizedBox(width: 3),
-                  Text(
-                    '$st',
-                    style: TextStyle(fontSize: 12, color: tok.sub, fontFeatures: Fs.tabular),
-                  ),
-                ],
+          if (st > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Semantics(
+                label: l.streakDays(st),
+                excludeSemantics: true,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(Ic.flame, size: 13, stroke: 2, color: hc.c),
+                    const SizedBox(width: 3),
+                    _Rolling(
+                      text: '$st',
+                      style: TextStyle(fontSize: 12, color: tok.sub, fontFeatures: Fs.tabular),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
+}
+
+/// Kurzes Aufleuchten in der Farbe der Gewohnheit und ein kleiner Hüpfer, sobald abgehakt wird.
+class _CheckFlash extends StatefulWidget {
+  const _CheckFlash({required this.on, required this.color, required this.child});
+  final bool on;
+  final Color color;
+  final Widget child;
+
+  @override
+  State<_CheckFlash> createState() => _CheckFlashState();
+}
+
+class _CheckFlashState extends State<_CheckFlash> with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(vsync: this, duration: Motion.springBack, value: 1);
+
+  static final _scale = TweenSequence<double>([
+    TweenSequenceItem(tween: Tween<double>(begin: 1, end: 1.035).chain(CurveTween(curve: Curves.easeOut)), weight: 30),
+    TweenSequenceItem(
+      tween: Tween<double>(begin: 1.035, end: 1).chain(CurveTween(curve: Motion.springSoft)),
+      weight: 70,
+    ),
+  ]);
+
+  @override
+  void didUpdateWidget(_CheckFlash old) {
+    super.didUpdateWidget(old);
+    if (widget.on && !old.on) {
+      _c.duration = Motion.of(context, Motion.springBack);
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _c,
+    builder: (context, child) => DecoratedBox(
+      decoration: BoxDecoration(
+        color: widget.color.withValues(alpha: 0.22 * (1 - Curves.easeOut.transform(_c.value))),
+        borderRadius: BorderRadius.circular(Sizes.rInput),
+      ),
+      child: Transform.scale(scale: _scale.evaluate(_c), alignment: Alignment.centerLeft, child: child),
+    ),
+    child: widget.child,
+  );
+}
+
+/// Zahl oder kurzer Text, der beim Ändern weich nach oben wegrollt (Serie, „2/3“).
+class _Rolling extends StatelessWidget {
+  const _Rolling({required this.text, required this.style});
+  final String text;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+    duration: Motion.of(context, Motion.pop),
+    switchInCurve: Motion.springSoft,
+    switchOutCurve: Curves.easeIn,
+    transitionBuilder: (child, a) => FadeTransition(
+      opacity: a,
+      child: SlideTransition(
+        position: Tween(begin: Offset(0, child.key == ValueKey(text) ? 0.7 : -0.7), end: Offset.zero).animate(a),
+        child: child,
+      ),
+    ),
+    child: Text(text, key: ValueKey(text), style: style),
+  );
 }
