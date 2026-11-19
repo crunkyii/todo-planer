@@ -201,6 +201,9 @@ abstract final class Sizes {
   static const double rHeat = 3;
 
   static const double iconBtn = 44;
+
+  /// Symbol bzw. Schritt-Nummer in der Flick-Anleitung.
+  static const double flickIcon = 32;
   static const double chipH = 36;
   static const double navH = 64;
   static const double navGap = 12;

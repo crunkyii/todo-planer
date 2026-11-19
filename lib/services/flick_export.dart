@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show AssetBundle;
 
 import '../data/models.dart';
 import '../data/store.dart';
@@ -40,6 +41,28 @@ class FlickExport {
     final base = Platform.environment['LOCALAPPDATA'];
     if (base == null || base.isEmpty) return null;
     return '$base\\ToDo Planer\\Flick\\Heute';
+  }
+
+  /// Neben [dir]: der Ordner mit den Symbolen der Shortcuts (`…\Flick\Icons`).
+  String? get iconDir => switch (dir) {
+    final d? => flickIconDir(d).replaceAll('/', Platform.pathSeparator),
+    null => null,
+  };
+
+  /// Legt die Symbole der Shortcuts in [iconDir] ab. Überschreibt sie jedes Mal – so kommen neue
+  /// Symbole einer neueren App-Version mit. Klappt das nicht, zeigt Flick sein eigenes Symbol.
+  Future<void> writeIcons(AssetBundle bundle) async {
+    final icons = iconDir;
+    if (icons == null) return;
+    try {
+      await Directory(icons).create(recursive: true);
+      for (final i in FlickIcon.values) {
+        final data = await bundle.load(i.asset);
+        await File('$icons${Platform.pathSeparator}${i.file}').writeAsBytes(data.buffer.asUint8List(), flush: true);
+      }
+    } on FileSystemException catch (e) {
+      debugPrint('Flick-Symbole nicht geschrieben: ${e.osError?.errorCode}');
+    }
   }
 
   String? _last;
@@ -170,23 +193,47 @@ String flickFolderName(int index, String text) {
   return name.replaceAll(RegExp(r'[. ]+$'), '');
 }
 
+/// Die Symbole der Flick-Shortcuts (`assets/flick`).
+enum FlickIcon {
+  add('aufgabe_hinzufuegen.ico'),
+  today('aufgaben_anzeigen.ico'),
+  open('todo_planer_oeffnen.ico');
+
+  const FlickIcon(this.file);
+  final String file;
+  String get asset => 'assets/flick/$file';
+}
+
+/// Ordner der Symbole zum Listen-Ordner [dir] (`…/Flick/Heute` → `…/Flick/Icons`), mit `/`.
+String flickIconDir(String dir) {
+  final d = dir.replaceAll(r'\', '/');
+  return '${d.substring(0, d.lastIndexOf('/'))}/Icons';
+}
+
 /// Die Shortcuts für die `config.toml` von Flick (Optionen → „Flick-Shortcuts kopieren“).
 /// [dir] ist der Ordner von [FlickExport]; die Namen der Shortcuts bleiben in jeder Sprache gleich.
 String flickShortcuts(AppLocalizations l, String dir) {
   String q(String s) => '"${s.replaceAll(r'\', r'\\').replaceAll('"', r'\"')}"';
-  String shortcut(String name, String about, List<String> more) =>
-      ['[[shortcut]]', 'name = ${q(name)}', 'about = ${q(about)}', ...more, ''].join('\n');
+  final icons = flickIconDir(dir);
+  String shortcut(String name, String about, FlickIcon icon, List<String> more) => [
+    '[[shortcut]]',
+    'name = ${q(name)}',
+    'about = ${q(about)}',
+    'icon = ${q('$icons/${icon.file}')}',
+    ...more,
+    '',
+  ].join('\n');
   return [
     '# ToDo Planer → Flick (https://github.com/Whiskey-Bravo/flick)',
     '',
-    shortcut('addAufgabe', l.flickAboutAdd, ['open = "$launchScheme://add"']),
-    shortcut('aufgabe', l.flickAboutAddTitle, ['open = "$launchScheme://add?title={arg}"']),
+    shortcut('addAufgabe', l.flickAboutAdd, FlickIcon.add, ['open = "$launchScheme://add"']),
+    shortcut('aufgabe', l.flickAboutAddTitle, FlickIcon.add, ['open = "$launchScheme://add?title={arg}"']),
     // Flick verlangt bei einer Liste {name} im Ziel – die App öffnet damit einfach „Aufgaben“.
-    shortcut('Aufgaben', l.flickAboutToday, [
+    shortcut('Aufgaben', l.flickAboutToday, FlickIcon.today, [
       'pick = ${q(dir.replaceAll(r'\', '/'))}',
       'open = "$launchScheme://tab/aufgaben?zeile={name}"',
     ]),
-    shortcut('todo', l.flickAboutTab, [
+    shortcut('todo', l.flickAboutTab, FlickIcon.open, [
       'choices = ["Aufgaben", "Kalender", "Wochenplan", "Statistik", "Optionen"]',
       'open = "$launchScheme://tab/{name}"',
     ]),

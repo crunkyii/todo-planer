@@ -1341,6 +1341,46 @@ class AppLocalizationsDe extends AppLocalizations {
   String get flickAboutTab => 'ToDo Planer in einem Tab öffnen';
 
   @override
+  String get flickGuideTitle => 'Flick einrichten';
+
+  @override
+  String get flickGuideIntro => 'Die Shortcuts sind kopiert. So kommen sie in Flick:';
+
+  @override
+  String get flickStep1 => 'Flick öffnen';
+
+  @override
+  String get flickStep1Sub => 'Alt+Leertaste drücken.';
+
+  @override
+  String get flickStep2 => '„flick config“ eintippen';
+
+  @override
+  String get flickStep2Sub => 'Enter drücken – die Datei config.toml öffnet sich im Editor.';
+
+  @override
+  String get flickStep3 => 'Ans Ende einfügen';
+
+  @override
+  String get flickStep3Sub =>
+      'Ganz nach unten gehen und Strg+V drücken. Waren die Shortcuts schon einmal drin, den alten Block vorher löschen – sonst gibt es sie doppelt.';
+
+  @override
+  String get flickStep4 => 'Speichern';
+
+  @override
+  String get flickStep4Sub => 'Strg+S drücken. Flick übernimmt die Shortcuts sofort.';
+
+  @override
+  String get flickGuideList => 'Liste „Aufgaben“';
+
+  @override
+  String get flickGuideTry => 'Das kannst du dann eintippen';
+
+  @override
+  String get flickCopyAgain => 'Nochmal kopieren';
+
+  @override
   String get flickHeading => 'Flick';
 
   @override

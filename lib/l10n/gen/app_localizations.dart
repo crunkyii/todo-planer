@@ -2366,6 +2366,84 @@ abstract class AppLocalizations {
   /// **'ToDo Planer in einem Tab öffnen'**
   String get flickAboutTab;
 
+  /// No description provided for @flickGuideTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Flick einrichten'**
+  String get flickGuideTitle;
+
+  /// No description provided for @flickGuideIntro.
+  ///
+  /// In de, this message translates to:
+  /// **'Die Shortcuts sind kopiert. So kommen sie in Flick:'**
+  String get flickGuideIntro;
+
+  /// No description provided for @flickStep1.
+  ///
+  /// In de, this message translates to:
+  /// **'Flick öffnen'**
+  String get flickStep1;
+
+  /// No description provided for @flickStep1Sub.
+  ///
+  /// In de, this message translates to:
+  /// **'Alt+Leertaste drücken.'**
+  String get flickStep1Sub;
+
+  /// No description provided for @flickStep2.
+  ///
+  /// In de, this message translates to:
+  /// **'„flick config“ eintippen'**
+  String get flickStep2;
+
+  /// No description provided for @flickStep2Sub.
+  ///
+  /// In de, this message translates to:
+  /// **'Enter drücken – die Datei config.toml öffnet sich im Editor.'**
+  String get flickStep2Sub;
+
+  /// No description provided for @flickStep3.
+  ///
+  /// In de, this message translates to:
+  /// **'Ans Ende einfügen'**
+  String get flickStep3;
+
+  /// No description provided for @flickStep3Sub.
+  ///
+  /// In de, this message translates to:
+  /// **'Ganz nach unten gehen und Strg+V drücken. Waren die Shortcuts schon einmal drin, den alten Block vorher löschen – sonst gibt es sie doppelt.'**
+  String get flickStep3Sub;
+
+  /// No description provided for @flickStep4.
+  ///
+  /// In de, this message translates to:
+  /// **'Speichern'**
+  String get flickStep4;
+
+  /// No description provided for @flickStep4Sub.
+  ///
+  /// In de, this message translates to:
+  /// **'Strg+S drücken. Flick übernimmt die Shortcuts sofort.'**
+  String get flickStep4Sub;
+
+  /// No description provided for @flickGuideList.
+  ///
+  /// In de, this message translates to:
+  /// **'Liste „Aufgaben“'**
+  String get flickGuideList;
+
+  /// No description provided for @flickGuideTry.
+  ///
+  /// In de, this message translates to:
+  /// **'Das kannst du dann eintippen'**
+  String get flickGuideTry;
+
+  /// No description provided for @flickCopyAgain.
+  ///
+  /// In de, this message translates to:
+  /// **'Nochmal kopieren'**
+  String get flickCopyAgain;
+
   /// No description provided for @flickHeading.
   ///
   /// In de, this message translates to:

@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart' show Scrollable, Size, Transform;
 import 'package:todo_liste/data/models.dart';
 import 'package:todo_liste/screens/calendar_tab.dart';
+import 'package:todo_liste/screens/flick_guide_page.dart';
 import 'package:todo_liste/screens/settings_tab.dart';
 import 'package:todo_liste/screens/sheets/task_sheet.dart';
 import 'package:todo_liste/screens/stats_tab.dart';
@@ -214,7 +215,16 @@ void main() {
 
     test('Shortcuts für Flick: Pfad mit / und Platzhalter, die Flick verlangt', () {
       final toml = flickShortcuts(l10n('de'), r'C:\Users\Max Mustermann\AppData\Local\ToDo Planer\Flick\Heute');
-      expect(toml, contains('name = "addAufgabe"\nabout = "Neue Aufgabe im ToDo Planer"\nopen = "todoplaner://add"'));
+      const icons = 'C:/Users/Max Mustermann/AppData/Local/ToDo Planer/Flick/Icons';
+      expect(
+        toml,
+        contains(
+          'name = "addAufgabe"\nabout = "Neue Aufgabe im ToDo Planer"\n'
+          'icon = "$icons/aufgabe_hinzufuegen.ico"\nopen = "todoplaner://add"',
+        ),
+      );
+      expect(toml, contains('icon = "$icons/aufgaben_anzeigen.ico"\npick = '));
+      expect(toml, contains('icon = "$icons/todo_planer_oeffnen.ico"\nchoices = '));
       expect(toml, contains('pick = "C:/Users/Max Mustermann/AppData/Local/ToDo Planer/Flick/Heute"'));
       expect(toml, contains('open = "todoplaner://tab/aufgaben?zeile={name}"'));
       expect(toml, contains('open = "todoplaner://tab/{name}"'));
@@ -340,10 +350,41 @@ void main() {
         return null;
       });
       addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
-      await tester.tap(find.text(l.flickCopy));
+      // Die Symbole werden echt geschrieben – dafür muss die Zeit hier echt laufen.
+      await tester.runAsync(() async {
+        await tester.tap(find.text(l.flickCopy));
+        for (var i = 0; i < 100 && copied == null; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        }
+      });
       await tester.pumpAndSettle();
-      expect(find.text(l.flickCopied), findsOneWidget);
+      expect(find.text(l.flickGuideIntro), findsOneWidget);
       expect(copied, contains('pick = "${dir.replaceAll(r'\', '/')}"'));
+      for (final i in FlickIcon.values) {
+        final f = File('${tmp.path}${Platform.pathSeparator}Icons${Platform.pathSeparator}${i.file}');
+        expect(f.lengthSync(), greaterThan(1000), reason: i.file);
+        expect(copied, contains('icon = "${f.path.replaceAll(r'\', '/')}"'));
+      }
+      // Danach geht die Anleitung auf – mit Schritten, Schalter und Beispielen.
+      expect(find.byType(FlickGuidePage), findsOneWidget);
+      expect(find.text(l.flickStep2), findsOneWidget);
+      expect(find.text('addAufgabe'), findsOneWidget);
+      await tester.tap(find.byWidgetPredicate((w) => w is AppSwitch && w.label == l.flickToday).last);
+      await tester.pumpAndSettle();
+      expect(app.settings.flick, isFalse, reason: 'Schalter in der Anleitung ist derselbe');
+      copied = null;
+      await tester.runAsync(() async {
+        await tester.tap(find.text(l.flickCopyAgain));
+        for (var i = 0; i < 100 && copied == null; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        }
+      });
+      await tester.pumpAndSettle();
+      expect(copied, contains('addAufgabe'));
+      expect(find.text(l.flickCopied), findsOneWidget, reason: 'Knopf zeigt „kopiert“');
+      await tester.tap(find.bySemanticsLabel(l.back).last);
+      await tester.pumpAndSettle();
+      expect(find.byType(FlickGuidePage), findsNothing);
       await finishApp(tester, app);
     });
   });

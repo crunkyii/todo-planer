@@ -51,3 +51,5 @@ flutter:
   # Das Datenbank-Schema wird in der Einrichtung per „SQL kopieren“ angeboten.
   assets:
     - supabase/schema.sql
+    # Symbole der Flick-Shortcuts (Windows), siehe lib/services/flick_export.dart.
+    - assets/flick/

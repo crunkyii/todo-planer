@@ -2,7 +2,8 @@
 #
 # Shortcuts für die config.toml von Flick (in Flick „flick config“ eintippen, das hier ans Ende
 # einfügen, speichern). Einfacher: in der App Optionen → Flick → „Flick-Shortcuts kopieren“ –
-# dann steht bei `pick` schon der richtige Pfad. Hier DEIN-NAME durch den Windows-Benutzer ersetzen.
+# dann stehen bei `pick` und `icon` schon die richtigen Pfade, und die App legt die Symbole ab.
+# Hier DEIN-NAME durch den Windows-Benutzer ersetzen. Fehlen die Symbole, zeigt Flick sein eigenes.
 #
 # Voraussetzungen: App mit dem Installer installiert (trägt todoplaner:// ein) und in der App
 # Optionen → Flick → „Heutige Aufgaben für Flick“ eingeschaltet. Erklärung: docs/funktionen.md.
@@ -13,18 +14,21 @@
 [[shortcut]]
 name = "addAufgabe"
 about = "Neue Aufgabe im ToDo Planer"
+icon = "C:/Users/DEIN-NAME/AppData/Local/ToDo Planer/Flick/Icons/aufgabe_hinzufuegen.ico"
 open = "todoplaner://add"
 
 # aufgabe Mathe lernen → Formular mit Titel
 [[shortcut]]
 name = "aufgabe"
 about = "Neue Aufgabe mit Titel, z. B. aufgabe Mathe lernen"
+icon = "C:/Users/DEIN-NAME/AppData/Local/ToDo Planer/Flick/Icons/aufgabe_hinzufuegen.ico"
 open = "todoplaner://add?title={arg}"
 
 # Aufgaben → heutige Aufgaben in der Leiste (Flick verlangt {name} im Ziel; die App braucht es nicht)
 [[shortcut]]
 name = "Aufgaben"
 about = "Heutige Aufgaben aus dem ToDo Planer"
+icon = "C:/Users/DEIN-NAME/AppData/Local/ToDo Planer/Flick/Icons/aufgaben_anzeigen.ico"
 pick = "C:/Users/DEIN-NAME/AppData/Local/ToDo Planer/Flick/Heute"
 open = "todoplaner://tab/aufgaben?zeile={name}"
 
@@ -32,5 +36,6 @@ open = "todoplaner://tab/aufgaben?zeile={name}"
 [[shortcut]]
 name = "todo"
 about = "ToDo Planer in einem Tab öffnen"
+icon = "C:/Users/DEIN-NAME/AppData/Local/ToDo Planer/Flick/Icons/todo_planer_oeffnen.ico"
 choices = ["Aufgaben", "Kalender", "Wochenplan", "Statistik", "Optionen"]
 open = "todoplaner://tab/{name}"

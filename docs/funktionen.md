@@ -45,10 +45,12 @@ Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhake
 
 1. Die App mit dem Installer ab dieser Version installieren – er trägt die Links `todoplaner://…` in Windows ein.
 2. In der App: *Optionen → Flick → Heutige Aufgaben für Flick* einschalten.
-3. *Optionen → Flick → Flick-Shortcuts kopieren* antippen.
-4. In Flick `flick config` eintippen (öffnet die `config.toml`), den kopierten Text ans Ende einfügen und speichern. Flick übernimmt das sofort. (Man kann die Shortcuts auch in Flick unter *Settings → Shortcuts* von Hand anlegen.)
+3. *Optionen → Flick → Flick-Shortcuts kopieren* antippen. Die App kopiert die Shortcuts, legt ihre drei Symbole in `%LOCALAPPDATA%\ToDo Planer\Flick\Icons` ab und öffnet die Seite **„Flick einrichten“** mit den Schritten, dem Schalter für die Liste und einer Vorschau, was man in Flick eintippen kann (mit den Symbolen). Dort gibt es auch „Nochmal kopieren“.
+4. In Flick `flick config` eintippen (öffnet die `config.toml`), den kopierten Text ans Ende einfügen und speichern. Flick übernimmt das sofort. Waren die Shortcuts schon einmal drin, vorher den alten Block löschen. (Man kann die Shortcuts auch in Flick unter *Settings → Shortcuts* von Hand anlegen.)
 
-Die Vorlage mit Erklärungen liegt auch unter [`tool/flick/todo-planer.toml`](../tool/flick/todo-planer.toml) – dort muss man den Pfad bei `pick` selbst anpassen; die kopierte Version aus der App hat ihn schon richtig.
+Jeder Shortcut hat ein eigenes Symbol (`icon = …` in der `config.toml`): *Aufgabe hinzufügen* für `addAufgabe` und `aufgabe`, *Aufgaben anzeigen* für `Aufgaben`, *ToDo Planer öffnen* für `todo`. Die Dateien liegen in der App unter [`assets/flick`](../assets/flick). Fehlt eine, zeigt Flick sein eigenes Symbol.
+
+Die Vorlage mit Erklärungen liegt auch unter [`tool/flick/todo-planer.toml`](../tool/flick/todo-planer.toml) – dort muss man die Pfade bei `pick` und `icon` selbst anpassen; die kopierte Version aus der App hat sie schon richtig.
 
 **So funktioniert es:**
 
