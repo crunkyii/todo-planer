@@ -213,6 +213,7 @@ class AppServices extends ChangeNotifier {
 
   Future<void> signOut() async {
     snack.clear();
+    registerNext = false; // nach dem Abmelden kommt „Anmelden“, nicht „Konto erstellen“
     await sync.idle();
     await sync.sync();
     await sync.idle();

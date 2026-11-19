@@ -149,7 +149,7 @@ class _SetupScreenState extends State<SetupScreen> {
         _Choice(icon: Ic.sync, title: l.createAccount, text: l.setupCloudText, onTap: () => _toDb(register: true)),
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: AppButton(label: l.haveAccount, kind: BtnKind.text, onTap: () => _toDb(register: false)),
+          child: AppButton(label: l.haveAccount, kind: BtnKind.text, big: true, onTap: () => _toDb(register: false)),
         ),
         _Choice(icon: Ic.phone, title: l.setupLocalTitle, text: l.setupLocalText, onTap: app.chooseLocal),
         const SizedBox(height: 12),

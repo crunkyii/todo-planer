@@ -1404,15 +1404,36 @@ void main() {
       }
     });
 
-    testWidgets('Erster Start: Zurück aus „Datenbank verbinden“ zeigt wieder alle Wege', (tester) async {
+    testWidgets('Erster Start: Zurück und anderer Weg, nicht erreichbare Datenbank', (tester) async {
       final l = l10n('de');
-      final app = await makeServices(syncMode: null);
+      final cloud = FakeCloud('http://localhost:1')
+        ..signedIn = false
+        ..reachable = false;
+      final app = await makeServices(syncMode: null, cloud: cloud);
       await pumpApp(tester, app);
       await _tap(tester, find.text(l.haveAccount));
       await _tap(tester, find.bySemanticsLabel(l.back));
       expect(find.text(l.createAccount), findsOneWidget);
       expect(find.text(l.haveAccount), findsOneWidget);
       expect(app.settings.syncMode, SyncMode.none);
+
+      // Danach der andere Weg: Es zählt die letzte Wahl, nicht die erste
+      await _tap(tester, find.text(l.createAccount));
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'https://abcdefgh.supabase.co');
+      await tester.enterText(fields.at(1), 'sb_publishable_test_key_123');
+      await tester.ensureVisible(find.text(l.connect));
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text(l.connect));
+      expect(find.text(l.errNoConnection), findsOneWidget, reason: 'Datenbank nicht erreichbar');
+      expect(app.settings.syncMode, SyncMode.none, reason: 'nichts gespeichert');
+
+      cloud.reachable = true;
+      await tester.ensureVisible(find.text(l.connect));
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text(l.connect));
+      expect(find.text(l.createAccount), findsOneWidget, reason: 'Überschrift „Konto erstellen“');
+      expect(find.text(l.haveAccount), findsOneWidget);
       await finishApp(tester, app);
     });
   });
