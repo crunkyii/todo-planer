@@ -91,7 +91,9 @@ class WidgetData private constructor(
             lang == "de" -> "$wd $d. $mon"
             else -> "$wd $d $mon"
         }
-        return label("untilDate", "bis {}").replace("{}", date.trim())
+        // Ältere Daten ohne den Text: lieber nichts als ein deutsches „bis“ in einer anderen Sprache.
+        val until = labels["untilDate"] ?: return ""
+        return until.replace("{}", date.trim())
     }
 
     /** Was heute in der Liste der App steht: Überfälliges und alles, was heute dran ist. */
