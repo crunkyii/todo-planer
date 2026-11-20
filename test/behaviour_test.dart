@@ -1088,6 +1088,13 @@ void main() {
       expect(ui.weekStart, DateTime(2026, 11, 12));
     });
 
+    test('UiState.dispose gibt auch die eigenen Zuhörer-Listen frei', () {
+      final ui = UiState()..dispose();
+      void noop() {}
+      expect(() => ui.sectionDragTick.addListener(noop), throwsFlutterError);
+      expect(() => ui.focusTask.addListener(noop), throwsFlutterError);
+    });
+
     testWidgets('Spalten: 2, 3 und 4 nebeneinander – genau so viele sind zu sehen', (tester) async {
       final l = l10n('de');
       final app = await makeServices();
