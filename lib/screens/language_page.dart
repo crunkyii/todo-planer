@@ -226,8 +226,13 @@ class _LangCard extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: tok.text),
               ),
             ),
-            const SizedBox(width: 8),
-            Text('($local)', style: TextStyle(fontSize: 13.5, color: tok.sub)),
+            if (local != native) ...[
+              const SizedBox(width: 8),
+              Text(
+                '($local)',
+                style: TextStyle(fontSize: Fs.base, color: tok.sub),
+              ),
+            ],
             AnimatedSwitcher(
               duration: Motion.of(context, Motion.pop),
               switchInCurve: Motion.spring,
