@@ -5,6 +5,7 @@ import '../theme/color_math.dart';
 import '../theme/tokens.dart';
 import 'app_icon.dart';
 import 'pressable.dart';
+import 'splash.dart';
 
 /// Kleine Bausteine aus dem Prototyp (.chip, .seg, .switch, .btn, .icon-btn, .input …).
 
@@ -747,7 +748,12 @@ class Dot extends StatelessWidget {
 }
 
 /// Abhak-Kreis (.check) bzw. kleines Kästchen (.check.small).
-class CheckMark extends StatelessWidget {
+///
+/// Beim Abhaken per Tipp springt der Kreis (0,6 → 1,2 → 1) und der Haken zeichnet sich; mit
+/// [splash] spritzt dazu ein Splash in der Farbe. Nur beim Abhaken – nicht beim Wieder-Öffnen
+/// und nicht, wenn die Liste schon abgehakt erscheint. Bei „Animationen reduzieren“ blendet
+/// die Farbe nur kurz über.
+class CheckMark extends StatefulWidget {
   const CheckMark({
     super.key,
     required this.on,
@@ -755,32 +761,103 @@ class CheckMark extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.small = false,
+    this.splash = false,
   });
   final bool on;
   final ItemColors colors;
   final String label;
   final VoidCallback onTap;
   final bool small;
+  final bool splash;
+
+  /// Größe des Kreises nach [ms] seit dem Abhaken.
+  @visibleForTesting
+  static double scaleAt(double ms) {
+    final growAt = Motion.checkGrowAt.inMilliseconds, settleAt = Motion.checkSettleAt.inMilliseconds;
+    if (ms < growAt) return Motion.checkFrom;
+    if (ms < settleAt) {
+      final t = ((ms - growAt) / Motion.checkGrow.inMilliseconds).clamp(0.0, 1.0);
+      return Motion.checkFrom + (Motion.checkPeak - Motion.checkFrom) * Motion.spring.transform(t);
+    }
+    final t = ((ms - settleAt) / Motion.checkSettle.inMilliseconds).clamp(0.0, 1.0);
+    return Motion.checkPeak + (1 - Motion.checkPeak) * Motion.emphasized.transform(t);
+  }
+
+  @override
+  State<CheckMark> createState() => _CheckMarkState();
+}
+
+class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(vsync: this, duration: Motion.checkTotal, value: 1);
+  final _link = LayerLink();
+
+  /// Gerade per Tipp abgehakt: Sprung und Haken laufen.
+  bool _fresh = false;
+
+  void _tap() {
+    final checking = !widget.on;
+    widget.onTap();
+    if (!checking || Motion.reduced(context)) {
+      _fresh = false;
+      _c.value = 1;
+      return;
+    }
+    setState(() => _fresh = true);
+    _c.forward(from: 0);
+    if (widget.splash) showSplash(context, color: widget.colors.c, link: _link);
+  }
+
+  @override
+  void didUpdateWidget(CheckMark old) {
+    super.didUpdateWidget(old);
+    if (!widget.on && _fresh) {
+      _fresh = false;
+      _c.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
+    final small = widget.small, on = widget.on, colors = widget.colors;
     final s = small ? 16.0 : 22.0;
-    final box = AnimatedContainer(
-      duration: Motion.fast,
-      width: s,
-      height: s,
-      decoration: BoxDecoration(
-        color: on ? colors.c : Colors.transparent,
-        border: Border.all(color: on ? colors.c : tok.sub, width: small ? 1.5 : 2),
-        borderRadius: BorderRadius.circular(small ? 4 : s / 2),
-      ),
-      alignment: Alignment.center,
-      child: on ? AppIcon(Ic.check, size: small ? 11 : 14, stroke: 3, color: colors.cs) : null,
+    final box = AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final fresh = _fresh && on && _c.isAnimating;
+        final ms = _c.value * Motion.checkTotal.inMilliseconds;
+        final drawn = fresh
+            ? Curves.easeOut.transform(
+                ((ms - Motion.checkSettleAt.inMilliseconds) / Motion.checkDraw.inMilliseconds).clamp(0.0, 1.0),
+              )
+            : 1.0;
+        return Transform.scale(
+          scale: fresh ? CheckMark.scaleAt(ms) : 1,
+          child: AnimatedContainer(
+            // Beim Abhaken füllt sich der Kreis sofort – er springt ja.
+            duration: _fresh ? Duration.zero : Motion.fast,
+            width: s,
+            height: s,
+            decoration: BoxDecoration(
+              color: on ? colors.c : Colors.transparent,
+              border: Border.all(color: on ? colors.c : tok.sub, width: small ? 1.5 : 2),
+              borderRadius: BorderRadius.circular(small ? 4 : s / 2),
+            ),
+            alignment: Alignment.center,
+            child: on ? AppIcon(Ic.check, size: small ? 11 : 14, stroke: 3, color: colors.cs, drawn: drawn) : null,
+          ),
+        );
+      },
     );
     return Pressable(
-      onTap: onTap,
-      semanticLabel: label,
+      onTap: _tap,
+      semanticLabel: widget.label,
       toggled: on,
       glow: false,
       pressScale: 0.85,
@@ -789,27 +866,9 @@ class CheckMark extends StatelessWidget {
         width: small ? 36 : 44,
         height: small ? 32 : 44,
         child: Center(
-          child: _PopIn(key: ValueKey(on), child: box),
+          child: CompositedTransformTarget(link: _link, child: box),
         ),
       ),
-    );
-  }
-}
-
-/// Häkchen springt beim Umschalten kurz auf (Keyframes `pop-check`).
-class _PopIn extends StatelessWidget {
-  const _PopIn({super.key, required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (Motion.reduced(context)) return child;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.5, end: 1),
-      duration: Motion.springBack,
-      curve: Motion.check,
-      builder: (context, v, c) => Transform.scale(scale: v, child: c),
-      child: child,
     );
   }
 }

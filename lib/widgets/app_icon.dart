@@ -128,19 +128,21 @@ const Map<Ic, List<_Shape>> _shapes = {
 };
 
 /// Zeichnet ein Prototyp-Icon in [size] mit Strichstärke [stroke] (bezogen auf 24 px).
+/// [drawn] < 1 zeichnet die Linien nur bis zu diesem Anteil (Haken, der sich zeichnet).
 class AppIcon extends StatelessWidget {
-  const AppIcon(this.icon, {super.key, this.size = 24, this.stroke = 1.9, this.color});
+  const AppIcon(this.icon, {super.key, this.size = 24, this.stroke = 1.9, this.color, this.drawn = 1});
 
   final Ic icon;
   final double size;
   final double stroke;
   final Color? color;
+  final double drawn;
 
   @override
   Widget build(BuildContext context) {
     final c = color ?? IconTheme.of(context).color ?? DefaultTextStyle.of(context).style.color!;
     return ExcludeSemantics(
-      child: CustomPaint(size: Size.square(size), painter: _IconPainter(icon, stroke, c)),
+      child: CustomPaint(size: Size.square(size), painter: _IconPainter(icon, stroke, c, drawn)),
     );
   }
 }
@@ -148,10 +150,11 @@ class AppIcon extends StatelessWidget {
 final Map<String, Path> _pathCache = {};
 
 class _IconPainter extends CustomPainter {
-  _IconPainter(this.icon, this.stroke, this.color);
+  _IconPainter(this.icon, this.stroke, this.color, this.drawn);
   final Ic icon;
   final double stroke;
   final Color color;
+  final double drawn;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -165,7 +168,8 @@ class _IconPainter extends CustomPainter {
     for (final s in _shapes[icon]!) {
       switch (s) {
         case _P(:final d):
-          canvas.drawPath(_pathCache.putIfAbsent(d, () => parseSvgPath(d)), line);
+          final path = _pathCache.putIfAbsent(d, () => parseSvgPath(d));
+          canvas.drawPath(drawn >= 1 ? path : _partOf(path, drawn), line);
         case _C(:final cx, :final cy, :final r, :final fill):
           canvas.drawCircle(Offset(cx, cy), r, fill ? (Paint()..color = color) : line);
         case _R(:final x, :final y, :final w, :final h, :final rx):
@@ -177,7 +181,17 @@ class _IconPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_IconPainter old) => old.icon != icon || old.stroke != stroke || old.color != color;
+  bool shouldRepaint(_IconPainter old) =>
+      old.icon != icon || old.stroke != stroke || old.color != color || old.drawn != drawn;
+
+  /// Der Anfang von [path] bis zum Anteil [t] seiner Länge.
+  static Path _partOf(Path path, double t) {
+    final out = Path();
+    for (final m in path.computeMetrics()) {
+      out.addPath(m.extractPath(0, m.length * t.clamp(0.0, 1.0)), Offset.zero);
+    }
+    return out;
+  }
 }
 
 /// Kleiner SVG-Pfad-Parser für die Befehle M L H V C S A Z (groß = absolut, klein = relativ).
