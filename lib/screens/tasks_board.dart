@@ -9,11 +9,11 @@ import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
-import '../util/holidays.dart';
 import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pickers.dart';
 import '../widgets/ui.dart';
+import 'calendar_tab.dart';
 import 'drag_order.dart';
 import 'older_done.dart';
 import 'task_card.dart';
@@ -586,7 +586,6 @@ class _MonthPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = context.app.store;
     final tok = context.tok;
-    final l = context.l;
     final f = Fmt.of(context);
     final now = today();
     final month = DateTime(now.year, now.month);
@@ -611,28 +610,17 @@ class _MonthPanel extends StatelessWidget {
             padding: EdgeInsets.zero,
             wdFontSize: 11,
             wdPadding: 4,
-            cell: (d, other) {
-              final holiday = holidayOn(d);
-              return DayCell(
-                day: d,
-                other: other,
-                selected: false,
-                holiday: holiday != null,
-                height: 42,
-                circle: 30,
-                semanticLabel: holiday == null ? f.dayMonth(d) : '${f.dayMonth(d)}, ${holidayName(l, holiday)}',
-                below: DayDots(
-                  colors: [
-                    for (final id in catsByDay[isoDate(d)] ?? const <String>{}) tok.item(store.catOf(id).color).c,
-                  ],
-                ),
-                onTap: () {
-                  ui.calSel = d;
-                  ui.calMonth = DateTime(d.year, d.month);
-                  ui.goTab(AppTab.calendar);
-                },
-              );
-            },
+            cell: (d, other) => CalendarDayCell(
+              day: d,
+              other: other,
+              small: true,
+              cats: catsByDay[isoDate(d)],
+              onTap: () {
+                ui.calSel = d;
+                ui.calMonth = DateTime(d.year, d.month);
+                ui.goTab(AppTab.calendar);
+              },
+            ),
           ),
         ],
       ),

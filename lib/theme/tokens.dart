@@ -256,6 +256,13 @@ abstract final class Sizes {
 
   /// Der Kalender zeigt den Tag erst neben dem Monat, wenn dem Monat genug Platz bleibt.
   static const double calTwoPane = 780;
+
+  /// Tag im Monatsraster: Zellenhöhe und Kreis um die Zahl – im Kalender-Tab und etwas
+  /// kleiner im Monat der Seitenleiste.
+  static const double calDayH = 48;
+  static const double calDayCircle = 34;
+  static const double calDayHSmall = 42;
+  static const double calDayCircleSmall = 30;
   static const double sideNavW = 236;
 
   /// Unterer Rand der Listen im breiten Layout (dort liegt keine Leiste über dem Inhalt).
