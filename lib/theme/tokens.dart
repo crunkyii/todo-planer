@@ -178,6 +178,9 @@ class AppTokens extends ThemeExtension<AppTokens> {
   ];
   Color get scrim => const Color(0x610A141E);
 
+  /// Glanzlicht auf den Tropfen des Splashs – hell wie dunkel weiß.
+  Color get shine => white;
+
   @override
   AppTokens copyWith() => this;
 
@@ -307,6 +310,16 @@ abstract final class Sizes {
   /// Breite des Streifens, in dem beim Ziehen der Name des nächsten Monats steht.
   static const double swipePeek = 120;
 
+  /// Ab dieser Verschiebung erscheint der Name der nächsten Seite.
+  static const double swipePeekFrom = 8;
+
+  /// Innenabstand des Namens im Streifen (waagrecht, senkrecht).
+  static const double swipePeekPadX = 14;
+  static const double swipePeekPadY = 8;
+
+  /// So schnell gewischt (px/s), blättert es auch nach kurzer Strecke.
+  static const double swipeVelocity = 300;
+
   /// So weit gleitet der Titel (Monat, Kalenderwoche) beim Blättern hinaus.
   static const double titleShift = 30;
 
@@ -353,6 +366,9 @@ abstract final class Fs {
   static const double tile = 26;
   static const double login = 28;
 
+  /// Pfeil neben dem Namen der nächsten Seite beim Wischen.
+  static const double peekIcon = base + 2;
+
   /// Ziffern gleich breit – Zahlen und Uhrzeiten springen nicht, wenn sich ihr Wert ändert.
   static const tabular = [FontFeature.tabularFigures()];
 }
@@ -369,7 +385,6 @@ abstract final class Motion {
   static const Curve zoom = Cubic(0.22, 1.2, 0.36, 1);
   static const Curve grow = Cubic(0.34, 1.35, 0.5, 1);
   static const Curve growX = Cubic(0.34, 1.3, 0.5, 1);
-  static const Curve check = Cubic(0.34, 1.9, 0.5, 1);
   static const Curve release = Cubic(0.25, 0.8, 0.35, 1);
 
   static const Duration press = Duration(milliseconds: 120);
@@ -415,7 +430,9 @@ abstract final class Motion {
   static const Duration checkSettleAt = Duration(milliseconds: 300);
   static const Duration checkSettle = Duration(milliseconds: 220);
   static const Duration checkDraw = Duration(milliseconds: 260);
-  static const Duration checkTotal = Duration(milliseconds: 1100);
+
+  /// Bis Sprung und Haken fertig sind – danach läuft nichts mehr.
+  static final Duration checkTotal = checkSettleAt + (checkSettle > checkDraw ? checkSettle : checkDraw);
   static const double checkFrom = 0.6;
   static const double checkPeak = 1.2;
 

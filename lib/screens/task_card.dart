@@ -767,7 +767,8 @@ class _StrikeTextState extends State<StrikeText> with SingleTickerProviderStateM
       return CustomPaint(
         foregroundPainter: _StrikePainter(
           text: widget.text,
-          style: DefaultTextStyle.of(context).style.merge(shown),
+          // Gemessen wird mit der festen Schrift – die Farbe ändert die Zeilen nicht.
+          style: DefaultTextStyle.of(context).style.merge(style),
           scaler: MediaQuery.textScalerOf(context),
           direction: Directionality.of(context),
           part: _part(Motion.strikeDelay, Motion.strike, Motion.emphasized),
@@ -797,19 +798,34 @@ class _StrikePainter extends CustomPainter {
   final double part;
   final Color color;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (part <= 0) return;
+  static final _line = Paint();
+
+  /// Zeilen des zuletzt gemessenen Texts: Während des Strichs ändert sich nur [part], der Text
+  /// wird also nicht in jedem Bild neu gesetzt.
+  static Object? _measured;
+  static List<LineMetrics> _lines = const [];
+
+  List<LineMetrics> _measure(double maxWidth) {
+    final key = (text, style, scaler, direction, maxWidth);
+    if (key == _measured) return _lines;
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: direction,
       textScaler: scaler,
-    )..layout(maxWidth: size.width + 0.5);
-    final lines = tp.computeLineMetrics();
+    )..layout(maxWidth: maxWidth);
+    _lines = tp.computeLineMetrics();
     tp.dispose();
+    _measured = key;
+    return _lines;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (part <= 0) return;
+    final lines = _measure(size.width + 0.5);
     // Lage und Stärke wie der Strich der Schrift (Roboto: ¼ bzw. 1/20 der Schriftgröße).
     final fs = scaler.scale(style.fontSize ?? Fs.task);
-    final paint = Paint()
+    final paint = _line
       ..color = color
       ..strokeWidth = math.max(1, fs * 0.05);
     var left = part * lines.fold<double>(0, (a, m) => a + m.width);
@@ -823,5 +839,11 @@ class _StrikePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_StrikePainter old) => old.part != part || old.text != text || old.style != style;
+  bool shouldRepaint(_StrikePainter old) =>
+      old.part != part ||
+      old.color != color ||
+      old.text != text ||
+      old.style != style ||
+      old.scaler != scaler ||
+      old.direction != direction;
 }

@@ -707,7 +707,7 @@ class CheckMark extends StatefulWidget {
 
 class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMixin {
   late final _c = AnimationController(vsync: this, duration: Motion.checkTotal, value: 1);
-  final _link = LayerLink();
+  late final _link = LayerLink();
 
   /// Gerade per Tipp abgehakt: Sprung und Haken laufen.
   bool _fresh = false;
@@ -716,7 +716,7 @@ class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMix
   bool _checking = false;
 
   void _tap() {
-    final color = widget.colors.c;
+    final color = widget.colors.c, shine = context.tok.shine;
     _checking = !widget.on && !Motion.reduced(context);
     // Stelle schon jetzt merken: Rutscht die Aufgabe nach „Erledigt“, ist der Kreis gleich weg.
     final anchor = _checking && widget.splash ? BurstAnchor.of(context) : null;
@@ -726,7 +726,7 @@ class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMix
       // Abgehakt (oder samt Zeile verschwunden, weil sie nach „Erledigt“ gewandert ist)?
       final checked = mounted ? widget.on : true;
       if (mounted) _checking = false;
-      if (checked) showSplash(anchor, color: color, link: _link);
+      if (checked) showSplash(anchor, color: color, shine: shine, link: _link);
     });
   }
 
@@ -791,8 +791,9 @@ class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMix
       child: SizedBox(
         width: small ? 36 : 44,
         height: small ? 32 : 44,
+        // Ziel für den Splash, damit er dem Kreis folgt – ohne Splash keine eigene Ebene.
         child: Center(
-          child: CompositedTransformTarget(link: _link, child: box),
+          child: widget.splash ? CompositedTransformTarget(link: _link, child: box) : box,
         ),
       ),
     );

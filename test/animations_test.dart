@@ -82,6 +82,9 @@ void main() {
       expect(CheckMark.scaleAt(0), Motion.checkFrom);
       expect(CheckMark.scaleAt(230), closeTo(Motion.checkPeak, 0.001));
       expect(CheckMark.scaleAt(600), 1);
+      // Die Animation endet, sobald Sprung und Haken fertig sind – nicht später.
+      expect(CheckMark.scaleAt(Motion.checkTotal.inMilliseconds.toDouble()), 1);
+      expect(Motion.checkTotal, Motion.checkSettleAt + Motion.checkDraw);
     });
 
     test('Blättern: hinaus in Wischrichtung, herein von der anderen Seite', () {
@@ -197,6 +200,27 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Der hinausgleitende Monat ist nicht mehr antippbar', (tester) async {
+      useFixedClock();
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.navCalendar));
+      final grid = find.byType(MonthGrid);
+      final ignored = find.ancestor(
+        of: grid,
+        matching: find.byWidgetPredicate((w) => w is IgnorePointer && w.ignoring),
+      );
+      expect(ignored, findsNothing);
+      await tester.tap(find.bySemanticsLabel(l.nextMonth));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(ignored, findsOneWidget, reason: 'der alte Monat gleitet hinaus');
+      await tester.pumpAndSettle();
+      expect(ignored, findsNothing, reason: 'der neue ist wieder antippbar');
+      await finishApp(tester, app);
+    });
+
     testWidgets('Wochenplan: Wischen zeigt die nächste Woche und blättert', (tester) async {
       useFixedClock(); // KW 47
       final l = l10n('de');
@@ -231,6 +255,8 @@ void main() {
       await tester.pump();
       expect(find.text('Dezember 2026'), findsOneWidget, reason: 'sofort der neue Monat');
       expect(tester.getTopLeft(grid).dx, rest);
+      final fade = tester.widget<Opacity>(find.ancestor(of: grid, matching: find.byType(Opacity)).first);
+      expect(fade.opacity, closeTo(Motion.pageDim, 0.001), reason: 'blendet nicht aus dem Leeren über');
       await tester.pumpAndSettle();
       await finishApp(tester, app);
     });
@@ -270,6 +296,26 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(_splash, findsNothing);
       await tester.pumpAndSettle();
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Nur Kreise mit Splash bekommen ein Ziel, dem er folgt', (tester) async {
+      useFixedClock();
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.navTasks));
+      final marks = tester.widgetList<CheckMark>(find.byType(CheckMark)).toList();
+      expect(marks.where((m) => m.splash), isNotEmpty);
+      expect(marks.where((m) => !m.splash), isNotEmpty, reason: 'Unteraufgaben spritzen nicht');
+      for (final m in marks) {
+        expect(
+          find.descendant(of: find.byWidget(m), matching: find.byType(CompositedTransformTarget)),
+          m.splash ? findsOneWidget : findsNothing,
+          reason: m.label,
+        );
+      }
       await finishApp(tester, app);
     });
 

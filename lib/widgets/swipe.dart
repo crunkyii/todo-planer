@@ -45,7 +45,11 @@ Duration get _pageTotal => Motion.pageInAt + Motion.pageIn;
 /// Gemeinsame Logik: merkt sich beim Wechsel von [page] den alten Inhalt und spielt das
 /// Hinaus- und Hereingleiten ab. Ein Wechsel von [group] (Woche ↔ Tag) springt ohne Gleiten.
 mixin _PageSwap<T extends StatefulWidget> on State<T>, TickerProvider {
-  late final AnimationController _c = AnimationController(vsync: this, value: 1);
+  // Ist das Gleiten fertig, wird der alte Inhalt nicht mehr gebraucht – nicht länger festhalten.
+  late final AnimationController _c = AnimationController(vsync: this, value: 1)
+    ..addStatusListener((s) {
+      if (s.isCompleted) _old = null;
+    });
   int _dir = 1;
   double _from = 0;
   bool _fade = false;
@@ -76,11 +80,18 @@ mixin _PageSwap<T extends StatefulWidget> on State<T>, TickerProvider {
     _c.forward(from: 0);
   }
 
+  /// Der gerade gezeigte Inhalt: der alte ist beim Hinausgleiten nicht mehr antippbar.
+  Widget current(PageFrame f, Widget child) => IgnorePointer(ignoring: f.old, child: f.old ? _old! : child);
+
   PageFrame frame(double distance, {bool title = false}) {
     _distance = distance;
     _title = title;
     if (!_c.isAnimating) return _rest;
-    if (_fade) return (x: 0, opacity: Curves.ease.transform(_c.value), old: false);
+    if (_fade) {
+      // Überblenden ab der Deckkraft beim Gleiten – nicht ab 0, sonst blitzt die Seite kurz leer auf.
+      final dim = title ? 0.0 : Motion.pageDim;
+      return (x: 0, opacity: dim + (1 - dim) * Curves.ease.transform(_c.value), old: false);
+    }
     final ms = _c.value * _pageTotal.inMilliseconds;
     return pageFrame(ms: ms, dir: _dir, distance: distance, from: _from, title: title);
   }
@@ -122,7 +133,7 @@ class _PageTitleState extends State<PageTitle> with SingleTickerProviderStateMix
       final f = frame(Sizes.titleShift, title: true);
       return Transform.translate(
         offset: Offset(f.x, 0),
-        child: Opacity(opacity: f.opacity, child: f.old ? _old! : widget.child),
+        child: Opacity(opacity: f.opacity, child: current(f, widget.child)),
       );
     },
   );
@@ -157,11 +168,6 @@ class SwipePager extends StatefulWidget {
 }
 
 class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, _PageSwap<SwipePager> {
-  static const _minVelocity = 300.0;
-
-  /// Ab dieser Verschiebung erscheint der Name der nächsten Seite.
-  static const _peekFrom = 8.0;
-
   /// Verschiebung durch den Finger (bei „Animationen reduzieren“ bleibt sie 0) und die
   /// gewischte Strecke, nach der entschieden wird.
   double _drag = 0;
@@ -209,9 +215,9 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
   void _end(DragEndDetails d) {
     _dragging = false;
     final v = d.primaryVelocity ?? 0;
-    if (_dist.abs() >= Sizes.swipeThreshold || v.abs() >= _minVelocity) {
+    if (_dist.abs() >= Sizes.swipeThreshold || v.abs() >= Sizes.swipeVelocity) {
       // Bei schnellem Wisch entscheidet die Richtung der Bewegung am Ende.
-      final right = v.abs() >= _minVelocity ? v > 0 : _dist > 0;
+      final right = v.abs() >= Sizes.swipeVelocity ? v > 0 : _dist > 0;
       widget.onMove(right ? -1 : 1);
       // Blättert die Seite doch nicht weiter, federt der Inhalt zurück.
       WidgetsBinding.instance
@@ -250,7 +256,7 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
           builder: (context, _) {
             final f = frame(box.maxWidth);
             final x = f.x + _drag;
-            final shown = _drag.abs() > _peekFrom;
+            final shown = _drag.abs() > Sizes.swipePeekFrom;
             final peek = Positioned(
               top: 0,
               bottom: 0,
@@ -280,9 +286,13 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
               fit: StackFit.passthrough,
               children: [
                 peek,
+                // Eigene Ebene: Beim Gleiten wird nur verschoben und überblendet, nicht neu gezeichnet.
                 Transform.translate(
                   offset: Offset(x, 0),
-                  child: Opacity(opacity: f.opacity, child: f.old ? _old! : widget.child),
+                  child: Opacity(
+                    opacity: f.opacity,
+                    child: RepaintBoundary(child: current(f, widget.child)),
+                  ),
                 ),
               ],
             );
@@ -304,18 +314,18 @@ class _PeekLabel extends StatelessWidget {
   Widget build(BuildContext context) => FittedBox(
     fit: BoxFit.scaleDown,
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: Sizes.swipePeekPadX, vertical: Sizes.swipePeekPadY),
       decoration: BoxDecoration(color: tok.surf2, borderRadius: BorderRadius.circular(Sizes.rPop)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (dir < 0) AppIcon(Ic.left, size: Fs.base + 2, color: tok.onPc),
+          if (dir < 0) AppIcon(Ic.left, size: Fs.peekIcon, color: tok.onPc),
           Text(
             text,
             maxLines: 1,
             style: TextStyle(fontSize: Fs.base, fontWeight: FontWeight.w500, color: tok.onPc),
           ),
-          if (dir > 0) AppIcon(Ic.right, size: Fs.base + 2, color: tok.onPc),
+          if (dir > 0) AppIcon(Ic.right, size: Fs.peekIcon, color: tok.onPc),
         ],
       ),
     ),
