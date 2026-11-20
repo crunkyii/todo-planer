@@ -92,6 +92,34 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Gemerkte Einteilung: Ist die Uhrzeit einer Aufgabe vorbei, wird beim nächsten Aufbau neu eingeteilt', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      var now = fixedNow;
+      clock = () => now;
+      addTearDown(() => clock = DateTime.now);
+      final app = await makeServices();
+      final store = app.store;
+      store.addCategory(name: 'Schule', color: '#AABBCC', offset: 0);
+      final cat = store.categories.last;
+      store.addTask(title: 'Referat', categoryId: cat.id, dueDate: today(), dueTime: 11 * 60, subs: const []);
+      store.addTask(title: 'Vokabeln', categoryId: cat.id, dueDate: addDays(today(), 1), dueTime: null, subs: const []);
+      await pumpApp(tester, app);
+      Finder head(String label) => find.byWidgetPredicate((w) => w is SectionHead && w.label == label);
+      expect(head(l.overdue), findsNothing);
+      expect(head(l.today), findsOneWidget);
+
+      // Die Zeit läuft weiter, an den Daten ändert sich nichts. Zuklappen von „Morgen“ baut
+      // die Liste neu – die gemerkte Einteilung von 10:30 gilt dann nicht mehr.
+      now = fixedNow.add(const Duration(minutes: 31));
+      await _tap(tester, head(l.tomorrow));
+      expect(head(l.overdue), findsOneWidget);
+      expect(head(l.today), findsNothing);
+      expect(find.text('Vokabeln'), findsNothing, reason: 'zugeklappt');
+      await finishApp(tester, app);
+    });
+
     testWidgets('Kategorie bearbeiten: Löschen, Abbrechen und Speichern passen auf ein schmales Handy', (tester) async {
       final l = l10n('de');
       final app = await makeServices();

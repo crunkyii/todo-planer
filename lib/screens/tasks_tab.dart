@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
 import '../data/models.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/selected.dart';
@@ -314,7 +315,28 @@ class _SearchBarState extends State<_SearchBar> {
   }
 }
 
-class _TaskList extends StatelessWidget {
+/// Was die Liste aus den Aufgaben berechnet: [list] gefiltert und sortiert, [hidden] von
+/// „In Aufgaben zeigen“ zurückgehaltene, [showOlder] ältere erledigte zum Nachladen und die
+/// Gruppen (`null` = eine einzige Liste: Suche, nach Name sortiert).
+typedef _Plan = ({List<Task> list, int hidden, bool showOlder, List<TaskGroup>? groups});
+
+/// Wovon [_Plan] abhängt – bleibt das alles gleich, gilt der gemerkte Plan weiter. Mengen und
+/// Listen stehen als Text darin, damit `==` ihren Inhalt vergleicht.
+typedef _PlanKey = (
+  int revision,
+  String filter,
+  bool hideDone,
+  String? search,
+  SortMode sort,
+  bool board,
+  int weekFirstDay,
+  String hiddenSections,
+  String columnOrder,
+  AppLocalizations l,
+  AppTokens tok,
+);
+
+class _TaskList extends StatefulWidget {
   const _TaskList({required this.ui, required this.board});
   final UiState ui;
 
@@ -322,14 +344,57 @@ class _TaskList extends StatelessWidget {
   final bool board;
 
   @override
-  Widget build(BuildContext context) {
+  State<_TaskList> createState() => _TaskListState();
+}
+
+class _TaskListState extends State<_TaskList> {
+  /// Der zuletzt berechnete Plan. Aufklappen, Ziehen eines Abschnitts, ein Abgleich oder ein
+  /// Wolken-Symbol bauen die Liste neu, ohne alles neu zu filtern, einzuteilen und zu sortieren.
+  ({_PlanKey key, DateTime until, _Plan plan})? _memo;
+
+  _Plan _planFor(String filter) {
+    final ui = widget.ui;
+    final app = context.app;
+    final set = app.settings;
+    final _PlanKey key = (
+      app.store.revision,
+      filter,
+      ui.hideDone,
+      ui.search,
+      ui.sort,
+      widget.board,
+      weekFirstDay,
+      (set.boardHidden.toList()..sort()).join(','),
+      set.boardColumnOrder().join(','),
+      context.l,
+      context.tok,
+    );
+    final now = clock();
+    final m = _memo;
+    if (m != null && m.key == key && now.isBefore(m.until)) return m.plan;
+    final (plan, until) = _computePlan(filter, now);
+    _memo = (key: key, until: until, plan: plan);
+    return plan;
+  }
+
+  /// Bis wann ein Plan über [tasks] ohne Änderung an den Daten stimmt: bis Mitternacht
+  /// („Heute“, „Morgen“ …) oder bis zur Uhrzeit einer offenen Aufgabe – danach ist sie
+  /// überfällig. Auch eine genau jetzt fällige zählt, sie wird gleich danach überfällig.
+  static DateTime _validUntil(Iterable<Task> tasks, DateTime now) {
+    var until = addDays(sod(now), 1);
+    for (final t in tasks) {
+      if (!t.done && t.hasTime && !t.due.isBefore(now) && t.due.isBefore(until)) until = t.due;
+    }
+    return until;
+  }
+
+  /// Filtert, teilt ein und sortiert – und sagt, bis wann das Ergebnis gilt.
+  (_Plan, DateTime) _computePlan(String filter, DateTime now) {
+    final ui = widget.ui, board = widget.board;
     final store = context.app.store;
     final l = context.l;
     final tok = context.tok;
     int off(Task t) => store.catOf(t.categoryId).offset;
-    final searching = ui.search != null && ui.search!.trim().isNotEmpty;
-    final filter = _filterOf(ui, store.categories, board: board);
-    final now = clock();
     final all = filterTasks(
       store.tasksWithOlder,
       filter: filter == filterHabits ? filterAll : filter,
@@ -344,12 +409,9 @@ class _TaskList extends StatelessWidget {
         : all;
     final hidden = all.length - list.length;
     list.sort((a, b) => byDo(a, b, off));
-    // Am PC stehen die Gewohnheiten in der Seitenleiste.
-    final showHabits = !board && ui.search == null && (filter == filterAll || filter == filterHabits);
     // Ältere erledigte liegen nur online: Knopf zum Nachladen bzw. Hinweis am Ende der Liste –
     // außer der Abschnitt „Erledigt“ ist zugeklappt oder Erledigte sind ausgeblendet.
-    final olderCat = filter == filterAll || filter == filterHabits ? null : filter;
-    var showOlder = filter != filterHabits && !ui.hideDone && store.olderWaiting(categoryId: olderCat) > 0;
+    final showOlder = filter != filterHabits && !ui.hideDone && store.olderWaiting(categoryId: _olderCat(filter)) > 0;
 
     // Gruppen: Zeiträume oder Kategorien. `null` = eine einzige Liste (Suche, nach Name sortiert).
     List<TaskGroup>? groups;
@@ -398,6 +460,25 @@ class _TaskList extends StatelessWidget {
         groups.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
       }
     }
+    return ((list: list, hidden: hidden, showOlder: showOlder, groups: groups), _validUntil(all, now));
+  }
+
+  /// Ältere erledigte nur einer Kategorie – oder `null` für alle.
+  static String? _olderCat(String filter) => filter == filterAll || filter == filterHabits ? null : filter;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = widget.ui, board = widget.board;
+    final store = context.app.store;
+    final l = context.l;
+    final tok = context.tok;
+    final searching = ui.search != null && ui.search!.trim().isNotEmpty;
+    final filter = _filterOf(ui, store.categories, board: board);
+    final (:list, :hidden, :groups, showOlder: olderWaiting) = _planFor(filter);
+    var showOlder = olderWaiting;
+    // Am PC stehen die Gewohnheiten in der Seitenleiste.
+    final showHabits = !board && ui.search == null && (filter == filterAll || filter == filterHabits);
+    final olderCat = _olderCat(filter);
 
     // Der Hinweis kommt nur beim ersten Mal (gemerkt am Gerät) und bleibt dann für diesen
     // App-Start stehen, bis man ihn schließt.
