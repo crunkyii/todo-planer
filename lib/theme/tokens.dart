@@ -152,7 +152,9 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final List<BoxShadow> cardShadow;
 
   /// Abgeleitete Farben für eine Kategorie-/Gewohnheits-/Blockfarbe.
-  ItemColors item(String hex) => ItemColors.of(parseHex(hex), dark: dark);
+  /// Zwischengespeichert: Karten fragen bei jedem Neuaufbau danach, es gibt aber nur wenige Farben.
+  ItemColors item(String hex) => _items.putIfAbsent((hex, dark), () => ItemColors.of(parseHex(hex), dark: dark));
+  static final _items = <(String, bool), ItemColors>{};
 
   /// Schatten unter einer gewählten Karte (Sprache), leicht in der Hauptfarbe.
   List<BoxShadow> get selectedShadow => [

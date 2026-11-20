@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/rendering.dart';
 import 'package:todo_liste/data/settings_store.dart';
+import 'package:todo_liste/theme/app_theme.dart';
 import 'package:todo_liste/widgets/app_icon.dart';
 import 'package:todo_liste/widgets/select.dart';
 
@@ -100,5 +102,28 @@ void main() {
     expect(find.bySemanticsLabel('${l.language}: Deutsch'), findsOneWidget);
     handle.dispose();
     await finishApp(tester, app);
+  });
+
+  testWidgets('Auswahl-Zeile: ein langer Wert steht ganz da und wird nicht abgeschnitten', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    const long = '2 Tage vorher erledigen';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme('', dark: false),
+        home: Scaffold(
+          body: SelectRow<int>(
+            title: 'Erledigen',
+            options: const [(0, 'Am selben Tag'), (2, long)],
+            value: 2,
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final text = tester.renderObject<RenderParagraph>(find.text(long));
+    expect(text.didExceedMaxLines, isFalse);
   });
 }

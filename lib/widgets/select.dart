@@ -104,34 +104,39 @@ class _SelectRowState<T> extends State<SelectRow<T>> {
             padding: const EdgeInsetsDirectional.fromSTEB(14, 0, 10, 0),
             child: end,
           )
-        : Container(
-            constraints: const BoxConstraints(minHeight: Sizes.setRowH),
-            padding: widget.padding,
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(title, style: TextStyle(fontSize: 16, color: tok.text)),
-                      if (widget.subtitle case final sub?)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(sub, style: TextStyle(fontSize: 13, color: tok.sub)),
-                        ),
-                    ],
-                  ),
+        : LayoutBuilder(
+            builder: (context, box) {
+              final maxValueW = box.maxWidth * Sizes.selectValueShare;
+              return Container(
+                constraints: const BoxConstraints(minHeight: Sizes.setRowH),
+                padding: widget.padding,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(title, style: TextStyle(fontSize: 16, color: tok.text)),
+                          if (widget.subtitle case final sub?)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(sub, style: TextStyle(fontSize: 13, color: tok.sub)),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Wert in voller Breite rechts; erst ein sehr langer Wert wird gekürzt, damit der
+                    // Titel nicht ganz verdrängt wird.
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxValueW),
+                      child: end,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                // Wert rechtsbündig; lange Werte kürzen statt den Titel zu verdrängen.
-                Flexible(
-                  flex: 2,
-                  child: Align(alignment: AlignmentDirectional.centerEnd, child: end),
-                ),
-              ],
-            ),
+              );
+            },
           );
     return Pressable(
       onTap: _openMenu,

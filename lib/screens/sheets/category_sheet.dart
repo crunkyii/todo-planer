@@ -103,7 +103,8 @@ class _CategorySheetState extends State<CategorySheet> {
           title: l.doWhen,
           padding: const EdgeInsets.symmetric(vertical: 8),
           options: [
-            for (final o in const [0, 1, 2, 7]) (o, f.offsetLabel(o)),
+            // Ein anderer Vorlauf (z. B. von einem anderen Gerät) bleibt sichtbar und wählbar.
+            for (final o in ({0, 1, 2, 7, _offset}.toList()..sort())) (o, f.offsetLabel(o)),
           ],
           value: _offset,
           onChanged: (v) => setState(() => _offset = v),
