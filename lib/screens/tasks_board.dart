@@ -465,25 +465,9 @@ class TasksSide extends StatelessWidget {
   );
 }
 
-class _Panel extends StatelessWidget {
-  const _Panel({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final tok = context.tok;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: tok.card,
-        borderRadius: BorderRadius.circular(Sizes.rCard),
-        boxShadow: tok.cardShadow,
-      ),
-      child: child,
-    );
-  }
-}
+/// Abstände der Karten in der Seitenleiste ([AppCard] mit [Sizes.rCard]).
+const _panelMargin = EdgeInsets.fromLTRB(12, 0, 12, 8);
+const _panelPadding = EdgeInsets.all(16);
 
 /// Wie viel von heute geschafft ist: Ring mit „erledigt/gesamt“ und was noch offen ist.
 /// Es zählt, was heute dran ist oder war (überfällig oder heute zu tun) – eine Aufgabe von
@@ -511,7 +495,10 @@ class _TodayPanel extends StatelessWidget {
     }
     final total = open + done;
     final summary = open == 0 ? l.todayAllDone : (late > 0 ? l.todayOpenLate(open, late) : l.todayOpen(open));
-    return _Panel(
+    return AppCard(
+      margin: _panelMargin,
+      padding: _panelPadding,
+      radius: Sizes.rCard,
       child: Semantics(
         container: true,
         label: '${l.today}: ${l.progress(done, total)}, $summary',
@@ -604,7 +591,10 @@ class _MonthPanel extends StatelessWidget {
     final now = today();
     final month = DateTime(now.year, now.month);
     final catsByDay = openCategoriesByDay(store.tasksWithOlder);
-    return _Panel(
+    return AppCard(
+      margin: _panelMargin,
+      padding: _panelPadding,
+      radius: Sizes.rCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
