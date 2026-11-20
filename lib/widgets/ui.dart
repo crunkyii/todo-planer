@@ -15,12 +15,13 @@ class RichB extends StatelessWidget {
   final String text;
   final TextStyle? style;
 
+  static final _bold = RegExp(r'<b>(.*?)</b>');
+
   @override
   Widget build(BuildContext context) {
     final spans = <TextSpan>[];
-    final re = RegExp(r'<b>(.*?)</b>');
     var i = 0;
-    for (final m in re.allMatches(text)) {
+    for (final m in _bold.allMatches(text)) {
       if (m.start > i) spans.add(TextSpan(text: text.substring(i, m.start)));
       spans.add(
         TextSpan(

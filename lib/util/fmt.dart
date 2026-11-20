@@ -29,32 +29,41 @@ class Fmt {
 
   static final _monday = DateTime(2024, 1, 1);
 
+  /// Einmal gebaute Formate je Muster und Sprache – ein DateFormat anzulegen kostet viel mehr
+  /// als damit zu formatieren, und Listen formatieren bei jedem Neuaufbau Dutzende Daten.
+  static final _formats = <String, DateFormat>{};
+  DateFormat _df(String key, DateFormat Function() make) => _formats.putIfAbsent('$key|$_loc', make);
+
   /// „Mo“, „Di“ … bzw. „Mo“, „Tu“ … (zwei Buchstaben wie im Prototyp).
   String wd(int i) {
-    final s = DateFormat.E(_loc).format(addDays(_monday, i)).replaceAll('.', '');
+    final s = _df('E', () => DateFormat.E(_loc)).format(addDays(_monday, i)).replaceAll('.', '');
     return _cap(s.length > 2 ? s.substring(0, 2) : s);
   }
 
-  String wdLong(int i) => _cap(DateFormat.EEEE(_loc).format(addDays(_monday, i)));
-  String monthYear(DateTime d) => _cap(DateFormat.yMMMM(_loc).format(d));
+  String wdLong(int i) => _cap(_df('EEEE', () => DateFormat.EEEE(_loc)).format(addDays(_monday, i)));
+  String monthYear(DateTime d) => _cap(_df('yMMMM', () => DateFormat.yMMMM(_loc)).format(d));
 
   /// „Dezember“ – der Monat allein (Vorschau beim Wischen im Kalender).
-  String month(DateTime d) => _cap(DateFormat.LLLL(_loc).format(d));
+  String month(DateTime d) => _cap(_df('LLLL', () => DateFormat.LLLL(_loc)).format(d));
 
   /// „Nov.“, „Juli“, „Jän.“ / „Nov“ – dieselbe Form wie in [dayMon]. Ein einzelnes `MMM`
   /// liefert in intl die alleinstehende Form ohne Punkt („Nov“, „Jul“), der Prototyp zeigt die mit Punkt.
-  String monShort(DateTime d) => DateFormat(null, _loc).dateSymbols.SHORTMONTHS[d.month - 1];
+  String monShort(DateTime d) => _df('', () => DateFormat(null, _loc)).dateSymbols.SHORTMONTHS[d.month - 1];
 
   /// „18. November“ / „November 18“
-  String dayMonth(DateTime d) =>
-      DateFormat(en ? 'MMMM d' : (de ? 'd. MMMM' : DateFormat.MMMMd(_loc).pattern), _loc).format(d);
+  String dayMonth(DateTime d) => _df(
+    'dayMonth',
+    () => DateFormat(en ? 'MMMM d' : (de ? 'd. MMMM' : DateFormat.MMMMd(_loc).pattern), _loc),
+  ).format(d);
 
   /// „18. Nov.“ / „Nov 18“
-  String dayMon(DateTime d) => DateFormat(en ? 'MMM d' : (de ? 'd. MMM' : 'd MMM'), _loc).format(d);
+  String dayMon(DateTime d) =>
+      _df('dayMon', () => DateFormat(en ? 'MMM d' : (de ? 'd. MMM' : 'd MMM'), _loc)).format(d);
 
   /// „18.11.2026“ / „11/18/2026“ – das ganze Datum mit Jahr (Export).
-  String fullDate(DateTime d) =>
-      en ? DateFormat.yMd(_loc).format(d) : '${pad2(d.day)}${de ? '.' : '/'}${pad2(d.month)}${de ? '.' : '/'}${d.year}';
+  String fullDate(DateTime d) => en
+      ? _df('yMd', () => DateFormat.yMd(_loc)).format(d)
+      : '${pad2(d.day)}${de ? '.' : '/'}${pad2(d.month)}${de ? '.' : '/'}${d.year}';
 
   /// „Fr 27. Nov.“ / „Fr Nov 27“ – Ende des Zeitraums im Widget „Demnächst“ (wie in Kotlin).
   String wdDayMon(DateTime d) => '${wd(wdIndex(d))} ${dayMon(d)}';

@@ -210,6 +210,9 @@ abstract final class Sizes {
   static const double selectOverlap = 6;
   static const double selectCompactH = 40;
 
+  /// Höchstens so viel der Zeilenbreite nimmt der gewählte Wert ein (Rest für den Titel).
+  static const double selectValueShare = 0.6;
+
   /// Seite „Sprache“: Karte (Radius, Höhe), Zeile „Wie das Gerät“, runde Flagge, Knopf „Fertig“.
   static const double rLangCard = 14;
   static const double langCardH = 60;

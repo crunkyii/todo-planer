@@ -113,6 +113,7 @@ class _TaskCardState extends State<TaskCard> {
     final tok = context.tok;
     final l = context.l;
     final f = Fmt.of(context);
+    final yearly = isYearly(t.title);
     final c = store.catOf(t.categoryId);
     final cc = tok.item(c.color);
     final late = isLate(t);
@@ -150,7 +151,7 @@ class _TaskCardState extends State<TaskCard> {
                     t.title,
                     c.name,
                     when,
-                    if (isYearly(t.title)) l.yearly,
+                    if (yearly) l.yearly,
                     if (t.notes.isNotEmpty) '${l.notes}: ${t.notes}',
                   ].join(', '),
                   excludeChildSemantics: true,
@@ -185,7 +186,7 @@ class _TaskCardState extends State<TaskCard> {
                                 ],
                               ),
                             if (t.notes.isNotEmpty) AppIcon(Ic.notes, size: 14, color: tok.sub),
-                            if (isYearly(t.title))
+                            if (yearly)
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [

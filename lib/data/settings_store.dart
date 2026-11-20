@@ -291,6 +291,8 @@ class SettingsStore extends ChangeNotifier {
   }
 
   Future<void> setCursor(String table, String value) async {
+    // Der Abgleich lädt die letzte Zeile jedes Mal wieder (`gte`) – dann nichts neu schreiben.
+    if (pullCursor[table] == value) return;
     pullCursor[table] = value;
     await _saveSync();
   }
