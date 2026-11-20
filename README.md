@@ -23,7 +23,7 @@ Beim ersten Start stehen drei Wege zur Wahl: **Konto erstellen** bzw. **Ich habe
 - **Kalender** mit österreichischen Feiertagen, **Wochenplan** mit Zeitblöcken, **Statistik** mit Heatmap
 - **Startbildschirm-Widgets** für Android
 - **Export** als PDF, Text oder CSV
-- **10 Themes**, hell/dunkel, Deutsch/Englisch
+- **10 Themes**, hell/dunkel, Deutsch, Englisch, Spanisch, Französisch und Italienisch
 - **Auto-Update** unter Windows und Android – signiert und geprüft, bevor etwas installiert wird
 - **Offline zuerst**: Alles wird sofort am Gerät gespeichert und später abgeglichen
 

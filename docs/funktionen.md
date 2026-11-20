@@ -29,7 +29,7 @@ Tägliche Gewohnheiten zum Abhaken, mit Serien-Flamme für aufeinanderfolgende T
 
 ## Startbildschirm-Widgets (Android)
 
-Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhaken. Form, Farbe und Durchsichtigkeit sind einstellbar. In den Einstellungen eines Listen-Widgets (Widget gedrückt halten → „Einstellungen“) lässt sich unter **Inhalt** jederzeit umstellen, ob es *Heute*, *Demnächst* oder *Gewohnheiten* zeigt.
+Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhaken. Form, Farbe und Durchsichtigkeit sind einstellbar. In den Einstellungen eines Listen-Widgets (Widget gedrückt halten → „Einstellungen“) lässt sich unter **Inhalt** jederzeit umstellen, ob es *Heute*, *Demnächst* oder *Gewohnheiten* zeigt. Bei *Demnächst* legt der **Zeitraum** fest, wie weit es in die Zukunft schaut (*3 Tage*, *1 Woche*, *2 Wochen*, *1 Monat* oder *Alles*); Überfälliges steht immer drin, und die Zahl oben zählt nur, was im Widget steht.
 
 ## Steuern über Flick (Windows)
 
@@ -65,7 +65,7 @@ Alle Daten als PDF, Text oder CSV (für Excel).
 
 ## Aussehen und Sprache
 
-10 Themes, hell/dunkel/System, Deutsch und Englisch. Alle Bedienelemente haben Beschriftungen für Screenreader.
+10 Themes, hell/dunkel/System. Sprachen: Deutsch, Englisch, Spanisch, Französisch und Italienisch – unter Optionen → **Sprache** (oder beim ersten Start) als Karten mit Flagge; „Wie das Gerät“ nimmt die Sprache des Handys bzw. PCs. Beim ersten Start gilt die Sprache des Geräts (sonst Englisch), unter Windows die im Installer gewählte. Auswahlen in den Optionen und Formularen sind Zeilen mit dem gewählten Wert, die beim Antippen ein Menü öffnen. Alle Bedienelemente haben Beschriftungen für Screenreader.
 
 
 ---
