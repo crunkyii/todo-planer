@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/tokens.dart';
+import 'app_icon.dart';
 
 /// Wo ein blätternder Inhalt gerade steht: Verschiebung, Deckkraft und ob noch der alte
 /// Inhalt zu sehen ist.
@@ -255,7 +256,11 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
                         alignment: x < 0 ? Alignment.centerLeft : Alignment.centerRight,
                         child: Opacity(
                           opacity: (_drag.abs() / Sizes.swipeThreshold).clamp(0.0, 1.0),
-                          child: Center(child: _PeekLabel(_drag < 0 ? widget.peek(1) : widget.peek(-1), tok: tok)),
+                          child: Center(
+                            child: _drag < 0
+                                ? _PeekLabel(widget.peek(1), dir: 1, tok: tok)
+                                : _PeekLabel(widget.peek(-1), dir: -1, tok: tok),
+                          ),
                         ),
                       ),
                     ),
@@ -279,8 +284,9 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
 
 /// Name der nächsten bzw. vorigen Seite hinter dem gezogenen Inhalt.
 class _PeekLabel extends StatelessWidget {
-  const _PeekLabel(this.text, {required this.tok});
+  const _PeekLabel(this.text, {required this.dir, required this.tok});
   final String text;
+  final int dir;
   final AppTokens tok;
 
   @override
@@ -289,10 +295,17 @@ class _PeekLabel extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(color: tok.surf2, borderRadius: BorderRadius.circular(Sizes.rPop)),
-      child: Text(
-        text,
-        maxLines: 1,
-        style: TextStyle(fontSize: Fs.base, fontWeight: FontWeight.w500, color: tok.onPc),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (dir < 0) AppIcon(Ic.left, size: Fs.base + 2, color: tok.onPc),
+          Text(
+            text,
+            maxLines: 1,
+            style: TextStyle(fontSize: Fs.base, fontWeight: FontWeight.w500, color: tok.onPc),
+          ),
+          if (dir > 0) AppIcon(Ic.right, size: Fs.base + 2, color: tok.onPc),
+        ],
       ),
     ),
   );

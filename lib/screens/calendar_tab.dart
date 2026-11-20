@@ -44,10 +44,7 @@ class CalendarTab extends StatelessWidget {
         );
 
         void move(int dir) => ui.set((s) => s.calMonth = DateTime(m.year, m.month + dir));
-        String peek(int dir) {
-          final name = f.month(DateTime(m.year, m.month + dir));
-          return dir > 0 ? '$name →' : '← $name';
-        }
+        String peek(int dir) => f.month(DateTime(m.year, m.month + dir));
 
         return LayoutBuilder(
           builder: (context, box) {

@@ -98,10 +98,9 @@ class _WeekTabState extends State<WeekTab> {
                   onMove: ui.weekStep,
                   peek: (dir) {
                     final f = Fmt.of(context);
-                    final name = one
+                    return one
                         ? f.day(addDays(ui.weekStart, ui.weekDay! + dir))
                         : f.weekLabel(addDays(ui.weekStart, 7 * dir));
-                    return dir > 0 ? '$name →' : '← $name';
                   },
                   child: body,
                 ),
