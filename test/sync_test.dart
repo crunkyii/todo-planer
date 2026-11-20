@@ -224,9 +224,13 @@ void main() {
       s.theme = 'ozean';
     });
     await a.sync.sync();
+    expect(server.calls['POST settings'], 2, reason: 'einmal abgelehnt, einmal ohne Sprache');
+    await a.sync.sync();
     await a.sync.sync();
     await tick();
     await sub.cancel();
+    // Kein erneutes Senden bei jedem Abgleich: Jeder Upload käme per Realtime als Änderung zurück.
+    expect(server.calls['POST settings'], 2);
 
     expect(server.rows('tasks').map((r) => r['title']), ['Hausübung'], reason: 'Aufgaben gehen weiter hoch');
     expect(server.rows('settings').single['theme'], 'ozean');
@@ -235,11 +239,32 @@ void main() {
     expect(a.settings.dirty, isTrue, reason: 'Sprache kommt nach, sobald die Datenbank sie kennt');
     expect(events.whereType<SchemaOutdated>(), hasLength(1));
 
-    // Nach dem neuen schema.sql geht auch die Sprache hoch.
+    // Nach dem neuen schema.sql geht die Sprache mit der nächsten Änderung (oder dem nächsten
+    // Start) hoch.
     server.reject = null;
+    a.settings.update((s) => s.raster = 30);
     await a.sync.sync();
     expect(server.rows('settings').single['lang'], 'it');
+    expect(server.rows('settings').single['raster'], 30);
     expect(a.settings.dirty, isFalse);
+  });
+
+  test('Realtime: das eigene Echo stößt keinen neuen Abgleich an', () async {
+    final a = await device();
+    a.settings.update((s) => s.theme = 'ozean');
+    await a.sync.sync();
+    final own = server.rows('settings').single;
+    expect(a.sync.bringsNews('settings', own), isFalse, reason: 'eigener Upload');
+    final newer = a.settings.updatedAt.add(const Duration(seconds: 1)).toIso8601String();
+    expect(a.sync.bringsNews('settings', {...own, 'updated_at': newer}), isTrue, reason: 'anderes Gerät');
+    expect(a.sync.bringsNews('settings', {'updated_at': 'kaputt'}), isTrue, reason: 'im Zweifel abgleichen');
+    expect(a.sync.bringsNews('settings', const {}), isTrue);
+
+    final t = a.store.addTask(title: 'Referat', categoryId: cat(a), dueDate: today(), dueTime: null, subs: const []);
+    await a.sync.sync();
+    final row = server.rows('tasks').singleWhere((r) => r['id'] == t.id);
+    expect(a.sync.bringsNews('tasks', row), isFalse);
+    expect(a.sync.bringsNews('unbekannt', row), isTrue);
   });
 
   test('Neustart: die Warteschlange überlebt und wird später hochgeladen', () async {

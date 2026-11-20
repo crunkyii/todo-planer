@@ -119,13 +119,22 @@ class SyncService extends ChangeNotifier {
   /// Zeile hier fehlt oder älter ist; sonst liefe nach jeder eigenen Änderung ein zweiter
   /// voller Durchgang. Im Zweifel (unbekannte Tabelle, unlesbare Zeile) wird abgeglichen.
   void _onRemoteChange(PostgresChangePayload change) {
-    try {
-      final table = syncTables.where((t) => t.name == change.table).firstOrNull;
-      if (table != null && change.newRecord.isNotEmpty && !store.isNews(table, change.newRecord)) return;
-    } on Object {
-      // Zeile ohne lesbaren Zeitstempel: lieber einmal zu oft abgleichen.
-    }
+    if (!bringsNews(change.table, change.newRecord)) return;
     schedule(remote: true);
+  }
+
+  /// Bringt eine Realtime-Meldung etwas Neues? Das eigene Echo nicht – sonst stieße jeder
+  /// Upload gleich den nächsten Abgleich an. Im Zweifel (unbekannte Tabelle, unlesbare Zeile) ja.
+  @visibleForTesting
+  bool bringsNews(String table, Map<String, Object?> row) {
+    if (row.isEmpty) return true;
+    try {
+      if (table == 'settings') return DateTime.parse(row['updated_at'] as String).isAfter(settings.updatedAt);
+      final spec = syncTables.where((t) => t.name == table).firstOrNull;
+      return spec == null || store.isNews(spec, row);
+    } on Object {
+      return true; // Zeile ohne lesbaren Zeitstempel: lieber einmal zu oft abgleichen.
+    }
   }
 
   Future<void> detach() async {
@@ -150,6 +159,11 @@ class SyncService extends ChangeNotifier {
   int rejected = 0;
 
   bool _schemaHintShown = false;
+
+  /// Stand der Einstellungen, der schon ohne Sprache oben ist (älteres schema.sql kennt sie
+  /// nicht). Er wird nicht bei jedem Abgleich neu gesendet – erst nach der nächsten Änderung
+  /// oder dem nächsten Start wird die Sprache wieder versucht.
+  DateTime? _sentWithoutLang;
 
   Future<void>? _running;
 
@@ -272,7 +286,7 @@ class SyncService extends ChangeNotifier {
       }
     }
     rejected = bad;
-    if (settings.dirty) {
+    if (settings.dirty && settings.updatedAt != _sentWithoutLang) {
       final at = settings.updatedAt;
       Future<void> send(Map<String, Object?> row) => db.from('settings').upsert(row, onConflict: 'user_id');
       try {
@@ -285,6 +299,7 @@ class SyncService extends ChangeNotifier {
         if (e.code != '23514') rethrow;
         _schemaHint();
         await send(settings.toRow()..remove('lang'));
+        _sentWithoutLang = at;
       }
     }
   }
