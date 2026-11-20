@@ -79,10 +79,13 @@ double _lerp(double a, double b, double t) => a + (b - a) * t;
 /// sich ab [Motion.checkSettleAt] zusammen und verschwinden. Mitte der Zeichenfläche = Mitte
 /// des Kreises; [ms] = Zeit seit dem Abhaken.
 class SplashPainter extends CustomPainter {
-  SplashPainter({required this.variant, required this.color, required this.ms});
+  SplashPainter({required this.variant, required this.color, required this.shine, required this.ms});
 
   final SplashVariant variant;
   final Color color;
+
+  /// Farbe des Glanzlichts auf den Tropfen ([AppTokens.shine]).
+  final Color shine;
   final double ms;
 
   static final Path _drop = parseSvgPath('M5 0.5C7.6 0.5 10 3.8 10 8A5 5 0 0 1 0 8C0 3.8 2.4 0.5 5 0.5Z');
@@ -160,7 +163,7 @@ class SplashPainter extends CustomPainter {
     canvas.drawPath(
       _shine,
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.8 * a)
+        ..color = shine.withValues(alpha: shine.a * 0.8 * a)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.9
         ..strokeCap = StrokeCap.round,
@@ -194,7 +197,8 @@ class SplashPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(SplashPainter old) => old.ms != ms || old.variant != variant || old.color != color;
+  bool shouldRepaint(SplashPainter old) =>
+      old.ms != ms || old.variant != variant || old.color != color || old.shine != shine;
 }
 
 /// Funken, wenn alle Gewohnheiten des Tages erledigt sind: [Sizes.sparkCount] bunte Punkte
@@ -283,13 +287,13 @@ void showBurst(
 }
 
 /// Der Splash in den Farben eines abgehakten Kreises – eine zufällige der 50 Varianten.
-void showSplash(BurstAnchor? anchor, {required Color color, LayerLink? link, int? variant}) {
+void showSplash(BurstAnchor? anchor, {required Color color, required Color shine, LayerLink? link, int? variant}) {
   final v = SplashVariant.of(variant ?? math.Random().nextInt(SplashVariant.count));
   showBurst(
     anchor,
     link: link,
     duration: Motion.splashTotal,
-    painter: (ms) => SplashPainter(variant: v, color: color, ms: ms),
+    painter: (ms) => SplashPainter(variant: v, color: color, shine: shine, ms: ms),
   );
 }
 

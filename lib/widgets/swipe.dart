@@ -168,11 +168,6 @@ class SwipePager extends StatefulWidget {
 }
 
 class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, _PageSwap<SwipePager> {
-  static const _minVelocity = 300.0;
-
-  /// Ab dieser Verschiebung erscheint der Name der nächsten Seite.
-  static const _peekFrom = 8.0;
-
   /// Verschiebung durch den Finger (bei „Animationen reduzieren“ bleibt sie 0) und die
   /// gewischte Strecke, nach der entschieden wird.
   double _drag = 0;
@@ -220,9 +215,9 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
   void _end(DragEndDetails d) {
     _dragging = false;
     final v = d.primaryVelocity ?? 0;
-    if (_dist.abs() >= Sizes.swipeThreshold || v.abs() >= _minVelocity) {
+    if (_dist.abs() >= Sizes.swipeThreshold || v.abs() >= Sizes.swipeVelocity) {
       // Bei schnellem Wisch entscheidet die Richtung der Bewegung am Ende.
-      final right = v.abs() >= _minVelocity ? v > 0 : _dist > 0;
+      final right = v.abs() >= Sizes.swipeVelocity ? v > 0 : _dist > 0;
       widget.onMove(right ? -1 : 1);
       // Blättert die Seite doch nicht weiter, federt der Inhalt zurück.
       WidgetsBinding.instance
@@ -261,7 +256,7 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
           builder: (context, _) {
             final f = frame(box.maxWidth);
             final x = f.x + _drag;
-            final shown = _drag.abs() > _peekFrom;
+            final shown = _drag.abs() > Sizes.swipePeekFrom;
             final peek = Positioned(
               top: 0,
               bottom: 0,
@@ -319,18 +314,18 @@ class _PeekLabel extends StatelessWidget {
   Widget build(BuildContext context) => FittedBox(
     fit: BoxFit.scaleDown,
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: Sizes.swipePeekPadX, vertical: Sizes.swipePeekPadY),
       decoration: BoxDecoration(color: tok.surf2, borderRadius: BorderRadius.circular(Sizes.rPop)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (dir < 0) AppIcon(Ic.left, size: Fs.base + 2, color: tok.onPc),
+          if (dir < 0) AppIcon(Ic.left, size: Fs.peekIcon, color: tok.onPc),
           Text(
             text,
             maxLines: 1,
             style: TextStyle(fontSize: Fs.base, fontWeight: FontWeight.w500, color: tok.onPc),
           ),
-          if (dir > 0) AppIcon(Ic.right, size: Fs.base + 2, color: tok.onPc),
+          if (dir > 0) AppIcon(Ic.right, size: Fs.peekIcon, color: tok.onPc),
         ],
       ),
     ),

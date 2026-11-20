@@ -716,7 +716,7 @@ class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMix
   bool _checking = false;
 
   void _tap() {
-    final color = widget.colors.c;
+    final color = widget.colors.c, shine = context.tok.shine;
     _checking = !widget.on && !Motion.reduced(context);
     // Stelle schon jetzt merken: Rutscht die Aufgabe nach „Erledigt“, ist der Kreis gleich weg.
     final anchor = _checking && widget.splash ? BurstAnchor.of(context) : null;
@@ -726,7 +726,7 @@ class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMix
       // Abgehakt (oder samt Zeile verschwunden, weil sie nach „Erledigt“ gewandert ist)?
       final checked = mounted ? widget.on : true;
       if (mounted) _checking = false;
-      if (checked) showSplash(anchor, color: color, link: _link);
+      if (checked) showSplash(anchor, color: color, shine: shine, link: _link);
     });
   }
 

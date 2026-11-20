@@ -178,6 +178,9 @@ class AppTokens extends ThemeExtension<AppTokens> {
   ];
   Color get scrim => const Color(0x610A141E);
 
+  /// Glanzlicht auf den Tropfen des Splashs – hell wie dunkel weiß.
+  Color get shine => white;
+
   @override
   AppTokens copyWith() => this;
 
@@ -300,6 +303,16 @@ abstract final class Sizes {
   /// Breite des Streifens, in dem beim Ziehen der Name des nächsten Monats steht.
   static const double swipePeek = 120;
 
+  /// Ab dieser Verschiebung erscheint der Name der nächsten Seite.
+  static const double swipePeekFrom = 8;
+
+  /// Innenabstand des Namens im Streifen (waagrecht, senkrecht).
+  static const double swipePeekPadX = 14;
+  static const double swipePeekPadY = 8;
+
+  /// So schnell gewischt (px/s), blättert es auch nach kurzer Strecke.
+  static const double swipeVelocity = 300;
+
   /// So weit gleitet der Titel (Monat, Kalenderwoche) beim Blättern hinaus.
   static const double titleShift = 30;
 
@@ -345,6 +358,9 @@ abstract final class Fs {
   static const double wheel = 22;
   static const double tile = 26;
   static const double login = 28;
+
+  /// Pfeil neben dem Namen der nächsten Seite beim Wischen.
+  static const double peekIcon = base + 2;
 
   /// Ziffern gleich breit – Zahlen und Uhrzeiten springen nicht, wenn sich ihr Wert ändert.
   static const tabular = [FontFeature.tabularFigures()];
