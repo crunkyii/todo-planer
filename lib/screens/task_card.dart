@@ -721,6 +721,7 @@ class StrikeText extends StatefulWidget {
 class _StrikeTextState extends State<StrikeText> with SingleTickerProviderStateMixin {
   static final _total = Motion.doneFadeDelay + Motion.doneFade;
   late final _c = AnimationController(vsync: this, duration: _total, value: 1);
+  final _lines = _StrikeLines();
 
   /// Anteil eines Teils der Animation (0 = offen, 1 = erledigt).
   double _part(Duration delay, Duration dur, Curve curve) {
@@ -773,11 +774,20 @@ class _StrikeTextState extends State<StrikeText> with SingleTickerProviderStateM
           direction: Directionality.of(context),
           part: _part(Motion.strikeDelay, Motion.strike, Motion.emphasized),
           color: widget.doneColor,
+          lines: _lines,
         ),
         child: Text(widget.text, style: shown),
       );
     },
   );
+}
+
+/// Zeilen des zuletzt gemessenen Texts, je Karte: Während des Strichs ändert sich nur der
+/// Anteil, der Text wird also nicht in jedem Bild neu gesetzt – auch wenn mehrere Karten
+/// gleichzeitig durchgestrichen werden.
+class _StrikeLines {
+  Object? key;
+  List<LineMetrics> metrics = const [];
 }
 
 /// Strich durch den Text, Zeile für Zeile bis zum Anteil [part] seiner ganzen Länge.
@@ -789,6 +799,7 @@ class _StrikePainter extends CustomPainter {
     required this.direction,
     required this.part,
     required this.color,
+    required this.lines,
   });
 
   final String text;
@@ -797,26 +808,22 @@ class _StrikePainter extends CustomPainter {
   final TextDirection direction;
   final double part;
   final Color color;
+  final _StrikeLines lines;
 
   static final _line = Paint();
 
-  /// Zeilen des zuletzt gemessenen Texts: Während des Strichs ändert sich nur [part], der Text
-  /// wird also nicht in jedem Bild neu gesetzt.
-  static Object? _measured;
-  static List<LineMetrics> _lines = const [];
-
   List<LineMetrics> _measure(double maxWidth) {
     final key = (text, style, scaler, direction, maxWidth);
-    if (key == _measured) return _lines;
+    if (key == lines.key) return lines.metrics;
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: direction,
       textScaler: scaler,
     )..layout(maxWidth: maxWidth);
-    _lines = tp.computeLineMetrics();
+    lines.metrics = tp.computeLineMetrics();
     tp.dispose();
-    _measured = key;
-    return _lines;
+    lines.key = key;
+    return lines.metrics;
   }
 
   @override
