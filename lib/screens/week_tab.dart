@@ -8,6 +8,7 @@ import '../data/models.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
+import '../util/selected.dart';
 import '../util/week_layout.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
@@ -53,8 +54,10 @@ class _WeekTabState extends State<WeekTab> {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final ui = widget.ui;
+    final store = app.store;
     return ListenableBuilder(
-      listenable: Listenable.merge([app.store, app.settings]),
+      // Der Upload-Stand (wartende Zeilen, Wolken) spielt im Wochenplan keine Rolle.
+      listenable: Listenable.merge([Selected(store, () => store.revision), app.settings]),
       builder: (context, _) {
         final one = ui.weekDay != null;
         // GlobalKey: Beim Wechsel Woche ↔ Tag wird das Raster nur umgehängt, nicht neu

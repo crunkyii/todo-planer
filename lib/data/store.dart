@@ -379,6 +379,22 @@ class Store extends ChangeNotifier {
   /// Alle Ansichten neu zeichnen, ohne etwas zu ändern (z. B. neuer Tag um Mitternacht).
   void touch() => notifyListeners();
 
+  /// Zählt bei jeder Meldung hoch, nach der Daten anders aussehen können – nicht aber, wenn
+  /// sich nur der Upload-Stand ([pending], [pendingTaskIds]) ändert. Ansichten merken sich
+  /// damit teure Berechnungen (z. B. die Abschnitte der Aufgabenliste) und sparen sie sich,
+  /// solange der Wert gleich bleibt.
+  int get revision => _revision;
+  int _revision = 0;
+
+  @override
+  void notifyListeners() {
+    _revision++;
+    super.notifyListeners();
+  }
+
+  /// Meldet, ohne [revision] zu erhöhen: Nur der Upload-Stand hat sich geändert.
+  void _notifyUploadState() => super.notifyListeners();
+
   void _changed() {
     _attachTouchedSubs();
     notifyListeners();
@@ -391,7 +407,7 @@ class Store extends ChangeNotifier {
     final n = await db.pendingCount();
     if (n != pending) {
       pending = n;
-      notifyListeners();
+      _notifyUploadState();
     }
   }
 
@@ -399,7 +415,7 @@ class Store extends ChangeNotifier {
   void markSynced() {
     if (pendingTaskIds.isNotEmpty) {
       pendingTaskIds.clear();
-      notifyListeners();
+      _notifyUploadState();
     }
     unawaited(refreshPending());
   }

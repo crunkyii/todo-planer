@@ -46,6 +46,25 @@ void main() {
     expect(loaded.subs.single.title, 'Seite 12');
   });
 
+  test('revision: zählt bei Änderungen hoch, nicht beim bloßen Upload-Stand', () async {
+    final t = add('Mathe');
+    await store.refreshPending();
+    var calls = 0;
+    store.addListener(() => calls++);
+    final before = store.revision;
+
+    store.markSynced();
+    await store.refreshPending();
+    expect(calls, greaterThan(0), reason: 'Wolken-Symbole und Zähler melden sich weiter');
+    expect(store.revision, before, reason: 'an den Daten hat sich nichts geändert');
+
+    store.toggleTask(t);
+    expect(store.revision, greaterThan(before));
+    final afterToggle = store.revision;
+    store.touch();
+    expect(store.revision, greaterThan(afterToggle), reason: 'neuer Tag: neu rechnen');
+  });
+
   test('Notiz: wird gespeichert, bleibt beim Bearbeiten ohne Notiz und übersteht den Neustart', () async {
     final t = store.addTask(
       title: 'Referat',

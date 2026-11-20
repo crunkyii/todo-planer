@@ -4,6 +4,7 @@ import '../app_services.dart';
 import '../data/models.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
+import '../util/selected.dart';
 import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlays.dart';
@@ -24,8 +25,16 @@ class TasksTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
+    final store = app.store, sync = app.sync;
     return ListenableBuilder(
-      listenable: Listenable.merge([app.store, app.sync, app.settings, ui.sectionDragTick]),
+      listenable: Listenable.merge([
+        // Die Zahl der wartenden Zeilen zeigen nur die Optionen – hier zählen Daten und Wolken-Symbole.
+        Selected(store, () => (store.revision, store.pendingTaskIds.length)),
+        // Vom Abgleich nur, was die Liste zeigt: online (Wolken, „Ältere laden“) und das Nachladen.
+        Selected(sync, () => (sync.online, sync.canLoadOlder, sync.loadingOlder)),
+        app.settings,
+        ui.sectionDragTick,
+      ]),
       builder: (context, _) => LayoutBuilder(
         builder: (context, box) {
           // Am PC mit genug Platz: Listen nebeneinander und rechts die Seitenleiste.
