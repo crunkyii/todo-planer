@@ -6,7 +6,15 @@ import '../data/settings_store.dart';
 import '../theme/color_math.dart';
 
 /// Welches Startbildschirm-Widget eingestellt wird.
-enum WidgetKind { today, upcoming, habits, count }
+enum WidgetKind {
+  today,
+  upcoming,
+  habits,
+  count;
+
+  /// Was ein Listen-Widget zeigen kann (das Widget „Anzahl“ zeigt nur eine Zahl).
+  static const lists = [today, upcoming, habits];
+}
 
 /// Form des Hintergrunds: rund wie die Samsung-/System-Widgets, leicht rund oder eckig.
 enum WidgetShape {
@@ -45,7 +53,15 @@ class WidgetConfig {
     this.mode = AppMode.system,
     this.transparency = 0,
     this.color,
+    this.content,
   }) : cats = cats ?? {};
+
+  /// Was ein Listen-Widget zeigt (Heute, Demnächst oder Gewohnheiten); null = wie beim
+  /// Hinzufügen gewählt. So kann jedes Listen-Widget später umgestellt werden.
+  WidgetKind? content;
+
+  /// Was das Widget der Art [kind] mit diesen Einstellungen tatsächlich zeigt.
+  WidgetKind shows(WidgetKind kind) => kind == WidgetKind.count ? kind : content ?? kind;
 
   /// Nur diese Kategorien zeigen; leer = alle.
   Set<String> cats;
@@ -78,6 +94,7 @@ class WidgetConfig {
       mode: pick(AppMode.values, j['mode'], AppMode.system),
       transparency: (j['alpha'] is num ? (j['alpha'] as num).round() : 0).clamp(0, 100),
       color: color is String && RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(color) ? color : null,
+      content: WidgetKind.lists.where((k) => k.name == j['content']).firstOrNull,
     );
   }
 
@@ -102,6 +119,7 @@ class WidgetConfig {
       'mode': mode.name,
       'alpha': transparency,
       'color': color,
+      'content': content?.name,
       if (l != null && d != null) ...{
         'bgLight': toHex(l.bg),
         'accentLight': toHex(l.accent),

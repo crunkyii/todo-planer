@@ -722,6 +722,12 @@ abstract class AppLocalizations {
   /// **'Widget einstellen'**
   String get widgetSettings;
 
+  /// No description provided for @widgetContent.
+  ///
+  /// In de, this message translates to:
+  /// **'Inhalt'**
+  String get widgetContent;
+
   /// No description provided for @widgetBackground.
   ///
   /// In de, this message translates to:

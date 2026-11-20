@@ -340,6 +340,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get widgetSettings => 'Widget settings';
 
   @override
+  String get widgetContent => 'Content';
+
+  @override
   String get widgetBackground => 'Background';
 
   @override

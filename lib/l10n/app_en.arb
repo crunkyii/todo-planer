@@ -105,6 +105,7 @@
   "widgetUntil": "by: {when}",
   "widgetNoHabits": "No habits yet.",
   "widgetSettings": "Widget settings",
+  "widgetContent": "Content",
   "widgetBackground": "Background",
   "widgetShowBackground": "Show background",
   "widgetShape": "Shape",

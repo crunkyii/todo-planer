@@ -29,7 +29,7 @@ Tägliche Gewohnheiten zum Abhaken, mit Serien-Flamme für aufeinanderfolgende T
 
 ## Startbildschirm-Widgets (Android)
 
-Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhaken. Form, Farbe und Durchsichtigkeit sind einstellbar.
+Vier Widgets: „Heute“, „Demnächst“, Zähler und Gewohnheiten zum Abhaken. Form, Farbe und Durchsichtigkeit sind einstellbar. In den Einstellungen eines Listen-Widgets (Widget gedrückt halten → „Einstellungen“) lässt sich unter **Inhalt** jederzeit umstellen, ob es *Heute*, *Demnächst* oder *Gewohnheiten* zeigt.
 
 ## Steuern über Flick (Windows)
 

@@ -32,6 +32,8 @@ class WidgetConfig private constructor(
     val mode: WidgetMode,
     /** Durchsichtigkeit des Hintergrunds in Prozent. */
     val transparency: Int,
+    /** Was ein Listen-Widget zeigt; null = wie beim Hinzufügen gewählt. */
+    val content: ListMode?,
     private val bgLight: Int?,
     private val bgDark: Int?,
     private val accentLight: Int?,
@@ -78,6 +80,7 @@ class WidgetConfig private constructor(
                 shape = enumOr(o.optString("shape"), WidgetShape.ROUND),
                 mode = enumOr(o.optString("mode"), WidgetMode.SYSTEM),
                 transparency = o.optInt("alpha", 0).coerceIn(0, 100),
+                content = enumValues<ListMode>().firstOrNull { it.name.equals(o.optString("content"), ignoreCase = true) },
                 bgLight = color(o, "bgLight"),
                 bgDark = color(o, "bgDark"),
                 accentLight = color(o, "accentLight"),

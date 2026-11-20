@@ -109,6 +109,21 @@ void main() {
       }
     });
 
+    test('Inhalt: nur Listen sind erlaubt, sonst wie beim Hinzufügen', () {
+      expect(WidgetConfig.fromJson(const {}).content, isNull);
+      expect(WidgetConfig.fromJson(const {'content': 'habits'}).content, WidgetKind.habits);
+      expect(WidgetConfig.fromJson(const {'content': 'count'}).content, isNull);
+      expect(WidgetConfig.fromJson(const {'content': 3}).content, isNull);
+      final c = WidgetConfig(content: WidgetKind.today);
+      expect(c.shows(WidgetKind.habits), WidgetKind.today);
+      expect(c.shows(WidgetKind.count), WidgetKind.count, reason: '„Anzahl“ bleibt eine Zahl');
+      expect(WidgetConfig().shows(WidgetKind.upcoming), WidgetKind.upcoming);
+      expect(
+        WidgetConfig.fromJson(jsonDecode(jsonEncode(c.toJson())) as Map<String, dynamic>).content,
+        WidgetKind.today,
+      );
+    });
+
     test('kaputte Werte fallen auf den Standard zurück', () {
       final c = WidgetConfig.fromJson(const {
         'cats': ['a', 5, null],
@@ -288,6 +303,32 @@ void main() {
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
       await tester.pumpAndSettle();
       expect(preview(tester).color, WidgetPalette.light.bg);
+    });
+
+    testWidgets('Inhalt umstellen: jedes Listen-Widget zeigt Heute, Demnächst oder Gewohnheiten', (tester) async {
+      final l = l10n('de');
+      final r = await open(tester, kind: WidgetKind.habits);
+      Seg<WidgetKind> seg() => tester.widget(find.byType(Seg<WidgetKind>));
+      expect(seg().value, WidgetKind.habits);
+      expect(find.widgetWithText(AppChip, 'Hausübung'), findsNothing);
+
+      // Auf „Heute“: Kategorien gibt es jetzt, die Vorschau zeigt Aufgaben.
+      seg().onChanged(WidgetKind.today);
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppChip, 'Hausübung'), findsOneWidget);
+      expect(tester.widget<WidgetPreview>(find.byType(WidgetPreview)).kind, WidgetKind.today);
+      seg().onChanged(WidgetKind.upcoming);
+      await tester.pumpAndSettle();
+      expect(tester.widget<WidgetPreview>(find.byType(WidgetPreview)).kind, WidgetKind.upcoming);
+      await tap(tester, find.text(l.save));
+      expect(r.saved.single.content, WidgetKind.upcoming);
+      expect(r.saved.single.toJson()['content'], 'upcoming');
+    });
+
+    testWidgets('das Widget „Anzahl“ hat keine Inhalt-Wahl', (tester) async {
+      await open(tester, kind: WidgetKind.count);
+      expect(find.byType(Seg<WidgetKind>), findsNothing);
+      expect(find.text(l10n('de').widgetContent), findsNothing);
     });
 
     testWidgets('Gewohnheiten-Widget hat keine Kategorien; Abbrechen speichert nichts', (tester) async {

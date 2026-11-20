@@ -107,11 +107,14 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
   /// Chip nur so breit wie sein Text (sonst füllt er die ganze Zeile).
   Widget _chip(AppChip chip) => IntrinsicWidth(child: chip);
 
+  /// Was das Widget mit den gewählten Einstellungen zeigt.
+  WidgetKind get _shows => _cfg.shows(widget.kind);
+
   @override
   Widget build(BuildContext context) {
     final tok = context.tok;
     final l = context.l;
-    final withCats = widget.kind != WidgetKind.habits && widget.categories.isNotEmpty;
+    final withCats = _shows != WidgetKind.habits && widget.categories.isNotEmpty;
     return Scaffold(
       backgroundColor: tok.bg,
       body: SafeArea(
@@ -121,17 +124,29 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
             // Die Vorschau bleibt oben stehen, damit man jede Änderung sofort sieht.
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-              child: WidgetPreview(
-                config: _cfg,
-                kind: widget.kind,
-                themeId: widget.themeId,
-                categories: widget.categories,
-              ),
+              child: WidgetPreview(config: _cfg, kind: _shows, themeId: widget.themeId, categories: widget.categories),
             ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 16),
                 children: [
+                  if (widget.kind != WidgetKind.count) ...[
+                    CapsHeading(l.widgetContent),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Seg<WidgetKind>(
+                        label: l.widgetContent,
+                        options: [
+                          (WidgetKind.today, l.today),
+                          (WidgetKind.upcoming, l.widgetUpcoming),
+                          (WidgetKind.habits, l.habits),
+                        ],
+                        value: _shows,
+                        onChanged: (v) => _set(() => _cfg.content = v),
+                      ),
+                    ),
+                  ],
                   if (withCats) ...[
                     CapsHeading(l.categories),
                     Padding(

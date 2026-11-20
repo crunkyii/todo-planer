@@ -98,7 +98,12 @@ object Widgets {
      */
     fun habitToggled(context: Context) {
         val mgr = AppWidgetManager.getInstance(context)
-        val ids = mgr.getAppWidgetIds(ComponentName(context, HabitsWidget::class.java))
+        // Jedes Listen-Widget kann auf „Gewohnheiten“ gestellt sein, nicht nur das Gewohnheiten-Widget.
+        val ids = listWidgets.flatMap { (cls, kind) ->
+            mgr.getAppWidgetIds(ComponentName(context, cls)).filter {
+                (WidgetConfig.load(context, it).content ?: kind) == ListMode.HABITS
+            }
+        }.toIntArray()
         @Suppress("DEPRECATION")
         mgr.notifyAppWidgetViewDataChanged(ids, R.id.list)
         @Suppress("DEPRECATION")
@@ -109,9 +114,11 @@ object Widgets {
     fun habitCount(data: WidgetData): String =
         "${data.habits.count { data.today in it.days }}/${data.habits.size}"
 
-    fun updateList(context: Context, mgr: AppWidgetManager, id: Int, mode: ListMode, data: WidgetData) {
+    /** Zeichnet ein Listen-Widget; [kind] ist seine Art, gezeigt wird, was die Einstellungen sagen. */
+    fun updateList(context: Context, mgr: AppWidgetManager, id: Int, kind: ListMode, data: WidgetData) {
         val v = RemoteViews(context.packageName, R.layout.widget_list)
         val cfg = WidgetConfig.load(context, id)
+        val mode = cfg.content ?: kind
         val look = WidgetLook(context, cfg, data)
         val (title, count, empty) = when (mode) {
             ListMode.TODAY -> Triple(

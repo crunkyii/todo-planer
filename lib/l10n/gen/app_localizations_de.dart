@@ -342,6 +342,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get widgetSettings => 'Widget einstellen';
 
   @override
+  String get widgetContent => 'Inhalt';
+
+  @override
   String get widgetBackground => 'Hintergrund';
 
   @override
