@@ -6,6 +6,7 @@ import '../../theme/tokens.dart';
 import '../../util/fmt.dart';
 import '../../util/task_logic.dart';
 import '../../widgets/pickers.dart';
+import '../../widgets/select.dart';
 import '../../widgets/ui.dart';
 import '../ui_state.dart';
 import 'sheet_parts.dart';
@@ -98,25 +99,21 @@ class _CategorySheetState extends State<CategorySheet> {
           label: l.color,
           child: ColorChoice(value: _color, onChanged: (c) => setState(() => _color = c)),
         ),
-        LabeledField(
-          label: l.doWhen,
-          child: Seg<int>(
-            wrap: true,
-            options: [
-              for (final o in const [0, 1, 2, 7]) (o, f.offsetLabel(o)),
-            ],
-            value: _offset,
-            onChanged: (v) => setState(() => _offset = v),
-          ),
+        SelectRow<int>(
+          title: l.doWhen,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          options: [
+            for (final o in const [0, 1, 2, 7]) (o, f.offsetLabel(o)),
+          ],
+          value: _offset,
+          onChanged: (v) => setState(() => _offset = v),
         ),
-        LabeledField(
-          label: l.showInTasks,
-          child: Seg<ListFrom>(
-            wrap: true,
-            options: [for (final o in ListFrom.values) (o, f.listFromLabel(o))],
-            value: _listFrom,
-            onChanged: (v) => setState(() => _listFrom = v),
-          ),
+        SelectRow<ListFrom>(
+          title: l.showInTasks,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          options: [for (final o in ListFrom.values) (o, f.listFromLabel(o))],
+          value: _listFrom,
+          onChanged: (v) => setState(() => _listFrom = v),
         ),
       ],
     );

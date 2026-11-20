@@ -113,93 +113,6 @@ class AppChip extends StatelessWidget {
   }
 }
 
-/// Segment-Knöpfe (.seg) – eine Auswahl aus wenigen Optionen.
-class Seg<T> extends StatelessWidget {
-  const Seg({
-    super.key,
-    required this.options,
-    required this.value,
-    required this.onChanged,
-    this.mini = false,
-    this.label,
-    this.wrap = false,
-  });
-  final List<(T, String)> options;
-  final T? value;
-  final ValueChanged<T> onChanged;
-  final bool mini;
-  final String? label;
-
-  /// Zwei Zeilen wie `.seg.wrap` (Kategorie-Vorlauf).
-  final bool wrap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tok = context.tok;
-    final h = mini ? 32.0 : 38.0;
-    Widget btn((T, String) o, {required bool last, bool expand = false}) {
-      final on = o.$1 == value;
-      return Pressable(
-        onTap: () => onChanged(o.$1),
-        selected: on,
-        semanticLabel: o.$2,
-        excludeChildSemantics: true,
-        radius: BorderRadius.zero,
-        pressScale: 0.95,
-        child: AnimatedContainer(
-          duration: Motion.fast,
-          height: h,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: on ? tok.pc : Colors.transparent,
-            border: last ? null : Border(right: BorderSide(color: tok.line)),
-          ),
-          child: Text(
-            o.$2,
-            maxLines: 1,
-            style: TextStyle(fontSize: mini ? 12.5 : 13, fontWeight: FontWeight.w500, color: on ? tok.onPc : tok.text),
-          ),
-        ),
-      );
-    }
-
-    final Widget body;
-    if (wrap) {
-      final rows = <Widget>[];
-      for (var i = 0; i < options.length; i += 2) {
-        rows.add(
-          Row(
-            children: [
-              for (var j = i; j < i + 2 && j < options.length; j++)
-                Expanded(child: btn(options[j], last: j == i + 1 || j == options.length - 1)),
-            ],
-          ),
-        );
-        if (i + 2 < options.length) rows.add(Divider(height: 1, thickness: 1, color: tok.line));
-      }
-      body = Column(mainAxisSize: MainAxisSize.min, children: rows);
-    } else {
-      body = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [for (var i = 0; i < options.length; i++) btn(options[i], last: i == options.length - 1)],
-      );
-    }
-    return Semantics(
-      container: true,
-      label: label,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          border: Border.all(color: tok.line),
-          borderRadius: BorderRadius.circular(wrap ? 12 : Sizes.rSeg),
-        ),
-        child: body,
-      ),
-    );
-  }
-}
-
 /// Schalter (.switch).
 class AppSwitch extends StatelessWidget {
   const AppSwitch({super.key, required this.value, required this.onChanged, required this.label});
@@ -690,7 +603,7 @@ class SetRow extends StatelessWidget {
       if (leading != null) ...[leading!, const SizedBox(width: 16)],
     ];
     final row = Container(
-      constraints: const BoxConstraints(minHeight: 52),
+      constraints: const BoxConstraints(minHeight: Sizes.setRowH),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: chevron || inline
           ? Row(

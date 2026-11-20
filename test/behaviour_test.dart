@@ -905,7 +905,7 @@ void main() {
       await _tap(tester, find.bySemanticsLabel(l.moreOptions));
       await _tap(tester, find.text(l.columns));
       Finder inSheet(Finder f) => find.descendant(of: find.byType(ColumnsSheet), matching: f);
-      await _tap(tester, inSheet(find.text('4')));
+      await choose(tester, inSheet(selectRow(l.columnsVisible)), '4');
       await _tap(tester, inSheet(find.bySemanticsLabel(l.overdue)).last);
       final cat = app.store.categories.first;
       await _tap(tester, inSheet(find.bySemanticsLabel(cat.name)).last);
@@ -1276,7 +1276,7 @@ void main() {
         expect(size.width, greaterThan(8), reason: 'Balken müssen eine Breite haben');
         expect(size.height, greaterThan(1));
       }
-      await _tap(tester, find.text(l.daysRange(30)));
+      await choose(tester, selectRow(l.period), l.daysRange(30));
       expect(find.byKey(const ValueKey('bar-segment')), findsWidgets);
       expect(tester.takeException(), isNull);
       await finishApp(tester, app);
@@ -1305,7 +1305,7 @@ void main() {
       seedDemo(app.store, de);
       await pumpApp(tester, app);
       await _tap(tester, find.bySemanticsLabel(de.settings));
-      await _tap(tester, find.text(de.langEn));
+      await choose(tester, selectRow(de.language), de.langEn);
       expect(find.text(en.appearance), findsOneWidget);
       expect(find.text(de.appearance), findsNothing);
       expect(find.text(en.navTasks), findsOneWidget);
@@ -1414,8 +1414,7 @@ void main() {
       await _tap(tester, find.bySemanticsLabel(l.settings));
       await _tap(tester, find.byType(AppSwitch).first);
       expect(app.settings.remind, isFalse);
-      await tester.scrollUntilVisible(find.text(l.grid), 200, scrollable: find.byType(Scrollable).first);
-      await _tap(tester, find.text('30').first);
+      await choose(tester, selectRow(l.grid), '30');
       expect(app.settings.raster, 30);
       await finishApp(tester, app);
     });

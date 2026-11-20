@@ -10,6 +10,7 @@ import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
 import '../widgets/pickers.dart';
+import '../widgets/select.dart';
 import '../widgets/ui.dart';
 
 /// Kleine eigene App für das Einstellungsfenster eines Startbildschirm-Widgets.
@@ -130,23 +131,17 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 16),
                 children: [
-                  if (widget.kind != WidgetKind.count) ...[
-                    CapsHeading(l.widgetContent),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Seg<WidgetKind>(
-                        label: l.widgetContent,
-                        options: [
-                          (WidgetKind.today, l.today),
-                          (WidgetKind.upcoming, l.widgetUpcoming),
-                          (WidgetKind.habits, l.habits),
-                        ],
-                        value: _shows,
-                        onChanged: (v) => _set(() => _cfg.content = v),
-                      ),
+                  if (widget.kind != WidgetKind.count)
+                    SelectRow<WidgetKind>(
+                      title: l.widgetContent,
+                      options: [
+                        (WidgetKind.today, l.today),
+                        (WidgetKind.upcoming, l.widgetUpcoming),
+                        (WidgetKind.habits, l.habits),
+                      ],
+                      value: _shows,
+                      onChanged: (v) => _set(() => _cfg.content = v),
                     ),
-                  ],
                   if (withCats) ...[
                     CapsHeading(l.categories),
                     Padding(
@@ -179,28 +174,22 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
                       onChanged: (v) => _set(() => _cfg.background = v),
                     ),
                   ),
-                  SetRow(
+                  SelectRow<AppMode>(
                     title: l.widgetBgColor,
-                    trailing: Seg<AppMode>(
-                      label: l.widgetBgColor,
-                      options: [(AppMode.light, l.light), (AppMode.dark, l.dark), (AppMode.system, l.system)],
-                      value: _cfg.mode,
-                      onChanged: (v) => _set(() => _cfg.mode = v),
-                    ),
+                    options: [(AppMode.light, l.light), (AppMode.dark, l.dark), (AppMode.system, l.system)],
+                    value: _cfg.mode,
+                    onChanged: (v) => _set(() => _cfg.mode = v),
                   ),
                   if (_cfg.background) ...[
-                    SetRow(
+                    SelectRow<WidgetShape>(
                       title: l.widgetShape,
-                      trailing: Seg<WidgetShape>(
-                        label: l.widgetShape,
-                        options: [
-                          (WidgetShape.round, l.widgetShapeRound),
-                          (WidgetShape.soft, l.widgetShapeSoft),
-                          (WidgetShape.square, l.widgetShapeSquare),
-                        ],
-                        value: _cfg.shape,
-                        onChanged: (v) => _set(() => _cfg.shape = v),
-                      ),
+                      options: [
+                        (WidgetShape.round, l.widgetShapeRound),
+                        (WidgetShape.soft, l.widgetShapeSoft),
+                        (WidgetShape.square, l.widgetShapeSquare),
+                      ],
+                      value: _cfg.shape,
+                      onChanged: (v) => _set(() => _cfg.shape = v),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),

@@ -4,6 +4,7 @@ import '../../app_services.dart';
 import '../../data/settings_store.dart';
 import '../../theme/tokens.dart';
 import '../../util/task_logic.dart';
+import '../../widgets/select.dart';
 import '../../widgets/ui.dart';
 import '../tasks_board.dart';
 import 'sheet_parts.dart';
@@ -46,19 +47,14 @@ class ColumnsSheet extends StatelessWidget {
           children: [
             SheetTitle(l.columns),
             if (board)
-              LabeledField(
-                label: l.columnsVisible,
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Seg<int>(
-                    label: l.columnsVisible,
-                    options: [
-                      for (var n = SettingsStore.boardVisibleMin; n <= SettingsStore.boardVisibleMax; n++) (n, '$n'),
-                    ],
-                    value: s.boardVisible,
-                    onChanged: (v) => s.updateDevice((x) => x.boardVisible = v),
-                  ),
-                ),
+              SelectRow<int>(
+                title: l.columnsVisible,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                options: [
+                  for (var n = SettingsStore.boardVisibleMin; n <= SettingsStore.boardVisibleMax; n++) (n, '$n'),
+                ],
+                value: s.boardVisible,
+                onChanged: (v) => s.updateDevice((x) => x.boardVisible = v),
               ),
             Padding(
               padding: const EdgeInsets.only(bottom: 12),

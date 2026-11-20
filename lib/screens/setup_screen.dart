@@ -9,6 +9,7 @@ import '../services/error_messages.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
+import '../widgets/select.dart';
 import '../widgets/snack.dart';
 import '../widgets/ui.dart';
 import 'auth_layout.dart';
@@ -156,7 +157,7 @@ class _SetupScreenState extends State<SetupScreen> {
         ),
         _Choice(icon: Ic.phone, title: l.setupLocalTitle, text: l.setupLocalText, onTap: app.chooseLocal),
         const SizedBox(height: 12),
-        Center(child: LangSeg(settings: app.settings)),
+        Center(child: LangSelect(settings: app.settings)),
       ],
     );
   }
@@ -329,15 +330,17 @@ class _Choice extends StatelessWidget {
 }
 
 /// Sprachwahl – die Namen stehen immer in der eigenen Sprache, damit man sie auch
-/// in der falschen Sprache findet.
-class LangSeg extends StatelessWidget {
-  const LangSeg({super.key, required this.settings});
+/// in der falschen Sprache findet. Mit [title] als ganze Zeile.
+class LangSelect extends StatelessWidget {
+  const LangSelect({super.key, required this.settings, this.title});
   final SettingsStore settings;
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l;
-    return Seg<String>(
+    return SelectRow<String>(
+      title: title,
       label: l.languageBoth,
       options: [('de', l.langDe), ('en', l.langEn)],
       value: settings.lang,

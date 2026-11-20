@@ -11,6 +11,7 @@ import '../util/stats.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pressable.dart';
 import '../widgets/layout.dart';
+import '../widgets/select.dart';
 import '../widgets/ui.dart';
 import 'sheets.dart';
 import 'ui_state.dart';
@@ -51,8 +52,7 @@ class StatsTab extends StatelessWidget {
           children: [
             TopBar(
               title: l.statistics,
-              trailing: Seg<int>(
-                mini: true,
+              trailing: SelectRow<int>(
                 label: l.period,
                 options: [(7, l.daysRange(7)), (30, l.daysRange(30))],
                 value: range,

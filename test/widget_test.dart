@@ -14,6 +14,8 @@ import 'package:todo_liste/data/sync_service.dart';
 import 'package:todo_liste/screens/shell.dart';
 import 'package:todo_liste/services/reminders.dart';
 
+import 'harness.dart' show choose, selectRow;
+
 Future<AppServices> _services({String? syncMode}) async {
   SharedPreferences.setMockInitialValues({
     if (syncMode != null) 'sync.v1': '{"mode":"$syncMode"}',
@@ -71,8 +73,7 @@ void main() {
   testWidgets('Sprache umstellen übersetzt den Willkommen-Bildschirm', (tester) async {
     final app = await _services();
     await _pump(tester, app);
-    await tester.tap(find.text('English'));
-    await tester.pumpAndSettle();
+    await choose(tester, selectRow('Sprache · Language'), 'English');
     expect(find.text('Welcome'), findsOneWidget);
     await _finish(tester, app);
   });
@@ -163,8 +164,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Einstellungen'));
     await tester.pumpAndSettle();
     expect(find.text('Raster (Minuten)'), findsOneWidget);
-    await tester.tap(find.text('Dunkel'));
-    await tester.pumpAndSettle();
+    await choose(tester, selectRow('Darstellung'), 'Dunkel');
     expect(app.settings.mode, AppMode.dark);
     await _finish(tester, app);
   });

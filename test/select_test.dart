@@ -1,0 +1,72 @@
+import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:todo_liste/data/settings_store.dart';
+import 'package:todo_liste/widgets/app_icon.dart';
+import 'package:todo_liste/widgets/select.dart';
+
+import 'harness.dart';
+
+void main() {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  setUpAll(() async {
+    await initializeDateFormatting();
+    await loadTestFonts();
+  });
+
+  Finder row(String title) => find.widgetWithText(SelectRow<AppMode>, title);
+  Finder option(String label) => find.widgetWithText(SelectOption, label);
+  AnimatedRotation arrow(WidgetTester t, String title) =>
+      t.widget(find.descendant(of: row(title), matching: find.byType(AnimatedRotation)));
+
+  testWidgets('Auswahl-Zeile: zeigt den Wert, öffnet das Menü mit Haken und übernimmt die Wahl', (tester) async {
+    final app = await makeServices();
+    await pumpApp(tester, app);
+    final l = l10n('de');
+    await goTab(tester, l.navSettings);
+
+    // Statt Balken: eine Zeile mit Titel und gewähltem Wert; die anderen Werte sind versteckt.
+    expect(find.descendant(of: row(l.appearance), matching: find.text(l.light)), findsOneWidget);
+    expect(find.text(l.dark), findsNothing);
+    expect(arrow(tester, l.appearance).turns, 0);
+
+    await tester.tap(row(l.appearance));
+    await tester.pumpAndSettle();
+    expect(option(l.light), findsOneWidget);
+    expect(option(l.dark), findsOneWidget);
+    expect(option(l.system), findsOneWidget);
+    // Haken nur beim gewählten Wert, der Pfeil zeigt nach oben.
+    expect(find.descendant(of: option(l.light), matching: find.byType(AppIcon)), findsOneWidget);
+    expect(find.descendant(of: option(l.dark), matching: find.byType(AppIcon)), findsNothing);
+    expect(arrow(tester, l.appearance).turns, 0.5);
+
+    await tester.tap(option(l.dark));
+    await tester.pumpAndSettle();
+    expect(app.settings.mode, AppMode.dark);
+    expect(find.byType(SelectOption), findsNothing);
+    expect(find.descendant(of: row(l.appearance), matching: find.text(l.dark)), findsOneWidget);
+    expect(arrow(tester, l.appearance).turns, 0);
+    await finishApp(tester, app);
+  });
+
+  testWidgets('Auswahl-Zeile: Esc schließt das Menü ohne Änderung; Screenreader hört Titel und Wert', (tester) async {
+    final app = await makeServices();
+    await pumpApp(tester, app);
+    final l = l10n('de');
+    await goTab(tester, l.navSettings);
+    final handle = tester.ensureSemantics();
+    expect(find.bySemanticsLabel('${l.appearance}: ${l.light}'), findsOneWidget);
+
+    await tester.tap(row(l.appearance));
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectOption), findsNWidgets(3));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectOption), findsNothing);
+    expect(app.settings.mode, AppMode.light);
+    handle.dispose();
+    await finishApp(tester, app);
+  });
+}

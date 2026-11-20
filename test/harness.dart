@@ -18,6 +18,7 @@ import 'package:todo_liste/services/flick_export.dart';
 import 'package:todo_liste/services/reminders.dart';
 import 'package:todo_liste/services/updater.dart';
 import 'package:todo_liste/util/dates.dart';
+import 'package:todo_liste/widgets/select.dart';
 
 /// Fester Zeitpunkt für alle Screen-Tests: Mittwoch, 18. November 2026, 10:30.
 final fixedNow = DateTime(2026, 11, 18, 10, 30);
@@ -190,6 +191,20 @@ Future<void> finishApp(WidgetTester tester, AppServices app, {bool closeDb = tru
   if (closeDb) await app.store.db.close();
   app.sync.dispose();
   app.dispose();
+}
+
+/// Die Auswahl-Zeile mit diesem Titel bzw. Namen.
+Finder selectRow(String title) =>
+    find.byWidgetPredicate((w) => w is SelectRow && (w.title == title || w.label == title));
+
+/// Wählt in einer Auswahl-Zeile [option]: Zeile antippen, dann im Menü.
+Future<void> choose(WidgetTester tester, Finder row, String option) async {
+  await tester.ensureVisible(row);
+  await tester.pumpAndSettle();
+  await tester.tap(row);
+  await tester.pumpAndSettle();
+  await tester.tap(find.widgetWithText(SelectOption, option));
+  await tester.pumpAndSettle();
 }
 
 /// Wechselt über die Navigation unten in einen Tab.

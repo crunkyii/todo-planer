@@ -162,7 +162,13 @@ class MenuEntry {
 
 /// ⋮-Menü: Milchglas-Kärtchen oben rechts, springt aus der Ecke auf.
 class AppMenuRoute extends PopupRoute<void> {
-  AppMenuRoute({required this.anchor, required this.builder, required this.label, this.scrollBehind});
+  AppMenuRoute({
+    required this.anchor,
+    required this.builder,
+    required this.label,
+    this.scrollBehind,
+    this.minWidth = 188,
+  });
 
   /// Position des ⋮-Knopfs (global).
   final Rect anchor;
@@ -171,6 +177,8 @@ class AppMenuRoute extends PopupRoute<void> {
 
   /// Die Liste hinter dem Menü. Wer neben dem Menü wischt, scrollt sie – das Menü geht dabei zu.
   final ScrollPosition? scrollBehind;
+
+  final double minWidth;
 
   /// Unter dieser Höhe klappt das Menü nach oben auf, wenn dort mehr Platz ist.
   static const _minBelow = 220.0;
@@ -262,7 +270,7 @@ class AppMenuRoute extends PopupRoute<void> {
             child: ConstrainedBox(
               // Nie höher als der freie Platz – längere Listen scrollen im Menü.
               constraints: BoxConstraints(
-                minWidth: 188,
+                minWidth: minWidth,
                 maxWidth: 240,
                 maxHeight: (sp.up ? sp.above : sp.below).clamp(96, 2000),
               ),

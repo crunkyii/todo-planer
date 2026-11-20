@@ -11,6 +11,7 @@ import 'package:todo_liste/services/widget_config.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/theme/tokens.dart';
 import 'package:todo_liste/widgets/pickers.dart';
+import 'package:todo_liste/widgets/select.dart';
 import 'package:todo_liste/widgets/ui.dart';
 
 import 'harness.dart';
@@ -237,11 +238,11 @@ void main() {
       expect(preview(tester).color, WidgetPalette.light.bg);
       expect(preview(tester).borderRadius, BorderRadius.circular(WidgetShape.round.radius));
 
-      await tap(tester, find.text(l.dark));
+      await choose(tester, selectRow(l.widgetBgColor), l.dark);
       expect(preview(tester).color, WidgetPalette.dark.bg);
-      await tap(tester, find.text(l.widgetShapeSquare));
+      await choose(tester, selectRow(l.widgetShape), l.widgetShapeSquare);
       expect(preview(tester).borderRadius, BorderRadius.circular(0));
-      await tap(tester, find.text(l.widgetShapeSoft));
+      await choose(tester, selectRow(l.widgetShape), l.widgetShapeSoft);
       expect(preview(tester).borderRadius, BorderRadius.circular(WidgetShape.soft.radius));
 
       // Transparenz: Regler ganz nach rechts
@@ -275,7 +276,7 @@ void main() {
       // Hintergrund aus: Form und Transparenz verschwinden, die Vorschau ist durchsichtig
       await tap(tester, find.byType(AppSwitch));
       expect(find.byType(Slider), findsNothing);
-      expect(find.text(l.widgetShapeSquare), findsNothing);
+      expect(selectRow(l.widgetShape), findsNothing);
       expect(preview(tester).color!.a, 0);
       await tap(tester, find.text(l.save));
       expect(r.saved.last.background, isFalse);
@@ -308,7 +309,7 @@ void main() {
     testWidgets('Inhalt umstellen: jedes Listen-Widget zeigt Heute, Demnächst oder Gewohnheiten', (tester) async {
       final l = l10n('de');
       final r = await open(tester, kind: WidgetKind.habits);
-      Seg<WidgetKind> seg() => tester.widget(find.byType(Seg<WidgetKind>));
+      SelectRow<WidgetKind> seg() => tester.widget(find.byType(SelectRow<WidgetKind>));
       expect(seg().value, WidgetKind.habits);
       expect(find.widgetWithText(AppChip, 'Hausübung'), findsNothing);
 
@@ -327,7 +328,7 @@ void main() {
 
     testWidgets('das Widget „Anzahl“ hat keine Inhalt-Wahl', (tester) async {
       await open(tester, kind: WidgetKind.count);
-      expect(find.byType(Seg<WidgetKind>), findsNothing);
+      expect(find.byType(SelectRow<WidgetKind>), findsNothing);
       expect(find.text(l10n('de').widgetContent), findsNothing);
     });
 

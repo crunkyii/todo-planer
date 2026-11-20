@@ -193,7 +193,18 @@ abstract final class Sizes {
   static const double rPop = 18;
   static const double rSnack = 8;
   static const double rToast = 20;
-  static const double rSeg = 20;
+
+  /// Auswahl-Menü (`SelectRow`): Möglichkeit, Höhe, Mindestbreite, Einrückung rechts und
+  /// wie weit das Menü über die Zeile ragt.
+  static const double rOption = 12;
+  static const double optionH = 44;
+  static const double selectMenuW = 200;
+  static const double selectInset = 12;
+  static const double selectOverlap = 6;
+  static const double selectCompactH = 40;
+
+  /// Mindesthöhe einer Einstellungs-Zeile.
+  static const double setRowH = 52;
   static const double rCalDay = 12;
   static const double rChoice = 22;
   static const double rBlock = 6;
@@ -320,6 +331,9 @@ abstract final class Motion {
 
   /// Hervorheben einer Aufgabe (zweimal größer werden und leuchten).
   static const Duration focus = Duration(milliseconds: 1600);
+
+  /// Betonte Standard-Kurve (Pfeil der Auswahl dreht sich).
+  static const Curve emphasized = Cubic(0.2, 0, 0, 1);
 
   /// „Animationen reduzieren“ des Systems.
   static bool reduced(BuildContext context) => MediaQuery.maybeDisableAnimationsOf(context) ?? false;

@@ -9,9 +9,9 @@ import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
 import '../widgets/app_icon.dart';
-import '../widgets/overlays.dart';
 import '../widgets/pressable.dart';
 import '../widgets/layout.dart';
+import '../widgets/select.dart';
 import '../widgets/ui.dart';
 import 'flick_guide_page.dart';
 import 'setup_screen.dart';
@@ -54,19 +54,13 @@ class SettingsTab extends StatelessWidget {
                 children: [
                   CapsHeading(l.theme),
                   _Themes(settings: s),
-                  SetRow(
+                  SelectRow<AppMode>(
                     title: l.appearance,
-                    trailing: Seg<AppMode>(
-                      label: l.appearance,
-                      options: [(AppMode.light, l.light), (AppMode.dark, l.dark), (AppMode.system, l.system)],
-                      value: s.mode,
-                      onChanged: (v) => s.update((x) => x.mode = v),
-                    ),
+                    options: [(AppMode.light, l.light), (AppMode.dark, l.dark), (AppMode.system, l.system)],
+                    value: s.mode,
+                    onChanged: (v) => s.update((x) => x.mode = v),
                   ),
-                  SetRow(
-                    title: l.language,
-                    trailing: LangSeg(settings: s),
-                  ),
+                  LangSelect(settings: s, title: l.language),
                   CapsHeading(l.navTasks),
                   SetRow(
                     title: l.categories,
@@ -87,46 +81,32 @@ class SettingsTab extends StatelessWidget {
                     ),
                   ),
                   CapsHeading(l.weeklyPlan),
-                  SetRow(
+                  SelectRow<int>(
                     title: l.weekStartsOn,
-                    trailing: _MenuPicker(
-                      label: l.weekStartsOn,
-                      value: s.weekFirstDay,
-                      options: [for (var i = 0; i < 7; i++) (i, Fmt.of(context).wdLong(i))],
-                      onChanged: (v) {
-                        s.updateDevice((x) => x.weekFirstDay = v);
-                        ui.weekFirstDayChanged();
-                      },
-                    ),
+                    options: [for (var i = 0; i < 7; i++) (i, Fmt.of(context).wdLong(i))],
+                    value: s.weekFirstDay,
+                    onChanged: (v) {
+                      s.updateDevice((x) => x.weekFirstDay = v);
+                      ui.weekFirstDayChanged();
+                    },
                   ),
-                  SetRow(
+                  SelectRow<int>(
                     title: l.grid,
-                    trailing: Seg<int>(
-                      label: l.grid,
-                      options: [for (final r in SettingsStore.rasterChoices) (r, '$r')],
-                      value: s.raster,
-                      onChanged: (v) => s.update((x) => x.raster = v),
-                    ),
+                    options: [for (final r in SettingsStore.rasterChoices) (r, '$r')],
+                    value: s.raster,
+                    onChanged: (v) => s.update((x) => x.raster = v),
                   ),
-                  SetRow(
+                  SelectRow<int>(
                     title: l.dayStarts,
-                    trailing: _MenuPicker.hours(
-                      label: l.dayStarts,
-                      value: s.dayStart,
-                      from: SettingsStore.dayStartMin,
-                      to: SettingsStore.dayStartMax,
-                      onChanged: (v) => s.update((x) => x.dayStart = v),
-                    ),
+                    options: _hours(SettingsStore.dayStartMin, SettingsStore.dayStartMax),
+                    value: s.dayStart,
+                    onChanged: (v) => s.update((x) => x.dayStart = v),
                   ),
-                  SetRow(
+                  SelectRow<int>(
                     title: l.dayEnds,
-                    trailing: _MenuPicker.hours(
-                      label: l.dayEnds,
-                      value: s.dayEnd,
-                      from: SettingsStore.dayEndMin,
-                      to: SettingsStore.dayEndMax,
-                      onChanged: (v) => s.update((x) => x.dayEnd = v),
-                    ),
+                    options: _hours(SettingsStore.dayEndMin, SettingsStore.dayEndMax),
+                    value: s.dayEnd,
+                    onChanged: (v) => s.update((x) => x.dayEnd = v),
                   ),
                   CapsHeading(l.storage),
                   if (cloud) ..._cloudRows(context, app) else ..._localRows(context, app),
@@ -146,6 +126,9 @@ class SettingsTab extends StatelessWidget {
       },
     );
   }
+
+  /// Stunden von [from] bis [to] als „06:00“.
+  static List<(int, String)> _hours(int from, int to) => [for (var h = from; h <= to; h++) (h, hmString(h * 60))];
 
   List<Widget> _cloudRows(BuildContext context, AppServices app) {
     final l = context.l;
@@ -385,84 +368,6 @@ class _ThemePreview extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// Auswahl wie „06:00“ oder „Montag“ (statt <select>): öffnet ein kleines Menü.
-class _MenuPicker extends StatelessWidget {
-  const _MenuPicker({required this.label, required this.value, required this.options, required this.onChanged});
-
-  /// Stunden von [from] bis [to] als „06:00“.
-  _MenuPicker.hours({
-    required this.label,
-    required this.value,
-    required int from,
-    required int to,
-    required this.onChanged,
-  }) : options = [for (var h = from; h <= to; h++) (h, hmString(h * 60))];
-
-  final String label;
-  final int value;
-  final List<(int, String)> options;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final tok = context.tok;
-    final text = options.firstWhere((o) => o.$1 == value, orElse: () => options.first).$2;
-    return Builder(
-      builder: (btnContext) {
-        return Pressable(
-          semanticLabel: '$label: $text',
-          excludeChildSemantics: true,
-          onTap: () {
-            final rect = anchorRect(btnContext);
-            if (rect == null) return;
-            Navigator.of(context).push(
-              AppMenuRoute(
-                anchor: rect,
-                label: label,
-                scrollBehind: Scrollable.maybeOf(btnContext)?.position,
-                builder: (menuContext) => [
-                  for (final o in options)
-                    MenuItemRow(
-                      entry: MenuEntry(
-                        label: o.$2,
-                        radio: true,
-                        checked: o.$1 == value,
-                        onTap: () {
-                          Navigator.pop(menuContext);
-                          onChanged(o.$1);
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-          child: Container(
-            height: 40,
-            padding: const EdgeInsets.fromLTRB(12, 0, 8, 0),
-            decoration: BoxDecoration(
-              color: tok.bg,
-              border: Border.all(color: tok.line),
-              borderRadius: BorderRadius.circular(Sizes.rInput),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  text,
-                  style: TextStyle(fontSize: 14, color: tok.text, fontFeatures: Fs.tabular),
-                ),
-                const SizedBox(width: 4),
-                AppIcon(Ic.down, size: 18, color: tok.sub),
               ],
             ),
           ),
