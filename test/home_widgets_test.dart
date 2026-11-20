@@ -54,7 +54,9 @@ void main() {
       expect(again['mon'], hasLength(12));
       expect((again['mon'] as List)[10], lang == 'en' ? 'Nov' : 'Nov.');
       expect(Fmt(l).widgetDate(DateTime(2026, 11, 18)), lang == 'en' ? 'NOV 18' : '18. NOV.');
-      expect(again['en'], lang == 'en');
+      // Die Sprache steht nur noch in `lang` – das Widget leitet „Englisch“ daraus ab.
+      expect(again['lang'], lang);
+      expect(again.containsKey('en'), isFalse);
       expect(again['wd'], hasLength(7));
       expect(again['accent'], isNot(again['accentDark']));
       await finishApp(tester, app);
