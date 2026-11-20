@@ -85,7 +85,7 @@ Beim Abhaken soll mehr passieren, damit es sich nach Erfolg anfühlt.
 
 - Haken zeichnet sich, der Kreis füllt sich mit der Farbe der Kategorie bzw. Gewohnheit, kleiner Sprung (Feder).
 - **Splash** beim Abhaken: von oben gesehen spritzen aus dem Kreis Tropfen in seiner Farbe in alle Richtungen
-  (unterschiedlich lang, mit kleinem Glanzlicht, dazwischen ein paar runde Spritzer), ziehen sich dann zusammen und
+  (rundliche Tropfen in verschiedenen Größen, mit kleinem Glanzlicht, dazu ein paar Spritzer; nur knapp über den Kreis hinaus). Es gibt 50 verschiedene Splashes, jedes Abhaken nimmt zufällig einen, ziehen sich dann zusammen und
   verschwinden nach gut einer halben Sekunde. Nur beim gerade abgehakten Kreis, nicht beim Öffnen; gezeichnet über
   den Nachbarzeilen (`CustomPainter` in einem `Overlay`, kein Paket nötig).
 - Aufgaben: Titel wird animiert durchgestrichen, die Karte rutscht dann sanft in „Erledigt“, die Liste schließt
