@@ -444,5 +444,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "allHabitsDone": "All habits done for today. Nice work!"
 }

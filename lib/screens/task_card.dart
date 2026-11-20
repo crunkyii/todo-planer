@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/semantics.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -10,6 +12,7 @@ import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/flip.dart';
 import '../widgets/pressable.dart';
+import '../widgets/splash.dart';
 import '../widgets/ui.dart';
 import 'sheets.dart';
 import 'ui_state.dart';
@@ -134,6 +137,7 @@ class _TaskCardState extends State<TaskCard> {
                 on: t.done,
                 colors: cc,
                 label: t.done ? l.a11yReopen(t.title) : l.a11yDone(t.title),
+                splash: true,
                 onTap: () => toggleTaskWithToast(context, t),
               ),
               Expanded(
@@ -155,15 +159,11 @@ class _TaskCardState extends State<TaskCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        StrikeText(
                           t.title,
-                          style: TextStyle(
-                            fontSize: Fs.task,
-                            height: 21 / 15.5,
-                            color: t.done ? tok.sub : tok.text,
-                            decoration: t.done ? TextDecoration.lineThrough : null,
-                            decorationColor: tok.sub,
-                          ),
+                          done: t.done,
+                          style: TextStyle(fontSize: Fs.task, height: 21 / 15.5, color: tok.text),
+                          doneColor: tok.sub,
                         ),
                         const SizedBox(height: 4),
                         Wrap(
@@ -392,11 +392,24 @@ class HabitsTaskCard extends StatelessWidget {
     final open = !ui.collapsed.contains(UiState.habitsCard);
     final cc = tok.item(habitColorHex);
     final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular);
+    // Alle Gewohnheiten des Tages erledigt: kurze Funken über der Karte und eine Meldung.
+    void celebrate() {
+      if (!context.mounted || !hs.every((h) => store.habitDone(h.id, k))) return;
+      app.snack.show(l.allHabitsDone, icon: Ic.check);
+      if (Motion.reduced(context)) return;
+      final colors = [for (final p in _sparkColors) tok.item(p.hex).c];
+      showBurst(
+        context,
+        duration: Motion.checkGrowAt + Motion.sparkStagger * 2 + Motion.sparks,
+        painter: (ms) => SparkPainter(colors: colors, ms: ms),
+      );
+    }
+
     // Abgehakte rutschen nach unten; innerhalb bleibt die eigene Reihenfolge.
     final Widget rows = FlipColumn(
       children: [
         for (final h in [...hs.where((h) => !store.habitDone(h.id, k)), ...hs.where((h) => store.habitDone(h.id, k))])
-          _HabitSub(key: ValueKey(h.id), habit: h, day: k, ui: ui),
+          _HabitSub(key: ValueKey(h.id), habit: h, day: k, ui: ui, onChecked: celebrate),
       ],
     );
     final maxH = listMaxHeight;
@@ -419,8 +432,11 @@ class HabitsTaskCard extends StatelessWidget {
                   on: all,
                   colors: cc,
                   label: all ? l.habitsReopenAll : l.habitsCheckAll,
+                  splash: true,
                   onTap: () {
-                    if (store.toggleAllHabitsToday()) buzz();
+                    if (!store.toggleAllHabitsToday()) return;
+                    buzz();
+                    celebrate();
                   },
                 ),
                 Expanded(
@@ -522,11 +538,23 @@ class HabitsTaskCard extends StatelessWidget {
   }
 }
 
+/// Farben der Funken, wenn alle Gewohnheiten erledigt sind.
+const _sparkColors = [
+  ColorPreset.mintGreen,
+  ColorPreset.sunYellow,
+  ColorPreset.coral,
+  ColorPreset.skyBlue,
+  ColorPreset.lavender,
+];
+
 class _HabitSub extends StatelessWidget {
-  const _HabitSub({super.key, required this.habit, required this.day, required this.ui});
+  const _HabitSub({super.key, required this.habit, required this.day, required this.ui, required this.onChecked});
   final Habit habit;
   final String day;
   final UiState ui;
+
+  /// Nach dem Abhaken (nicht beim Wieder-Öffnen).
+  final VoidCallback onChecked;
 
   @override
   Widget build(BuildContext context) {
@@ -547,8 +575,11 @@ class _HabitSub extends StatelessWidget {
             on: on,
             colors: hc,
             label: on ? l.a11yHabitReopen(h.name) : l.a11yHabitDoneToday(h.name),
+            splash: true,
             onTap: () {
-              if (store.toggleHabitDay(h.id, day)) buzz();
+              if (!store.toggleHabitDay(h.id, day)) return;
+              buzz();
+              onChecked();
             },
           ),
           Expanded(
@@ -645,24 +676,151 @@ class _CheckFlashState extends State<_CheckFlash> with SingleTickerProviderState
   );
 }
 
-/// Zahl oder kurzer Text, der beim Ändern weich nach oben wegrollt (Serie, „2/3“).
+/// Zahl oder kurzer Text (Serie, „2/3“): Ändert sich der Wert, kommt der neue kurz danach von
+/// unten herein und blendet ein.
 class _Rolling extends StatelessWidget {
   const _Rolling({required this.text, required this.style});
   final String text;
   final TextStyle style;
 
   @override
-  Widget build(BuildContext context) => AnimatedSwitcher(
-    duration: Motion.of(context, Motion.pop),
-    switchInCurve: Motion.springSoft,
-    switchOutCurve: Curves.easeIn,
-    transitionBuilder: (child, a) => FadeTransition(
-      opacity: a,
-      child: SlideTransition(
-        position: Tween(begin: Offset(0, child.key == ValueKey(text) ? 0.7 : -0.7), end: Offset.zero).animate(a),
+  Widget build(BuildContext context) {
+    final total = Motion.countDelay + Motion.count;
+    return AnimatedSwitcher(
+      duration: Motion.of(context, total),
+      switchInCurve: Interval(Motion.countDelay.inMilliseconds / total.inMilliseconds, 1, curve: Motion.emphasized),
+      // Der alte Wert geht sofort.
+      switchOutCurve: const Threshold(1),
+      transitionBuilder: (child, a) => AnimatedBuilder(
+        animation: a,
+        builder: (context, c) => Opacity(
+          opacity: a.value.clamp(0.0, 1.0),
+          child: Transform.translate(offset: Offset(0, Motion.countShift * (1 - a.value)), child: c),
+        ),
         child: child,
       ),
-    ),
-    child: Text(text, key: ValueKey(text), style: style),
+      child: Text(text, key: ValueKey(text), style: style),
+    );
+  }
+}
+
+/// Titel einer Aufgabe: Beim Abhaken wird er animiert durchgestrichen und blasser, beim
+/// Wieder-Öffnen läuft es rückwärts. Steht er schon erledigt da, wird nichts animiert.
+class StrikeText extends StatefulWidget {
+  const StrikeText(this.text, {super.key, required this.done, required this.style, required this.doneColor});
+  final String text;
+  final bool done;
+  final TextStyle style;
+  final Color doneColor;
+
+  @override
+  State<StrikeText> createState() => _StrikeTextState();
+}
+
+class _StrikeTextState extends State<StrikeText> with SingleTickerProviderStateMixin {
+  static final _total = Motion.doneFadeDelay + Motion.doneFade;
+  late final _c = AnimationController(vsync: this, duration: _total, value: 1);
+
+  /// Anteil eines Teils der Animation (0 = offen, 1 = erledigt).
+  double _part(Duration delay, Duration dur, Curve curve) {
+    final ms = _c.value * _total.inMilliseconds;
+    final t = curve.transform(((ms - delay.inMilliseconds) / dur.inMilliseconds).clamp(0.0, 1.0));
+    return widget.done ? t : 1 - t;
+  }
+
+  @override
+  void didUpdateWidget(StrikeText old) {
+    super.didUpdateWidget(old);
+    if (old.done == widget.done) return;
+    if (Motion.reduced(context)) {
+      _c.value = 1;
+    } else {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _c,
+    builder: (context, _) {
+      final style = widget.style;
+      if (!_c.isAnimating) {
+        return Text(
+          widget.text,
+          style: style.copyWith(
+            color: widget.done ? widget.doneColor : style.color,
+            decoration: widget.done ? TextDecoration.lineThrough : null,
+            decorationColor: widget.doneColor,
+          ),
+        );
+      }
+      final shown = style.copyWith(
+        color: Color.lerp(style.color, widget.doneColor, _part(Motion.doneFadeDelay, Motion.doneFade, Curves.ease)),
+      );
+      return CustomPaint(
+        foregroundPainter: _StrikePainter(
+          text: widget.text,
+          style: DefaultTextStyle.of(context).style.merge(shown),
+          scaler: MediaQuery.textScalerOf(context),
+          direction: Directionality.of(context),
+          part: _part(Motion.strikeDelay, Motion.strike, Motion.emphasized),
+          color: widget.doneColor,
+        ),
+        child: Text(widget.text, style: shown),
+      );
+    },
   );
+}
+
+/// Strich durch den Text, Zeile für Zeile bis zum Anteil [part] seiner ganzen Länge.
+class _StrikePainter extends CustomPainter {
+  _StrikePainter({
+    required this.text,
+    required this.style,
+    required this.scaler,
+    required this.direction,
+    required this.part,
+    required this.color,
+  });
+
+  final String text;
+  final TextStyle style;
+  final TextScaler scaler;
+  final TextDirection direction;
+  final double part;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (part <= 0) return;
+    final tp = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: direction,
+      textScaler: scaler,
+    )..layout(maxWidth: size.width + 0.5);
+    final lines = tp.computeLineMetrics();
+    tp.dispose();
+    // Lage und Stärke wie der Strich der Schrift (Roboto: ¼ bzw. 1/20 der Schriftgröße).
+    final fs = scaler.scale(style.fontSize ?? Fs.task);
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = math.max(1, fs * 0.05);
+    var left = part * lines.fold<double>(0, (a, m) => a + m.width);
+    for (final m in lines) {
+      if (left <= 0) break;
+      final w = math.min(left, m.width);
+      final y = m.baseline - fs * 0.25;
+      canvas.drawLine(Offset(m.left, y), Offset(m.left + w, y), paint);
+      left -= w;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_StrikePainter old) => old.part != part || old.text != text || old.style != style;
 }
