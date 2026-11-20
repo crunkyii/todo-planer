@@ -99,6 +99,11 @@ final screens = <Screen>[
     await _tap(t, find.bySemanticsLabel(l.settings));
     expect(find.text(l.appearance), findsOneWidget);
   }),
+  Screen('sprache', (t, l) async {
+    await _tap(t, find.bySemanticsLabel(l.settings));
+    await _tap(t, find.text(l.language).last);
+    expect(find.text(l.langSameAsDevice), findsOneWidget);
+  }),
   Screen('kategorien', (t, l) async {
     await _tap(t, find.bySemanticsLabel(l.settings));
     await _tap(t, find.text(l.categories).last);
@@ -113,25 +118,28 @@ void main() {
     await loadTestFonts();
   });
 
-  // Jeder Screen in Deutsch/Englisch, hell/dunkel und in zwei Größen. Ein Überlauf
-  // (gelb-schwarze Streifen) oder eine Exception lässt den Test scheitern.
+  // Jeder Screen in Deutsch/Englisch, hell/dunkel und in zwei Größen; Spanisch, Französisch und
+  // Italienisch (oft längere Wörter) am kleinen Handy in hell. Ein Überlauf (gelb-schwarze
+  // Streifen) oder eine Exception lässt den Test scheitern.
+  final variants = [
+    for (final lang in ['de', 'en'])
+      for (final mode in ['light', 'dark'])
+        for (final size in const [Size(412, 915), Size(320, 640)]) (lang, mode, size),
+    for (final lang in ['es', 'fr', 'it']) (lang, 'light', const Size(320, 640)),
+  ];
   for (final s in screens) {
-    for (final lang in ['de', 'en']) {
-      for (final mode in ['light', 'dark']) {
-        for (final size in const [Size(412, 915), Size(320, 640)]) {
-          final id = '${s.name}_${size.width.toInt()}_${mode}_$lang';
-          testWidgets('Screen $id', (tester) async {
-            useFixedClock();
-            final l = l10n(lang);
-            final app = await makeServices(lang: lang, mode: mode, syncMode: s.syncMode, cloudConfig: s.cloudConfig);
-            if (s.seed) seedDemo(app.store, l);
-            await pumpApp(tester, app, size: size);
-            await s.open(tester, l);
-            await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$id.png'));
-            await finishApp(tester, app);
-          });
-        }
-      }
+    for (final (lang, mode, size) in variants) {
+      final id = '${s.name}_${size.width.toInt()}_${mode}_$lang';
+      testWidgets('Screen $id', (tester) async {
+        useFixedClock();
+        final l = l10n(lang);
+        final app = await makeServices(lang: lang, mode: mode, syncMode: s.syncMode, cloudConfig: s.cloudConfig);
+        if (s.seed) seedDemo(app.store, l);
+        await pumpApp(tester, app, size: size);
+        await s.open(tester, l);
+        await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$id.png'));
+        await finishApp(tester, app);
+      });
     }
   }
 }

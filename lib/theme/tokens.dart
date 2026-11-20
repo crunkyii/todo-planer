@@ -154,6 +154,11 @@ class AppTokens extends ThemeExtension<AppTokens> {
   /// Abgeleitete Farben für eine Kategorie-/Gewohnheits-/Blockfarbe.
   ItemColors item(String hex) => ItemColors.of(parseHex(hex), dark: dark);
 
+  /// Schatten unter einer gewählten Karte (Sprache), leicht in der Hauptfarbe.
+  List<BoxShadow> get selectedShadow => [
+    BoxShadow(color: p.withValues(alpha: 0.16), offset: const Offset(0, 4), blurRadius: 14),
+  ];
+
   /// Schatten unter schwebenden Elementen (Navigation, Menü, Snackbar).
   List<BoxShadow> get navShadow => const [BoxShadow(color: Color(0x29142846), offset: Offset(0, 8), blurRadius: 28)];
   List<BoxShadow> get popShadow => const [BoxShadow(color: Color(0x2E000000), offset: Offset(0, 10), blurRadius: 30)];
@@ -202,6 +207,14 @@ abstract final class Sizes {
   static const double selectInset = 12;
   static const double selectOverlap = 6;
   static const double selectCompactH = 40;
+
+  /// Seite „Sprache“: Karte (Radius, Höhe), Zeile „Wie das Gerät“, runde Flagge, Knopf „Fertig“.
+  static const double rLangCard = 14;
+  static const double langCardH = 60;
+  static const double langDeviceH = 56;
+  static const double flag = 34;
+  static const double doneBtnW = 52;
+  static const double doneBtnH = 36;
 
   /// Mindesthöhe einer Einstellungs-Zeile.
   static const double setRowH = 52;
@@ -274,6 +287,22 @@ abstract final class Sizes {
 
   /// Bis zu dieser Breite gilt ein Handy als schmal: kleinere Schrift im Wochenplan, kürzere Chips.
   static const double narrowWidth = 360;
+}
+
+/// Farben der Flaggen auf der Seite „Sprache“ (feste Farben, unabhängig vom Design).
+abstract final class FlagColors {
+  static const white = Color(0xFFFFFFFF);
+  static const deBlack = Color(0xFF000000);
+  static const deRed = Color(0xFFDD0000);
+  static const deGold = Color(0xFFFFCE00);
+  static const ukBlue = Color(0xFF012169);
+  static const ukRed = Color(0xFFC8102E);
+  static const esRed = Color(0xFFAA151B);
+  static const esYellow = Color(0xFFF1BF00);
+  static const frBlue = Color(0xFF002654);
+  static const frRed = Color(0xFFCE1126);
+  static const itGreen = Color(0xFF009246);
+  static const itRed = Color(0xFFCE2B37);
 }
 
 /// Schriftgrößen (px aus dem CSS).

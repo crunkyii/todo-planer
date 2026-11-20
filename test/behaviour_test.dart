@@ -1305,7 +1305,9 @@ void main() {
       seedDemo(app.store, de);
       await pumpApp(tester, app);
       await _tap(tester, find.bySemanticsLabel(de.settings));
-      await choose(tester, selectRow(de.language), de.langEn);
+      await _tap(tester, find.text(de.language).last);
+      await _tap(tester, find.text(de.langEn));
+      await _tap(tester, find.bySemanticsLabel(en.finish));
       expect(find.text(en.appearance), findsOneWidget);
       expect(find.text(de.appearance), findsNothing);
       expect(find.text(en.navTasks), findsOneWidget);

@@ -14,7 +14,7 @@ import '../widgets/layout.dart';
 import '../widgets/select.dart';
 import '../widgets/ui.dart';
 import 'flick_guide_page.dart';
-import 'setup_screen.dart';
+import 'language_page.dart';
 import 'sheets.dart';
 import 'ui_state.dart';
 
@@ -60,7 +60,12 @@ class SettingsTab extends StatelessWidget {
                     value: s.mode,
                     onChanged: (v) => s.update((x) => x.mode = v),
                   ),
-                  LangSelect(settings: s, title: l.language),
+                  SetRow(
+                    title: l.language,
+                    inline: true,
+                    onTap: () => openLanguagePage(context, s),
+                    trailing: LangValue(lang: s.lang),
+                  ),
                   CapsHeading(l.navTasks),
                   SetRow(
                     title: l.categories,

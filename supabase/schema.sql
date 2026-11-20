@@ -93,7 +93,7 @@ create table if not exists public.week_blocks (
 
 create table if not exists public.settings (
   user_id     uuid        primary key default auth.uid() references auth.users (id) on delete cascade,
-  lang        text        not null default 'de' check (lang in ('de', 'en')),
+  lang        text        not null default 'de' check (lang in ('de', 'en', 'es', 'fr', 'it')),
   theme       text        not null default 'himmel',
   mode        text        not null default 'light' check (mode in ('light', 'dark', 'system')),
   raster      smallint    not null default 15 check (raster in (5, 15, 30)),
@@ -126,6 +126,10 @@ alter table public.categories add column if not exists list_from text not null d
 alter table public.categories drop constraint if exists categories_list_from_check;
 alter table public.categories add  constraint categories_list_from_check
   check (list_from in ('always', 'week', 'tomorrow', 'today', 'never'));
+
+-- Sprachen Spanisch, Französisch und Italienisch (seit 1.7.0):
+alter table public.settings drop constraint if exists settings_lang_check;
+alter table public.settings add  constraint settings_lang_check check (lang in ('de', 'en', 'es', 'fr', 'it'));
 
 alter table public.categories  add column if not exists field_times jsonb;
 alter table public.tasks       add column if not exists field_times jsonb;

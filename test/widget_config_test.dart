@@ -318,7 +318,11 @@ void main() {
 
     testWidgets('Bild: Demnächst mit Zeitraum', (tester) async {
       useFixedClock();
-      await open(tester, kind: WidgetKind.upcoming, initial: WidgetConfig(range: WidgetRange.week));
+      await open(
+        tester,
+        kind: WidgetKind.upcoming,
+        initial: WidgetConfig(range: WidgetRange.week),
+      );
       await expectLater(find.byType(WidgetConfigApp), matchesGoldenFile('goldens/widget-zeitraum_412_light_de.png'));
     });
 

@@ -870,6 +870,16 @@
   "updateFailed": "Das hat nicht geklappt – hier klicken, um es noch einmal zu versuchen",
   "langDe": "Deutsch",
   "langEn": "English",
+  "langEs": "Español",
+  "langFr": "Français",
+  "langIt": "Italiano",
+  "langNameDe": "Deutsch",
+  "langNameEn": "Englisch",
+  "langNameEs": "Spanisch",
+  "langNameFr": "Französisch",
+  "langNameIt": "Italienisch",
+  "langSameAsDevice": "Wie das Gerät",
+  "finish": "Fertig",
   "olderDoneLoad": "{count, plural, =1{1 ältere erledigte Aufgabe laden} other{{count} ältere erledigte Aufgaben laden}}",
   "@olderDoneLoad": {
     "placeholders": {

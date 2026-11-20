@@ -6,13 +6,21 @@ import '../l10n/gen/app_localizations.dart';
 import 'dates.dart';
 
 /// Datums- und Zahlenformate in der gewählten Sprache (intl).
-/// Deutsch nutzt österreichische Monatsnamen („Jänner“) wie im Prototyp.
+/// Deutsch nutzt österreichische Monatsnamen („Jänner“) wie im Prototyp. Englisch schreibt
+/// den Monat vor den Tag („Nov 18“), Spanisch, Französisch und Italienisch den Tag ohne Punkt
+/// davor („18 nov.“).
 class Fmt {
-  Fmt(this.l) : en = l.localeName == 'en', _loc = l.localeName == 'en' ? 'en' : 'de_AT';
+  Fmt(this.l) : en = l.localeName == 'en', de = l.localeName == 'de', _loc = _locale(l.localeName);
 
   final AppLocalizations l;
   final bool en;
+  final bool de;
   final String _loc;
+
+  static String _locale(String lang) => lang == 'de' ? 'de_AT' : lang;
+
+  /// Erster Buchstabe groß („lunes“ → „Lunes“, „noviembre de 2026“ → „Noviembre de 2026“).
+  static String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   static Fmt of(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -24,24 +32,26 @@ class Fmt {
   /// „Mo“, „Di“ … bzw. „Mo“, „Tu“ … (zwei Buchstaben wie im Prototyp).
   String wd(int i) {
     final s = DateFormat.E(_loc).format(addDays(_monday, i)).replaceAll('.', '');
-    return s.length > 2 ? s.substring(0, 2) : s;
+    return _cap(s.length > 2 ? s.substring(0, 2) : s);
   }
 
-  String wdLong(int i) => DateFormat.EEEE(_loc).format(addDays(_monday, i));
-  String monthYear(DateTime d) => DateFormat.yMMMM(_loc).format(d);
+  String wdLong(int i) => _cap(DateFormat.EEEE(_loc).format(addDays(_monday, i)));
+  String monthYear(DateTime d) => _cap(DateFormat.yMMMM(_loc).format(d));
 
   /// „Nov.“, „Juli“, „Jän.“ / „Nov“ – dieselbe Form wie in [dayMon]. Ein einzelnes `MMM`
   /// liefert in intl die alleinstehende Form ohne Punkt („Nov“, „Jul“), der Prototyp zeigt die mit Punkt.
   String monShort(DateTime d) => DateFormat(null, _loc).dateSymbols.SHORTMONTHS[d.month - 1];
 
   /// „18. November“ / „November 18“
-  String dayMonth(DateTime d) => en ? DateFormat('MMMM d', _loc).format(d) : DateFormat('d. MMMM', _loc).format(d);
+  String dayMonth(DateTime d) =>
+      DateFormat(en ? 'MMMM d' : (de ? 'd. MMMM' : DateFormat.MMMMd(_loc).pattern), _loc).format(d);
 
   /// „18. Nov.“ / „Nov 18“
-  String dayMon(DateTime d) => en ? DateFormat('MMM d', _loc).format(d) : DateFormat('d. MMM', _loc).format(d);
+  String dayMon(DateTime d) => DateFormat(en ? 'MMM d' : (de ? 'd. MMM' : 'd MMM'), _loc).format(d);
 
   /// „18.11.2026“ / „11/18/2026“ – das ganze Datum mit Jahr (Export).
-  String fullDate(DateTime d) => en ? DateFormat.yMd(_loc).format(d) : '${pad2(d.day)}.${pad2(d.month)}.${d.year}';
+  String fullDate(DateTime d) =>
+      en ? DateFormat.yMd(_loc).format(d) : '${pad2(d.day)}${de ? '.' : '/'}${pad2(d.month)}${de ? '.' : '/'}${d.year}';
 
   /// „Fr 27. Nov.“ / „Fr Nov 27“ – Ende des Zeitraums im Widget „Demnächst“ (wie in Kotlin).
   String wdDayMon(DateTime d) => '${wd(wdIndex(d))} ${dayMon(d)}';
@@ -58,7 +68,7 @@ class Fmt {
     if (diff == 0) return l.today;
     if (diff == 1) return l.tomorrow;
     if (diff == -1) return l.yesterday;
-    final date = en ? '${d.month}/${d.day}' : '${d.day}.${d.month}.';
+    final date = en ? '${d.month}/${d.day}' : (de ? '${d.day}.${d.month}.' : '${d.day}/${d.month}');
     return l.weekdayShortWithDate(wd(wdIndex(d)), date);
   }
 
@@ -80,7 +90,8 @@ class Fmt {
   String weekRange(DateTime ws) {
     final we = addDays(ws, 6);
     if (ws.month != we.month) return l.rangeDash(dayMon(ws), dayMon(we));
-    return en ? '${monShort(we)} ${ws.day}–${we.day}' : '${ws.day}.–${we.day}. ${monShort(we)}';
+    if (en) return '${monShort(we)} ${ws.day}–${we.day}';
+    return de ? '${ws.day}.–${we.day}. ${monShort(we)}' : '${ws.day}–${we.day} ${monShort(we)}';
   }
 
   String time(int minutes) => hmString(minutes);
@@ -96,7 +107,7 @@ class Fmt {
   String oneDecimal(double v) => NumberFormat('0.0', _loc).format(v);
 
   /// Tag im Balkendiagramm (30 Tage): „18.“ / „18“
-  String dayNum(DateTime d) => en ? '${d.day}' : '${d.day}.';
+  String dayNum(DateTime d) => de ? '${d.day}.' : '${d.day}';
 
   /// „Am selben Tag“ / „2 Tage vorher“ / „1 Woche vorher“ (für Kategorien).
   String offsetLabel(int o) => o == 0 ? l.offsetSameDay : (o == 7 ? l.offsetWeekBefore : l.offsetDaysBefore(o));

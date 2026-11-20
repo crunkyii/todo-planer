@@ -73,7 +73,12 @@ void main() {
   testWidgets('Sprache umstellen übersetzt den Willkommen-Bildschirm', (tester) async {
     final app = await _services();
     await _pump(tester, app);
-    await choose(tester, selectRow('Sprache · Language'), 'English');
+    await tester.tap(find.bySemanticsLabel(RegExp('^Sprache · Language')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Done'));
+    await tester.pumpAndSettle();
     expect(find.text('Welcome'), findsOneWidget);
     await _finish(tester, app);
   });

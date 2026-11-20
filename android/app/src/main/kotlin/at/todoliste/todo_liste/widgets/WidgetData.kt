@@ -41,6 +41,8 @@ class WidgetData private constructor(
     private val weekdays: List<String>,
     private val months: List<String>,
     private val english: Boolean,
+    /** Sprache der App: Deutsch „18. Nov.“, Englisch „Nov 18“, sonst „18 nov.“. */
+    private val lang: String,
     private val accentLight: Int?,
     private val accentDark: Int?,
 ) {
@@ -84,7 +86,11 @@ class WidgetData private constructor(
         val (_, m, d) = civilFromDays(end)
         val wd = weekdays.getOrNull(Math.floorMod(end + 3, 7)) ?: ""
         val mon = months.getOrNull(m - 1).orEmpty()
-        val date = if (english) "$wd $mon $d" else "$wd $d. $mon"
+        val date = when {
+            english -> "$wd $mon $d"
+            lang == "de" -> "$wd $d. $mon"
+            else -> "$wd $d $mon"
+        }
         return label("untilDate", "bis {}").replace("{}", date.trim())
     }
 
@@ -123,12 +129,16 @@ class WidgetData private constructor(
     /** Das heutige Datum für neben „Heute“: „18. NOV.“ bzw. „NOV 18“ (ohne Jahr). */
     fun dateLabel(): String {
         val (_, m, d) = civilFromDays(today)
-        val locale = if (english) Locale.ENGLISH else Locale.GERMAN
+        val locale = Locale.forLanguageTag(lang)
         // Ältere Zusammenfassung ohne Monatsnamen: die von Android nehmen.
         val name = months.getOrNull(m - 1)?.takeIf { it.isNotEmpty() }
             ?: java.text.DateFormatSymbols.getInstance(locale).shortMonths.getOrNull(m - 1).orEmpty()
         val month = name.uppercase(locale)
-        return if (english) "$month $d" else "$d. $month"
+        return when {
+            english -> "$month $d"
+            lang == "de" -> "$d. $month"
+            else -> "$d $month"
+        }
     }
 
     /** Akzentfarbe des App-Themes für hell bzw. dunkel (null: noch keine Daten von der App). */
@@ -142,7 +152,11 @@ class WidgetData private constructor(
         else -> {
             val (_, m, d) = civilFromDays(day)
             val wd = weekdays.getOrNull(Math.floorMod(day + 3, 7)) ?: ""
-            if (english) "$wd $m/$d" else "$wd $d.$m."
+            when {
+                english -> "$wd $m/$d"
+                lang == "de" -> "$wd $d.$m."
+                else -> "$wd $d/$m"
+            }
         }
     }
 
@@ -235,6 +249,7 @@ class WidgetData private constructor(
                 weekdays = wd,
                 months = mon,
                 english = o.optBoolean("en", false),
+                lang = o.optString("lang").ifEmpty { if (o.optBoolean("en", false)) "en" else "de" },
                 accentLight = parseColor(o.optString("accent")),
                 accentDark = parseColor(o.optString("accentDark")),
             )

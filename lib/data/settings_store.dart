@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show File, FileSystemException, Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,6 +40,28 @@ class SettingsStore extends ChangeNotifier {
 
   /// Zwischen „Tag beginnt“ und „Tag endet“ liegen mindestens so viele Stunden.
   static const minDayHours = 6;
+
+  /// Sprachen der App – dieselben erlaubt die Datenbank (`supabase/schema.sql`, Tabelle `settings`).
+  static const languages = ['de', 'en', 'es', 'fr', 'it'];
+
+  /// Sprache des Geräts, wenn die App sie kann – sonst Englisch.
+  /// [code] = Sprache des Geräts (Standard: wie das System meldet).
+  static String deviceLang([String? code]) =>
+      _supported(code ?? PlatformDispatcher.instance.locale.languageCode) ?? 'en';
+
+  static String? _supported(String? code) => languages.contains(code) ? code : null;
+
+  /// Windows: Der Installer legt die dort gewählte Sprache neben das Programm
+  /// (`tool/release/installer.iss`). Sie gilt beim ersten Start, bis etwas gespeichert ist.
+  static String? installerLang() {
+    if (kIsWeb || !Platform.isWindows) return null;
+    try {
+      final f = File('${File(Platform.resolvedExecutable).parent.path}${Platform.pathSeparator}install-language.txt');
+      return f.existsSync() ? _supported(f.readAsStringSync().trim()) : null;
+    } on FileSystemException {
+      return null;
+    }
+  }
 
   static const _kSettings = 'settings.v1';
   static const _kSync = 'sync.v1';
@@ -146,9 +169,8 @@ class SettingsStore extends ChangeNotifier {
   }
 
   void _load() {
-    final sys = PlatformDispatcher.instance.locale.languageCode;
-    lang = sys == 'de' ? 'de' : 'en';
     final s = _decode(_kSettings);
+    lang = (s == null ? installerLang() : null) ?? deviceLang();
     if (s != null) _apply(s);
     final sync = _decode(_kSync);
     if (sync != null) {
@@ -182,7 +204,7 @@ class SettingsStore extends ChangeNotifier {
   }
 
   void _apply(Map<String, Object?> s) {
-    if (s['lang'] case final String v when v == 'de' || v == 'en') lang = v;
+    if (_supported(s['lang'] as String?) case final v?) lang = v;
     theme = (s['theme'] as String?) ?? theme;
     mode = AppMode.values.asNameMap()[s['mode']] ?? mode;
     raster = _clampRaster((s['raster'] as num?)?.toInt() ?? raster);
