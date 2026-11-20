@@ -45,6 +45,20 @@ oder SQL Server auf dem eigenen Server oder NAS.
 - **Neue Libraries** für die Datenbank-Treiber vorher prüfen und abstimmen (Version, Lizenz, läuft auf Android,
   Windows und Linux).
 
+## Eigene Spalten im Board
+
+Bisher gibt es im Board nur die festen Spalten (Zeiträume wie Heute, Morgen, Diese Woche und auf Wunsch eine Spalte
+pro Kategorie). Man soll selbst Spalten hinzufügen können.
+
+- **Hinzufügen** unter ⋮ → Spalten mit „Spalte hinzufügen“: Name eingeben, optional Farbe wählen.
+- **Aufgaben zuordnen**: Aufgaben per Ziehen in eine eigene Spalte legen oder im Aufgaben-Formular eine Spalte
+  wählen. Eine Aufgabe steht in genau einer eigenen Spalte oder in keiner (dann wie bisher nach Zeitraum).
+- **Bearbeiten**: umbenennen, Farbe ändern, löschen (Aufgaben darin bleiben erhalten und fallen in ihre
+  Zeitraum-Spalte zurück), Reihenfolge per Ziehen wie bei den festen Spalten, ein- und ausblenden.
+- **Abgleich**: Eigene Spalten und die Zuordnung der Aufgaben gehen über `Store` und den Sync auf alle Geräte;
+  dafür neue Tabelle bzw. Spalte in `supabase/schema.sql` (wiederholt ausführbar).
+- Texte in allen Sprachen (de, en, es, fr, it).
+
 ## Mehr Animationen
 
 ### Wischen im Kalender und im Wochenplan
