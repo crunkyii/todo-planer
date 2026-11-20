@@ -223,14 +223,18 @@ class SyncService extends ChangeNotifier {
   /// Gibt zurück, ob es sich lohnt, das Hochladen gleich noch einmal zu versuchen.
   bool _unknownColumn(PostgrestException e) {
     if (e.code != 'PGRST204') return false; // „Spalte nicht gefunden“
-    if (!_schemaHintShown) {
-      _schemaHintShown = true;
-      _events.add(const SchemaOutdated());
-    }
+    _schemaHint();
     final col = _optionalColumns.where((c) => !_missing.contains(c) && e.message.contains("'$c'")).firstOrNull;
     if (col == null) return false;
     _missing.add(col);
     return true;
+  }
+
+  /// Einmal je Sitzung: „Bitte schema.sql neu ausführen“.
+  void _schemaHint() {
+    if (_schemaHintShown) return;
+    _schemaHintShown = true;
+    _events.add(const SchemaOutdated());
   }
 
   Future<void> _push() async {
@@ -270,8 +274,18 @@ class SyncService extends ChangeNotifier {
     rejected = bad;
     if (settings.dirty) {
       final at = settings.updatedAt;
-      await db.from('settings').upsert(settings.toRow(), onConflict: 'user_id');
-      settings.markSettingsClean(at);
+      Future<void> send(Map<String, Object?> row) => db.from('settings').upsert(row, onConflict: 'user_id');
+      try {
+        await send(settings.toRow());
+        settings.markSettingsClean(at);
+      } on PostgrestException catch (e) {
+        // Älteres schema.sql kennt neue Sprachen noch nicht (CHECK auf `lang`): Den Rest trotzdem
+        // hochladen und weiter abgleichen. Die Einstellungen bleiben vorgemerkt, damit die Sprache
+        // nachkommt, sobald die Datenbank aktualisiert ist.
+        if (e.code != '23514') rethrow;
+        _schemaHint();
+        await send(settings.toRow()..remove('lang'));
+      }
     }
   }
 

@@ -211,6 +211,37 @@ void main() {
     expect(b.settings.raster, 30);
   });
 
+  test('Server mit älterem schema.sql lehnt die neue Sprache ab: der Rest geht trotzdem durch', () async {
+    // Wie der CHECK in schema.sql vor 1.7.0: nur Deutsch und Englisch.
+    server.reject = (table, row) => table == 'settings' && !const {null, 'de', 'en'}.contains(row['lang']);
+    final a = await device();
+    final events = <SyncEvent>[];
+    final sub = a.sync.events.listen(events.add);
+    final c = cat(a);
+    a.store.addTask(title: 'Hausübung', categoryId: c, dueDate: today(), dueTime: null, subs: const []);
+    a.settings.update((s) {
+      s.lang = 'it';
+      s.theme = 'ozean';
+    });
+    await a.sync.sync();
+    await a.sync.sync();
+    await tick();
+    await sub.cancel();
+
+    expect(server.rows('tasks').map((r) => r['title']), ['Hausübung'], reason: 'Aufgaben gehen weiter hoch');
+    expect(server.rows('settings').single['theme'], 'ozean');
+    expect(server.rows('settings').single.containsKey('lang'), isFalse);
+    expect(a.settings.lang, 'it');
+    expect(a.settings.dirty, isTrue, reason: 'Sprache kommt nach, sobald die Datenbank sie kennt');
+    expect(events.whereType<SchemaOutdated>(), hasLength(1));
+
+    // Nach dem neuen schema.sql geht auch die Sprache hoch.
+    server.reject = null;
+    await a.sync.sync();
+    expect(server.rows('settings').single['lang'], 'it');
+    expect(a.settings.dirty, isFalse);
+  });
+
   test('Neustart: die Warteschlange überlebt und wird später hochgeladen', () async {
     final db = LocalDb(NativeDatabase.memory());
     final a = await device(db: db);
