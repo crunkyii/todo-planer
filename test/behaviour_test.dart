@@ -92,6 +92,34 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Gemerkte Einteilung: Ist die Uhrzeit einer Aufgabe vorbei, wird beim nächsten Aufbau neu eingeteilt', (
+      tester,
+    ) async {
+      final l = l10n('de');
+      var now = fixedNow;
+      clock = () => now;
+      addTearDown(() => clock = DateTime.now);
+      final app = await makeServices();
+      final store = app.store;
+      store.addCategory(name: 'Schule', color: '#AABBCC', offset: 0);
+      final cat = store.categories.last;
+      store.addTask(title: 'Referat', categoryId: cat.id, dueDate: today(), dueTime: 11 * 60, subs: const []);
+      store.addTask(title: 'Vokabeln', categoryId: cat.id, dueDate: addDays(today(), 1), dueTime: null, subs: const []);
+      await pumpApp(tester, app);
+      Finder head(String label) => find.byWidgetPredicate((w) => w is SectionHead && w.label == label);
+      expect(head(l.overdue), findsNothing);
+      expect(head(l.today), findsOneWidget);
+
+      // Die Zeit läuft weiter, an den Daten ändert sich nichts. Zuklappen von „Morgen“ baut
+      // die Liste neu – die gemerkte Einteilung von 10:30 gilt dann nicht mehr.
+      now = fixedNow.add(const Duration(minutes: 31));
+      await _tap(tester, head(l.tomorrow));
+      expect(head(l.overdue), findsOneWidget);
+      expect(head(l.today), findsNothing);
+      expect(find.text('Vokabeln'), findsNothing, reason: 'zugeklappt');
+      await finishApp(tester, app);
+    });
+
     testWidgets('Kategorie bearbeiten: Löschen, Abbrechen und Speichern passen auf ein schmales Handy', (tester) async {
       final l = l10n('de');
       final app = await makeServices();
@@ -728,6 +756,31 @@ void main() {
         await finishApp(tester, app);
       }
     });
+
+    testWidgets('Jetzt-Linie wandert mit der Uhr, nur in der Spalte von heute', (tester) async {
+      final l = l10n('de');
+      var now = fixedNow; // Mittwoch, 10:30
+      clock = () => now;
+      addTearDown(() => clock = DateTime.now);
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      final tok = tester.element(find.byType(WeekTab)).tok;
+      final line = find.byWidgetPredicate((w) => w is ColoredBox && w.color == tok.err);
+      expect(line, findsOneWidget);
+      final top = tester.getTopLeft(line).dy;
+
+      // Eine halbe Stunde später: Der Minuten-Takt der Linie schiebt sie eine halbe Stunde tiefer.
+      now = fixedNow.add(const Duration(minutes: 30));
+      await tester.pump(const Duration(minutes: 1));
+      expect(tester.getTopLeft(line).dy - top, moreOrLessEquals(Sizes.hour / 2));
+
+      // Nach dem Ende des Rasters ist sie weg.
+      now = DateTime(fixedNow.year, fixedNow.month, fixedNow.day, 23, 59);
+      await tester.pump(const Duration(minutes: 1));
+      expect(line, findsNothing);
+      await finishApp(tester, app);
+    });
   });
 
   group('Formulare, Wochenbeginn und Spalten', () {
@@ -1086,6 +1139,13 @@ void main() {
       ui.weekStep(-6);
       expect(addDays(ui.weekStart, ui.weekDay!), DateTime(2026, 11, 18));
       expect(ui.weekStart, DateTime(2026, 11, 12));
+    });
+
+    test('UiState.dispose gibt auch die eigenen Zuhörer-Listen frei', () {
+      final ui = UiState()..dispose();
+      void noop() {}
+      expect(() => ui.sectionDragTick.addListener(noop), throwsFlutterError);
+      expect(() => ui.focusTask.addListener(noop), throwsFlutterError);
     });
 
     testWidgets('Spalten: 2, 3 und 4 nebeneinander – genau so viele sind zu sehen', (tester) async {

@@ -12,6 +12,7 @@ import 'package:todo_liste/services/reminders.dart';
 import 'package:todo_liste/theme/color_math.dart';
 import 'package:todo_liste/util/dates.dart';
 import 'package:todo_liste/util/fmt.dart';
+import 'package:todo_liste/util/selected.dart';
 import 'package:todo_liste/util/stats.dart';
 import 'package:todo_liste/util/task_logic.dart';
 import 'package:todo_liste/util/week_layout.dart';
@@ -402,5 +403,23 @@ void main() {
         expect(msg, contains('Grund vom Server'), reason: code);
       }
     });
+  });
+
+  test('Selected: meldet sich nur, wenn sich der gewählte Wert ändert', () {
+    final source = ValueNotifier((online: true, syncing: false));
+    addTearDown(source.dispose);
+    final sel = Selected(source, () => source.value.online);
+    var calls = 0;
+    void listener() => calls++;
+    sel.addListener(listener);
+
+    source.value = (online: true, syncing: true);
+    expect(calls, 0, reason: 'nur „syncing“ geändert');
+    source.value = (online: false, syncing: true);
+    expect(calls, 1);
+
+    sel.removeListener(listener);
+    source.value = (online: true, syncing: false);
+    expect(calls, 1, reason: 'abgemeldet');
   });
 }

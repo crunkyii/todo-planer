@@ -113,4 +113,13 @@ class UiState extends ChangeNotifier {
     weekDay = weekDay == null ? i : null;
     notifyListeners();
   }
+
+  /// Gibt auch die eigenen Zuhörer-Listen frei ([sectionDragTick], [focusTask]) –
+  /// `AppShell` ruft das auf, wenn der Bildschirm verschwindet.
+  @override
+  void dispose() {
+    sectionDragTick.dispose();
+    focusTask.dispose();
+    super.dispose();
+  }
 }
