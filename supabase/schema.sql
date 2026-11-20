@@ -286,6 +286,13 @@ begin
     execute format('drop policy if exists %I on public.%I', t || '_delete_own', t);
     execute format('create policy %I on public.%I for delete to authenticated using ((select auth.uid()) = user_id)', t || '_delete_own', t);
 
+    -- 3b) Zugriff über die API freigeben. Neuere Supabase-Projekte machen neue Tabellen nicht
+    -- mehr von selbst sichtbar („permission denied“). Was jemand sieht, regeln weiter die
+    -- Regeln oben: Angemeldete nur ihre eigenen Zeilen, Abgemeldete (anon) gar nichts – die
+    -- App prüft beim Einrichten damit nur, ob die Tabellen da sind.
+    execute format('grant select on public.%I to anon', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+
     -- 4) Realtime: andere Geräte bekommen Änderungen sofort mit
     if not exists (
       select 1 from pg_publication_tables
@@ -296,6 +303,9 @@ begin
   end loop;
 end;
 $$;
+
+-- Die Trigger rufen diese Funktion als angemeldeter Nutzer auf
+grant execute on function public.sync_field_times(jsonb, timestamptz) to authenticated;
 
 -- Supabase (PostgREST) neue Spalten sofort bekannt machen
 notify pgrst, 'reload schema';
