@@ -90,6 +90,8 @@ class CalendarTab extends StatelessWidget {
                   ],
                 ),
               ),
+              // Die Wochentage bleiben stehen, nur die Tage gleiten beim Blättern.
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: MonthWeekdays()),
               // Links/rechts wischen blättert den Monat (wie die Pfeile oben).
               SwipePager(
                 page: m,
@@ -97,6 +99,7 @@ class CalendarTab extends StatelessWidget {
                 peek: peek,
                 child: MonthGrid(
                   month: m,
+                  weekdays: false,
                   cell: (d, other) {
                     final isSel = sameDay(d, sel);
                     final holiday = holidayOn(d);
