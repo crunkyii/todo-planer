@@ -51,6 +51,10 @@ mixin _PageSwap<T extends StatefulWidget> on State<T>, TickerProvider {
   bool _fade = false;
   Widget? _old;
 
+  /// Strecke und Art des zuletzt gezeichneten Bilds – für einen Wechsel mitten im Gleiten.
+  double _distance = 0;
+  bool _title = false;
+
   DateTime get page;
   Object? get group;
 
@@ -61,15 +65,20 @@ mixin _PageSwap<T extends StatefulWidget> on State<T>, TickerProvider {
       _old = null;
       return;
     }
+    // Wird mitten im Gleiten schon wieder geblättert, geht es von der aktuellen Stelle weiter.
+    // Steht noch der alte Inhalt da, bleibt er der alte – der dazwischen liegende kam nie herein.
+    final now = frame(_distance, title: _title);
     _dir = page.isAfter(oldPage) ? 1 : -1;
-    _from = from;
-    _old = oldChild;
+    _from = now.x + from;
+    if (!now.old) _old = oldChild;
     _fade = Motion.reduced(context);
     _c.duration = _fade ? Motion.crossFade : _pageTotal;
     _c.forward(from: 0);
   }
 
   PageFrame frame(double distance, {bool title = false}) {
+    _distance = distance;
+    _title = title;
     if (!_c.isAnimating) return _rest;
     if (_fade) return (x: 0, opacity: Curves.ease.transform(_c.value), old: false);
     final ms = _c.value * _pageTotal.inMilliseconds;
@@ -205,9 +214,11 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
       final right = v.abs() >= _minVelocity ? v > 0 : _dist > 0;
       widget.onMove(right ? -1 : 1);
       // Blättert die Seite doch nicht weiter, federt der Inhalt zurück.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _drag != 0 && !_dragging) _springBack();
-      });
+      WidgetsBinding.instance
+        ..addPostFrameCallback((_) {
+          if (mounted && _drag != 0 && !_dragging) _springBack();
+        })
+        ..scheduleFrame();
       return;
     }
     _springBack();
