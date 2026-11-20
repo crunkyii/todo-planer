@@ -97,7 +97,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get navStats => 'Statistiche';
 
   @override
-  String get navSettings => 'Impostazioni';
+  String get navSettings => 'Opzioni';
 
   @override
   String get weeklyPlan => 'Piano settimanale';
