@@ -57,3 +57,28 @@ Die Auswahl-Balken mit mehreren Feldern nebeneinander (`Seg`, z. B. *Hell / Dunk
   (`AppMenuRoute`) oder ein Sheet mit den Möglichkeiten öffnet – überall gleich.
 - Betrifft alle Stellen mit `Seg<…>` (Optionen, Widget-Einstellungen, Formulare); danach `Seg` entfernen.
 - Bedienung mit Tastatur und Screenreader muss erhalten bleiben, Vergleichsbilder (Goldens) neu erzeugen.
+
+## Mehr Animationen
+
+### Wischen im Kalender und im Wochenplan
+
+Beim Wischen zum nächsten oder vorigen Monat bzw. zur nächsten oder vorigen Woche soll man sehen, in welche
+Richtung es geht.
+
+- Der Inhalt folgt dem Finger und gleitet dann ganz hinaus, der neue Monat bzw. die neue Woche kommt von der
+  passenden Seite herein (nach links wischen → nächster, nach rechts → voriger).
+- Lässt man zu früh los, federt die Ansicht zurück. Dasselbe Hineingleiten auch bei den Pfeil-Knöpfen und bei
+  „Heute“.
+- Titel (Monat bzw. Kalenderwoche) wechselt mit, z. B. kurz hinausgleiten und ausblenden.
+- Dauer und Kurven über `Motion` in `lib/theme/tokens.dart`; bei „Animationen reduzieren“ nur ein kurzes Überblenden.
+
+### Abhaken von Aufgaben und Gewohnheiten
+
+Beim Abhaken soll mehr passieren, damit es sich nach Erfolg anfühlt.
+
+- Haken zeichnet sich, der Kreis füllt sich mit der Farbe der Kategorie bzw. Gewohnheit, kleiner Sprung (Feder).
+- Aufgaben: Titel wird animiert durchgestrichen, die Karte rutscht dann sanft in „Erledigt“, die Liste schließt
+  die Lücke weich.
+- Gewohnheiten: Serie (Streak) zählt sichtbar hoch; bei allen Gewohnheiten des Tages oder einer runden Serie
+  ein kleiner Konfetti- oder Funken-Effekt.
+- Wieder öffnen läuft rückwärts ab. Haptik wie bei `Pressable`; „Animationen reduzieren“ beachten.
