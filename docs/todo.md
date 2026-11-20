@@ -16,6 +16,13 @@ Ein Marktplatz in der App, über den man Themes und Plugins findet, installiert 
   abschaltbar.
 - **Flick als Plugin**: Die Flick-Anbindung wird nicht mehr automatisch eingerichtet. Sie steht als Plugin im
   Marktplatz und wird erst aktiv, wenn man sie dort installiert. Beim Entfernen räumt sie ihre Dateien wieder weg.
+  - **Standardmäßig nichts von Flick**: Ohne Plugin enthält die App keinen Flick-Teil – kein Abschnitt in den
+    Optionen, keine Flick-Symbole (`assets/flick`), keine Vorlage (`tool/flick`), kein Export der heutigen Aufgaben.
+    Das alles wandert in das Plugin.
+  - **Repo verlinken**: Die Plugin-Seite verlinkt das Flick-Repo (https://github.com/Whiskey-Bravo/flick).
+  - **Rechte**: Beim Installieren steht in Klartext, was das Plugin darf – Aufgaben lesen, **Datenbank verändern**
+    (Aufgaben anlegen und abhaken, das wird mit den anderen Geräten abgeglichen) und Dateien in einem eigenen Ordner.
+- Entwurf mit Bildschirmen: Design-Konzept „ToDo Planer – Konzept“ (Marktplatz, Plugin-Rechte).
 
 ## Eigene SQL-Datenbank
 
