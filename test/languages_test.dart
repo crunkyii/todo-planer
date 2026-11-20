@@ -55,6 +55,15 @@ void main() {
       expect(langNameIn(l10n('de'), 'es'), 'Spanisch');
       expect(langNameIn(l10n('fr'), 'de'), 'Allemand');
     });
+
+    test('Einzahl stimmt, „Alle“ passt zu den Kategorien', () {
+      final es = l10n('es'), fr = l10n('fr'), it = l10n('it');
+      expect(es.tileStreak(1), 'día de racha');
+      expect(it.tileStreak(1), 'giorno di fila');
+      expect(es.todayOpen(1), 'Pendientes: 1');
+      expect(it.todayOpenLate(1, 1), 'Aperte: 1 · in ritardo: 1');
+      expect([es.all, fr.all, it.all], ['Todas', 'Toutes', 'Tutte']);
+    });
   });
 
   group('Datumsformate', () {

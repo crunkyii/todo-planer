@@ -217,8 +217,8 @@ class _TaskSheetState extends State<TaskSheet> {
     final cc = tok.item(cat.color);
     final due = f.dayTime(_date, _time);
     final infoText = cat.offset > 0
-        ? l.infoListFrom(l.infoHandIn(due), f.day(addDays(_date, -cat.offset)))
-        : l.infoDue(due);
+        ? l.infoListFrom(l.infoHandIn(f.inText(due)), f.inText(f.day(addDays(_date, -cat.offset))))
+        : l.infoDue(f.inText(due));
     final isEdit = widget.task != null;
 
     return SheetBody(

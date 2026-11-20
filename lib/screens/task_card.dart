@@ -116,7 +116,7 @@ class _TaskCardState extends State<TaskCard> {
     final c = store.catOf(t.categoryId);
     final cc = tok.item(c.color);
     final late = isLate(t);
-    final when = c.offset > 0 ? l.infoHandIn(f.day(t.dueDate)) : f.dayTime(t.dueDate, t.dueTime);
+    final when = c.offset > 0 ? l.infoHandIn(f.inText(f.day(t.dueDate))) : f.dayTime(t.dueDate, t.dueTime);
     final subDone = t.subs.where((s) => s.done).length;
     final pending = app.offlineCloud && store.pendingTaskIds.contains(t.id);
     final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular);

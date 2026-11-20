@@ -317,7 +317,9 @@ class _BlockSheetState extends State<BlockSheet> {
                 for (final t in dayTasks)
                   AppChip(
                     // An den Tagen davor steht dabei, wann sie fällig ist.
-                    label: _dueThatDay(t) ? t.title : '${t.title} · ${l.infoHandIn(f.wd(wdIndex(t.dueDate)))}',
+                    label: _dueThatDay(t)
+                        ? t.title
+                        : '${t.title} · ${l.infoHandIn(f.inText(f.wd(wdIndex(t.dueDate))))}',
                     selected: _taskId == t.id,
                     colors: tok.item(store.catOf(t.categoryId).color),
                     height: 32,

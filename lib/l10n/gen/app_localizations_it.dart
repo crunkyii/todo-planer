@@ -40,7 +40,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get back => 'Indietro';
 
   @override
-  String get all => 'Tutti';
+  String get all => 'Tutte';
 
   @override
   String get name => 'Nome';
@@ -502,7 +502,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String completedDeleted(int count) {
-    return '$count completate eliminate';
+    return 'Completate eliminate: $count';
   }
 
   @override
@@ -564,12 +564,12 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String todayOpen(int count) {
-    return '$count aperte';
+    return 'Aperte: $count';
   }
 
   @override
   String todayOpenLate(int count, int late) {
-    return '$count aperte, $late in ritardo';
+    return 'Aperte: $count · in ritardo: $late';
   }
 
   @override
@@ -780,7 +780,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String catDoSameDay(int open) {
-    return 'Da fare lo stesso giorno · $open aperte';
+    return 'Da fare lo stesso giorno · aperte: $open';
   }
 
   @override
@@ -788,8 +788,8 @@ class AppLocalizationsIt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Da fare $count giorni prima · $open aperte',
-      one: 'Da fare 1 giorno prima · $open aperte',
+      other: 'Da fare $count giorni prima · aperte: $open',
+      one: 'Da fare 1 giorno prima · aperte: $open',
     );
     return '$_temp0';
   }
@@ -967,7 +967,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String tileStreak(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'giorni di fila', one: 'giorni di fila');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'giorni di fila', one: 'giorno di fila');
     return '$_temp0';
   }
 

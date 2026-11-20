@@ -40,7 +40,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get back => 'Retour';
 
   @override
-  String get all => 'Tout';
+  String get all => 'Toutes';
 
   @override
   String get name => 'Nom';
@@ -94,7 +94,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navWeek => 'Semaine';
 
   @override
-  String get navStats => 'Statistiques';
+  String get navStats => 'Bilan';
 
   @override
   String get navSettings => 'Réglages';
@@ -505,7 +505,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String completedDeleted(int count) {
-    return '$count terminée(s) supprimée(s)';
+    return 'Terminées supprimées : $count';
   }
 
   @override

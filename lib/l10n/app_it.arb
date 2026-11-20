@@ -10,7 +10,7 @@
   "saved": "Salvato",
   "itemGone": "Questo elemento nel frattempo è stato eliminato.",
   "back": "Indietro",
-  "all": "Tutti",
+  "all": "Tutte",
   "name": "Nome",
   "color": "Colore",
   "customColor": "Colore personalizzato",
@@ -156,7 +156,7 @@
   "completedShown": "Completate visibili",
   "deleteCompleted": "Elimina completate",
   "noCompleted": "Nessuna attività completata",
-  "completedDeleted": "{count} completate eliminate",
+  "completedDeleted": "Completate eliminate: {count}",
   "completedTasks": "Attività completate",
   "subtask": "Sottoattività",
   "subtasks": "Sottoattività",
@@ -176,7 +176,7 @@
   "prevLists": "Liste precedenti",
   "nextLists": "Liste successive",
   "todayAllDone": "Tutto fatto",
-  "todayOpen": "{count} aperte",
+  "todayOpen": "Aperte: {count}",
   "@todayOpen": {
     "placeholders": {
       "count": {
@@ -184,7 +184,7 @@
       }
     }
   },
-  "todayOpenLate": "{count} aperte, {late} in ritardo",
+  "todayOpenLate": "Aperte: {count} · in ritardo: {late}",
   "@todayOpenLate": {
     "placeholders": {
       "count": {
@@ -246,8 +246,8 @@
   "offsetSameDay": "Stesso giorno",
   "offsetDaysBefore": "{count, plural, =1{1 giorno prima} other{{count} giorni prima}}",
   "offsetWeekBefore": "1 settimana prima",
-  "catDoSameDay": "Da fare lo stesso giorno · {open} aperte",
-  "catDoDaysBefore": "{count, plural, =1{Da fare 1 giorno prima · {open} aperte} other{Da fare {count} giorni prima · {open} aperte}}",
+  "catDoSameDay": "Da fare lo stesso giorno · aperte: {open}",
+  "catDoDaysBefore": "{count, plural, =1{Da fare 1 giorno prima · aperte: {open}} other{Da fare {count} giorni prima · aperte: {open}}}",
   "catDoWeekBefore": "Da fare 1 settimana prima · {open} aperte",
   "categoriesCount": "{count, plural, =1{1 categoria} other{{count} categorie}}",
   "newBlock": "Nuovo blocco",
@@ -303,7 +303,7 @@
   "more": "più",
   "perDay": "al giorno",
   "tileDone": "fatte",
-  "tileStreak": "{count, plural, =1{giorni di fila} other{giorni di fila}}",
+  "tileStreak": "{count, plural, =1{giorno di fila} other{giorni di fila}}",
   "daysRange": "{count} giorni",
   "heatSummary": "<b>{total}</b> fatte in <b>{days}</b> giorni",
   "heatDay": "{date}: <b>{count}</b> fatte",

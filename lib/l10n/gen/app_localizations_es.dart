@@ -40,7 +40,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get back => 'Atrás';
 
   @override
-  String get all => 'Todo';
+  String get all => 'Todas';
 
   @override
   String get name => 'Nombre';
@@ -94,7 +94,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navWeek => 'Semana';
 
   @override
-  String get navStats => 'Estadísticas';
+  String get navStats => 'Progreso';
 
   @override
   String get navSettings => 'Ajustes';
@@ -294,7 +294,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get yesterday => 'Ayer';
 
   @override
-  String get overdue => 'Atrasadas';
+  String get overdue => 'Con retraso';
 
   @override
   String get thisWeek => 'Esta semana';
@@ -500,7 +500,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String completedDeleted(int count) {
-    return '$count completadas eliminadas';
+    return 'Completadas eliminadas: $count';
   }
 
   @override
@@ -562,12 +562,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String todayOpen(int count) {
-    return '$count pendientes';
+    return 'Pendientes: $count';
   }
 
   @override
   String todayOpenLate(int count, int late) {
-    return '$count pendientes, $late atrasadas';
+    return 'Pendientes: $count · con retraso: $late';
   }
 
   @override
@@ -773,7 +773,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String catDoSameDay(int open) {
-    return 'Hacer el mismo día · $open pendientes';
+    return 'Hacer el mismo día · pendientes: $open';
   }
 
   @override
@@ -781,8 +781,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Hacer $count días antes · $open pendientes',
-      one: 'Hacer 1 día antes · $open pendientes',
+      other: 'Hacer $count días antes · pendientes: $open',
+      one: 'Hacer 1 día antes · pendientes: $open',
     );
     return '$_temp0';
   }
@@ -960,7 +960,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String tileStreak(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'días de racha', one: 'días de racha');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'días de racha', one: 'día de racha');
     return '$_temp0';
   }
 
@@ -1095,7 +1095,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String offlinePending(int count) {
-    return 'Sin conexión · $count pendientes';
+    return 'Sin conexión · pendientes: $count';
   }
 
   @override

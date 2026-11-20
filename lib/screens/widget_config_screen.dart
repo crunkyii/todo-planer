@@ -356,7 +356,7 @@ class WidgetPreview extends StatelessWidget {
     final rangeEnd = kind == WidgetKind.upcoming ? config.range.end(today()) : null;
     final beside = switch (kind) {
       WidgetKind.today => f.widgetDate(today()),
-      WidgetKind.upcoming when rangeEnd != null => l.widgetUntilDate(f.wdDayMon(rangeEnd)),
+      WidgetKind.upcoming when rangeEnd != null => l.widgetUntilDate(f.inText(f.wdDayMon(rangeEnd))),
       _ => null,
     };
 

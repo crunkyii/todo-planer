@@ -75,6 +75,10 @@ class Fmt {
     return l.weekdayShortWithDate(wd(wdIndex(d)), date);
   }
 
+  /// Ein Tag mitten im Satz („Abgabe Morgen“, „Entrega mañana“): Spanisch, Französisch und
+  /// Italienisch schreiben dort klein, Deutsch und Englisch bleiben wie gewohnt.
+  String inText(String s) => en || de || s.isEmpty ? s : s[0].toLowerCase() + s.substring(1);
+
   /// „Heute“ bzw. „Heute, 16:00“, wenn eine Uhrzeit gesetzt ist.
   String dayTime(DateTime d, int? minutes) => minutes == null ? day(d) : l.dayWithTime(day(d), time(minutes));
 

@@ -10,7 +10,7 @@
   "saved": "Guardado",
   "itemGone": "Este elemento se eliminó entretanto.",
   "back": "Atrás",
-  "all": "Todo",
+  "all": "Todas",
   "name": "Nombre",
   "color": "Color",
   "customColor": "Color personalizado",
@@ -28,7 +28,7 @@
   "navTasks": "Tareas",
   "navCalendar": "Calendario",
   "navWeek": "Semana",
-  "navStats": "Estadísticas",
+  "navStats": "Progreso",
   "navSettings": "Ajustes",
   "weeklyPlan": "Plan semanal",
   "statistics": "Estadísticas",
@@ -91,7 +91,7 @@
   "today": "Hoy",
   "tomorrow": "Mañana",
   "yesterday": "Ayer",
-  "overdue": "Atrasadas",
+  "overdue": "Con retraso",
   "thisWeek": "Esta semana",
   "later": "Más adelante",
   "sectionCount": "{label} ({count})",
@@ -156,7 +156,7 @@
   "completedShown": "Completadas visibles",
   "deleteCompleted": "Eliminar completadas",
   "noCompleted": "Sin tareas completadas",
-  "completedDeleted": "{count} completadas eliminadas",
+  "completedDeleted": "Completadas eliminadas: {count}",
   "completedTasks": "Tareas completadas",
   "subtask": "Subtarea",
   "subtasks": "Subtareas",
@@ -176,7 +176,7 @@
   "prevLists": "Listas anteriores",
   "nextLists": "Listas siguientes",
   "todayAllDone": "Todo hecho",
-  "todayOpen": "{count} pendientes",
+  "todayOpen": "Pendientes: {count}",
   "@todayOpen": {
     "placeholders": {
       "count": {
@@ -184,7 +184,7 @@
       }
     }
   },
-  "todayOpenLate": "{count} pendientes, {late} atrasadas",
+  "todayOpenLate": "Pendientes: {count} · con retraso: {late}",
   "@todayOpenLate": {
     "placeholders": {
       "count": {
@@ -246,8 +246,8 @@
   "offsetSameDay": "El mismo día",
   "offsetDaysBefore": "{count, plural, =1{1 día antes} other{{count} días antes}}",
   "offsetWeekBefore": "1 semana antes",
-  "catDoSameDay": "Hacer el mismo día · {open} pendientes",
-  "catDoDaysBefore": "{count, plural, =1{Hacer 1 día antes · {open} pendientes} other{Hacer {count} días antes · {open} pendientes}}",
+  "catDoSameDay": "Hacer el mismo día · pendientes: {open}",
+  "catDoDaysBefore": "{count, plural, =1{Hacer 1 día antes · pendientes: {open}} other{Hacer {count} días antes · pendientes: {open}}}",
   "catDoWeekBefore": "Hacer 1 semana antes · {open} pendientes",
   "categoriesCount": "{count, plural, =1{1 categoría} other{{count} categorías}}",
   "newBlock": "Nuevo bloque",
@@ -303,7 +303,7 @@
   "more": "más",
   "perDay": "por día",
   "tileDone": "hechas",
-  "tileStreak": "{count, plural, =1{días de racha} other{días de racha}}",
+  "tileStreak": "{count, plural, =1{día de racha} other{días de racha}}",
   "daysRange": "{count} días",
   "heatSummary": "<b>{total}</b> hechas en <b>{days}</b> días",
   "heatDay": "{date}: <b>{count}</b> hechas",
@@ -341,7 +341,7 @@
   "database": "Base de datos",
   "signOut": "Cerrar sesión",
   "offline": "Sin conexión",
-  "offlinePending": "Sin conexión · {count} pendientes",
+  "offlinePending": "Sin conexión · pendientes: {count}",
   "synced": "Sincronizado",
   "syncing": "Sincronizando …",
   "allSynced": "Todo sincronizado",

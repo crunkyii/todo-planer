@@ -40,13 +40,16 @@ class WidgetData private constructor(
     private val labels: Map<String, String>,
     private val weekdays: List<String>,
     private val months: List<String>,
-    private val english: Boolean,
     /** Sprache der App: Deutsch „18. Nov.“, Englisch „Nov 18“, sonst „18 nov.“. */
     private val lang: String,
     private val accentLight: Int?,
     private val accentDark: Int?,
 ) {
     val today: Int = todayIndex()
+    private val english = lang == "en"
+
+    /** Ein Tag mitten im Satz („hasta mañana“): Spanisch, Französisch, Italienisch klein – wie Fmt.inText. */
+    private fun inText(s: String): String = if (english || lang == "de") s else s.replaceFirstChar { it.lowercase() }
 
     fun label(key: String, fallback: String): String = labels[key] ?: fallback
 
@@ -89,7 +92,7 @@ class WidgetData private constructor(
         val date = when {
             english -> "$wd $mon $d"
             lang == "de" -> "$wd $d. $mon"
-            else -> "$wd $d $mon"
+            else -> "${inText(wd)} $d $mon"
         }
         // Ältere Daten ohne den Text: lieber nichts als ein deutsches „bis“ in einer anderen Sprache.
         val until = labels["untilDate"] ?: return ""
@@ -175,7 +178,7 @@ class WidgetData private constructor(
         val due = listOfNotNull(day, time).joinToString(", ")
         val parts = ArrayList<String>()
         if (isLate(t)) parts += label("overdue", "Überfällig")
-        if (due.isNotEmpty()) parts += label("until", "bis: {}").replace("{}", due)
+        if (due.isNotEmpty()) parts += label("until", "bis: {}").replace("{}", inText(due))
         return parts.joinToString(" · ")
     }
 
@@ -250,7 +253,6 @@ class WidgetData private constructor(
                 labels = labels,
                 weekdays = wd,
                 months = mon,
-                english = o.optBoolean("en", false),
                 lang = o.optString("lang").ifEmpty { if (o.optBoolean("en", false)) "en" else "de" },
                 accentLight = parseColor(o.optString("accent")),
                 accentDark = parseColor(o.optString("accentDark")),
