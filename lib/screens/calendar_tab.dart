@@ -44,6 +44,10 @@ class CalendarTab extends StatelessWidget {
         );
 
         void move(int dir) => ui.set((s) => s.calMonth = DateTime(m.year, m.month + dir));
+        String peek(int dir) {
+          final name = f.month(DateTime(m.year, m.month + dir));
+          return dir > 0 ? '$name →' : '← $name';
+        }
 
         return LayoutBuilder(
           builder: (context, box) {
@@ -54,23 +58,41 @@ class CalendarTab extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Semantics(
-                        header: true,
-                        liveRegion: true,
-                        child: Text(
-                          f.monthYear(m),
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+                      child: ClipRect(
+                        child: Semantics(
+                          header: true,
+                          liveRegion: true,
+                          child: PageTitle(
+                            page: m,
+                            child: Text(
+                              f.monthYear(m),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     IconBtn(Ic.left, label: l.prevMonth, onTap: () => move(-1)),
+                    AppButton(
+                      label: l.today,
+                      kind: BtnKind.text,
+                      padding: MediaQuery.sizeOf(context).width <= Sizes.narrowWidth ? 8 : 16,
+                      onTap: () => ui.set((s) {
+                        s.calMonth = DateTime(clock().year, clock().month);
+                        s.calSel = today();
+                      }),
+                    ),
                     IconBtn(Ic.right, label: l.nextMonth, onTap: () => move(1)),
                   ],
                 ),
               ),
               // Links/rechts wischen blättert den Monat (wie die Pfeile oben).
-              SwipeStep(
+              SwipePager(
+                page: m,
                 onMove: move,
+                peek: peek,
                 child: MonthGrid(
                   month: m,
                   cell: (d, other) {
