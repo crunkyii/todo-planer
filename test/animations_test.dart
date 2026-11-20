@@ -299,6 +299,26 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Nur Kreise mit Splash bekommen ein Ziel, dem er folgt', (tester) async {
+      useFixedClock();
+      final l = l10n('de');
+      final app = await makeServices();
+      seedDemo(app.store, l);
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.navTasks));
+      final marks = tester.widgetList<CheckMark>(find.byType(CheckMark)).toList();
+      expect(marks.where((m) => m.splash), isNotEmpty);
+      expect(marks.where((m) => !m.splash), isNotEmpty, reason: 'Unteraufgaben spritzen nicht');
+      for (final m in marks) {
+        expect(
+          find.descendant(of: find.byWidget(m), matching: find.byType(CompositedTransformTarget)),
+          m.splash ? findsOneWidget : findsNothing,
+          reason: m.label,
+        );
+      }
+      await finishApp(tester, app);
+    });
+
     testWidgets('Gewohnheiten: Splash, Serie zählt hoch, alle erledigt → Funken und Meldung', (tester) async {
       useFixedClock();
       final l = l10n('de');

@@ -707,7 +707,7 @@ class CheckMark extends StatefulWidget {
 
 class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMixin {
   late final _c = AnimationController(vsync: this, duration: Motion.checkTotal, value: 1);
-  final _link = LayerLink();
+  late final _link = LayerLink();
 
   /// Gerade per Tipp abgehakt: Sprung und Haken laufen.
   bool _fresh = false;
@@ -791,8 +791,9 @@ class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMix
       child: SizedBox(
         width: small ? 36 : 44,
         height: small ? 32 : 44,
+        // Ziel für den Splash, damit er dem Kreis folgt – ohne Splash keine eigene Ebene.
         child: Center(
-          child: CompositedTransformTarget(link: _link, child: box),
+          child: widget.splash ? CompositedTransformTarget(link: _link, child: box) : box,
         ),
       ),
     );
