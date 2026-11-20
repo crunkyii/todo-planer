@@ -78,6 +78,15 @@ String _filterOf(UiState ui, Iterable<TaskCategory> categories, {required bool b
   return board && f == filterHabits ? filterAll : f;
 }
 
+/// Die Liste einer Kategorie aus [tasks]: offene vor erledigten, dann nach Erledigen-Tag.
+TaskGroup _catGroup(TaskCategory c, Iterable<Task> tasks, AppTokens tok, int Function(Task) off) => (
+  id: 'k-${c.id}',
+  label: c.name,
+  items: tasks.where((t) => t.categoryId == c.id).toList()..sort((a, b) => doneLast(a, b) ?? byDo(a, b, off)),
+  color: tok.item(c.color).c,
+  section: null,
+);
+
 class _ChipBar extends StatelessWidget {
   const _ChipBar({required this.ui, required this.board});
   final UiState ui;
@@ -349,16 +358,9 @@ class _TaskList extends StatelessWidget {
         list.sort((a, b) => doneLast(a, b) ?? a.title.toLowerCase().compareTo(b.title.toLowerCase()));
       }
     } else if (ui.sort == SortMode.category) {
-      groups = [
-        for (final c in store.categories)
-          (
-            id: 'k-${c.id}',
-            label: c.name,
-            items: list.where((t) => t.categoryId == c.id).toList()..sort((a, b) => doneLast(a, b) ?? byDo(a, b, off)),
-            color: tok.item(c.color).c,
-            section: null,
-          ),
-      ].where((g) => g.items.isNotEmpty).toList();
+      groups = [for (final c in store.categories) _catGroup(c, list, tok, off)]
+          .where((g) => g.items.isNotEmpty)
+          .toList();
     } else {
       // Zeiträume lassen sich ausblenden und Kategorien als eigene Listen dazunehmen
       // (⋮ → Spalten) – am PC sind das die Spalten, am Handy die Abschnitte.
@@ -388,15 +390,8 @@ class _TaskList extends StatelessWidget {
       {
         for (final id in set.boardCats) {
           final c = store.categoryById(id);
-          if (c == null) continue;
-          groups.add((
-            id: 'k-${c.id}',
-            label: c.name,
-            // Alles aus der Kategorie – auch was „In Aufgaben zeigen“ sonst noch zurückhält.
-            items: all.where((t) => t.categoryId == c.id).toList()..sort((a, b) => doneLast(a, b) ?? byDo(a, b, off)),
-            color: tok.item(c.color).c,
-            section: null,
-          ));
+          // Alles aus der Kategorie – auch was „In Aufgaben zeigen“ sonst noch zurückhält.
+          if (c != null) groups.add(_catGroup(c, all, tok, off));
         }
         // Reihenfolge, wie man sie sich an den Überschriften zurechtgezogen hat.
         final order = set.boardColumnOrder();
