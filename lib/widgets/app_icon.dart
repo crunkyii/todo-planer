@@ -1,3 +1,5 @@
+import 'dart:ui' show PathMetric;
+
 import 'package:material_ui/material_ui.dart';
 
 /// Die Strich-Icons des Prototyps (24×24-Raster, runde Enden), als eigene Zeichnung.
@@ -156,22 +158,29 @@ class _IconPainter extends CustomPainter {
   final Color color;
   final double drawn;
 
+  // Ein Pinsel für alle Icons: Farbe und Stärke werden je Bild gesetzt, gezeichnet wird sofort.
+  static final _line = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
+  static final _fill = Paint();
+
+  /// Vermessene Pfade für [drawn] < 1 – der Haken zeichnet sich über viele Bilder.
+  static final _metrics = Expando<List<PathMetric>>();
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas.scale(size.width / 24);
-    final line = Paint()
+    final line = _line
       ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+      ..strokeWidth = stroke;
     for (final s in _shapes[icon]!) {
       switch (s) {
         case _P(:final d):
           final path = _pathCache.putIfAbsent(d, () => parseSvgPath(d));
           canvas.drawPath(drawn >= 1 ? path : _partOf(path, drawn), line);
         case _C(:final cx, :final cy, :final r, :final fill):
-          canvas.drawCircle(Offset(cx, cy), r, fill ? (Paint()..color = color) : line);
+          canvas.drawCircle(Offset(cx, cy), r, fill ? (_fill..color = color) : line);
         case _R(:final x, :final y, :final w, :final h, :final rx):
           canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x, y, w, h), Radius.circular(rx)), line);
         case _E(:final cx, :final cy, :final rx, :final ry):
@@ -187,7 +196,7 @@ class _IconPainter extends CustomPainter {
   /// Der Anfang von [path] bis zum Anteil [t] seiner Länge.
   static Path _partOf(Path path, double t) {
     final out = Path();
-    for (final m in path.computeMetrics()) {
+    for (final m in _metrics[path] ??= path.computeMetrics().toList()) {
       out.addPath(m.extractPath(0, m.length * t.clamp(0.0, 1.0)), Offset.zero);
     }
     return out;

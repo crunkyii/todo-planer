@@ -95,6 +95,13 @@ class SplashPainter extends CustomPainter {
     ..moveTo(7.2, 6.6)
     ..quadraticBezierTo(8.1, 7.8, 7.7, 9.2);
 
+  // Ein Pinsel je Art für alle Bilder: Die Farbe wird je Teil gesetzt, gezeichnet wird sofort.
+  static final _fill = Paint();
+  static final _shineLine = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.9
+    ..strokeCap = StrokeCap.round;
+
   static double get _flyAt => Motion.checkGrowAt.inMilliseconds.toDouble();
   static double get _settleAt => Motion.checkSettleAt.inMilliseconds.toDouble();
 
@@ -159,15 +166,9 @@ class SplashPainter extends CustomPainter {
       ..translate(-w / 2 + (w - 10 * k) / 2, -h + (h - 13 * k) / 2)
       ..scale(k);
     final a = s.op.clamp(0.0, 1.0);
-    canvas.drawPath(_drop, Paint()..color = color.withValues(alpha: color.a * a));
-    canvas.drawPath(
-      _shine,
-      Paint()
-        ..color = shine.withValues(alpha: shine.a * 0.8 * a)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.9
-        ..strokeCap = StrokeCap.round,
-    );
+    canvas
+      ..drawPath(_drop, _fill..color = color.withValues(alpha: color.a * a))
+      ..drawPath(_shine, _shineLine..color = shine.withValues(alpha: shine.a * 0.8 * a));
     canvas.restore();
   }
 
@@ -191,7 +192,7 @@ class SplashPainter extends CustomPainter {
     canvas.drawCircle(
       Offset(0, s.y),
       p.s / 2 * s.sx,
-      Paint()..color = color.withValues(alpha: color.a * s.op.clamp(0.0, 1.0)),
+      _fill..color = color.withValues(alpha: color.a * s.op.clamp(0.0, 1.0)),
     );
     canvas.restore();
   }
@@ -209,6 +210,8 @@ class SparkPainter extends CustomPainter {
   final List<Color> colors;
   final double ms;
 
+  static final _fill = Paint();
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas.translate(size.width / 2, size.height / 2);
@@ -225,7 +228,7 @@ class SparkPainter extends CustomPainter {
       canvas.drawCircle(
         Offset(0, -Sizes.sparkDistance * move),
         Sizes.spark / 2 * _lerp(1, 0.3, move),
-        Paint()..color = c.withValues(alpha: c.a * (1 - fade)),
+        _fill..color = c.withValues(alpha: c.a * (1 - fade)),
       );
       canvas.restore();
     }
