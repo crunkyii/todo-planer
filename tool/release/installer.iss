@@ -46,10 +46,15 @@ OutputBaseFilename=todo-planer-{#AppVersion}-setup
 ; Läuft die App noch (Update aus der App heraus), wird sie geschlossen statt mit einem Fehler abzubrechen.
 CloseApplications=yes
 RestartApplications=no
+; Beim Installieren die Sprache wählen; sie gilt danach auch für die App (install-language.txt).
+ShowLanguageDialog=yes
 
 [Languages]
 Name: "de"; MessagesFile: "compiler:Languages\German.isl"
 Name: "en"; MessagesFile: "compiler:Default.isl"
+Name: "es"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "fr"; MessagesFile: "compiler:Languages\French.isl"
+Name: "it"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
@@ -82,6 +87,9 @@ Type: files; Name: "{app}\todo_liste.exe"
 Type: files; Name: "{autoprograms}\Todo-Planer.lnk"
 Type: files; Name: "{autodesktop}\Todo-Planer.lnk"
 
+[UninstallDelete]
+Type: files; Name: "{app}\install-language.txt"
+
 [Code]
 function AllowSetForegroundWindow(dwProcessId: Cardinal): Boolean;
   external 'AllowSetForegroundWindow@user32.dll stdcall';
@@ -89,8 +97,13 @@ function AllowSetForegroundWindow(dwProcessId: Cardinal): Boolean;
 // Die App, die der Installer am Ende startet, darf ihr Fenster nach vorne holen. Ihr Fenster
 // erscheint erst, wenn der Installer schon beendet ist – ohne diese Erlaubnis bliebe es im
 // Hintergrund und blinkte nur in der Taskleiste. $FFFFFFFF = ASFW_ANY.
+//
+// Nach dem Kopieren: die gewählte Setup-Sprache (de, en, es, fr, it) neben das Programm legen.
+// Die App nimmt sie beim ersten Start (lib/data/settings_store.dart, installerLang).
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
+  if CurStep = ssPostInstall then
+    SaveStringToFile(ExpandConstant('{app}\install-language.txt'), ActiveLanguage, False);
   if (CurStep = ssPostInstall) or (CurStep = ssDone) then
     AllowSetForegroundWindow($FFFFFFFF);
 end;
