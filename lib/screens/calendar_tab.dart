@@ -61,11 +61,16 @@ class CalendarTab extends StatelessWidget {
                           liveRegion: true,
                           child: PageTitle(
                             page: m,
-                            child: Text(
-                              f.monthYear(m),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+                            // Am schmalen Handy wird ein langer Monat („September 2026“) kleiner statt
+                            // abgeschnitten – daneben stehen Pfeile und „Heute“.
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                f.monthYear(m),
+                                maxLines: 1,
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+                              ),
                             ),
                           ),
                         ),
