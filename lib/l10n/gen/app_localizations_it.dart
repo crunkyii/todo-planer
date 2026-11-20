@@ -350,7 +350,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get widgetRange => 'Periodo';
 
   @override
-  String get widgetRangeHint => 'Quanto in anticipo';
+  String get widgetRangeHint => 'Quanto avanti';
 
   @override
   String get widgetRange3d => '3 giorni';
@@ -1336,7 +1336,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get langSameAsDevice => 'Come il dispositivo';
 
   @override
-  String get finish => 'Fine';
+  String get finish => 'Fatto';
 
   @override
   String olderDoneLoad(int count) {
