@@ -37,3 +37,23 @@ oder SQL Server auf dem eigenen Server oder NAS.
   WireGuard) oder einen eigenen Server empfehlen.
 - **Neue Libraries** für die Datenbank-Treiber vorher prüfen und abstimmen (Version, Lizenz, läuft auf Android,
   Windows und Linux).
+
+## Widget „Demnächst“: wie weit in die Zukunft
+
+In den Widget-Einstellungen soll man festlegen können, wie weit „Demnächst“ in die Zukunft schaut.
+
+- Neue Einstellung **Zeitraum**, nur wenn der Inhalt „Demnächst“ ist, z. B. *3 Tage*, *1 Woche*, *2 Wochen*,
+  *1 Monat* oder *Alles*. Standard bleibt *Alles*, damit sich bestehende Widgets nicht ändern.
+- Gespeichert in `WidgetConfig` (Dart und `WidgetConfig.kt`); `WidgetData.tasks()` filtert nach Fälligkeit bis zu
+  diesem Tag, Überfälliges bleibt immer drin. Die Zahl im Kopf zählt nur, was angezeigt wird.
+- Vorschau im Einstellungsfenster zeigt den Zeitraum mit an, Texte in `app_de.arb` und `app_en.arb`.
+
+## Auswahl-Balken ersetzen
+
+Die Auswahl-Balken mit mehreren Feldern nebeneinander (`Seg`, z. B. *Hell / Dunkel / System*, *Deutsch / English*,
+*Rund / Weich / Eckig*, *Heute / Demnächst / Gewohnheiten*) sollen überall aus der App verschwinden.
+
+- Stattdessen eine schlichtere Auswahl, z. B. eine Zeile mit dem aktuellen Wert, die beim Antippen ein Menü
+  (`AppMenuRoute`) oder ein Sheet mit den Möglichkeiten öffnet – überall gleich.
+- Betrifft alle Stellen mit `Seg<…>` (Optionen, Widget-Einstellungen, Formulare); danach `Seg` entfernen.
+- Bedienung mit Tastatur und Screenreader muss erhalten bleiben, Vergleichsbilder (Goldens) neu erzeugen.
