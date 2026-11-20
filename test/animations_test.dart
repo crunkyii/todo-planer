@@ -197,6 +197,27 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Der hinausgleitende Monat ist nicht mehr antippbar', (tester) async {
+      useFixedClock();
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.navCalendar));
+      final grid = find.byType(MonthGrid);
+      final ignored = find.ancestor(
+        of: grid,
+        matching: find.byWidgetPredicate((w) => w is IgnorePointer && w.ignoring),
+      );
+      expect(ignored, findsNothing);
+      await tester.tap(find.bySemanticsLabel(l.nextMonth));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(ignored, findsOneWidget, reason: 'der alte Monat gleitet hinaus');
+      await tester.pumpAndSettle();
+      expect(ignored, findsNothing, reason: 'der neue ist wieder antippbar');
+      await finishApp(tester, app);
+    });
+
     testWidgets('Wochenplan: Wischen zeigt die nächste Woche und blättert', (tester) async {
       useFixedClock(); // KW 47
       final l = l10n('de');
@@ -231,6 +252,8 @@ void main() {
       await tester.pump();
       expect(find.text('Dezember 2026'), findsOneWidget, reason: 'sofort der neue Monat');
       expect(tester.getTopLeft(grid).dx, rest);
+      final fade = tester.widget<Opacity>(find.ancestor(of: grid, matching: find.byType(Opacity)).first);
+      expect(fade.opacity, closeTo(Motion.pageDim, 0.001), reason: 'blendet nicht aus dem Leeren über');
       await tester.pumpAndSettle();
       await finishApp(tester, app);
     });

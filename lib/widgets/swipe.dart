@@ -45,7 +45,11 @@ Duration get _pageTotal => Motion.pageInAt + Motion.pageIn;
 /// Gemeinsame Logik: merkt sich beim Wechsel von [page] den alten Inhalt und spielt das
 /// Hinaus- und Hereingleiten ab. Ein Wechsel von [group] (Woche ↔ Tag) springt ohne Gleiten.
 mixin _PageSwap<T extends StatefulWidget> on State<T>, TickerProvider {
-  late final AnimationController _c = AnimationController(vsync: this, value: 1);
+  // Ist das Gleiten fertig, wird der alte Inhalt nicht mehr gebraucht – nicht länger festhalten.
+  late final AnimationController _c = AnimationController(vsync: this, value: 1)
+    ..addStatusListener((s) {
+      if (s.isCompleted) _old = null;
+    });
   int _dir = 1;
   double _from = 0;
   bool _fade = false;
@@ -76,11 +80,18 @@ mixin _PageSwap<T extends StatefulWidget> on State<T>, TickerProvider {
     _c.forward(from: 0);
   }
 
+  /// Der gerade gezeigte Inhalt: der alte ist beim Hinausgleiten nicht mehr antippbar.
+  Widget current(PageFrame f, Widget child) => IgnorePointer(ignoring: f.old, child: f.old ? _old! : child);
+
   PageFrame frame(double distance, {bool title = false}) {
     _distance = distance;
     _title = title;
     if (!_c.isAnimating) return _rest;
-    if (_fade) return (x: 0, opacity: Curves.ease.transform(_c.value), old: false);
+    if (_fade) {
+      // Überblenden ab der Deckkraft beim Gleiten – nicht ab 0, sonst blitzt die Seite kurz leer auf.
+      final dim = title ? 0.0 : Motion.pageDim;
+      return (x: 0, opacity: dim + (1 - dim) * Curves.ease.transform(_c.value), old: false);
+    }
     final ms = _c.value * _pageTotal.inMilliseconds;
     return pageFrame(ms: ms, dir: _dir, distance: distance, from: _from, title: title);
   }
@@ -122,7 +133,7 @@ class _PageTitleState extends State<PageTitle> with SingleTickerProviderStateMix
       final f = frame(Sizes.titleShift, title: true);
       return Transform.translate(
         offset: Offset(f.x, 0),
-        child: Opacity(opacity: f.opacity, child: f.old ? _old! : widget.child),
+        child: Opacity(opacity: f.opacity, child: current(f, widget.child)),
       );
     },
   );
@@ -280,9 +291,13 @@ class _SwipePagerState extends State<SwipePager> with TickerProviderStateMixin, 
               fit: StackFit.passthrough,
               children: [
                 peek,
+                // Eigene Ebene: Beim Gleiten wird nur verschoben und überblendet, nicht neu gezeichnet.
                 Transform.translate(
                   offset: Offset(x, 0),
-                  child: Opacity(opacity: f.opacity, child: f.old ? _old! : widget.child),
+                  child: Opacity(
+                    opacity: f.opacity,
+                    child: RepaintBoundary(child: current(f, widget.child)),
+                  ),
                 ),
               ],
             );
