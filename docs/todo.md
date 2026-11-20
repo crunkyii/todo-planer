@@ -89,3 +89,25 @@ Beim Abhaken soll mehr passieren, damit es sich nach Erfolg anfühlt.
 - Gewohnheiten: Serie (Streak) zählt sichtbar hoch; bei allen Gewohnheiten des Tages oder einer runden Serie
   ein kleiner Konfetti- oder Funken-Effekt.
 - Wieder öffnen läuft rückwärts ab. Haptik wie bei `Pressable`; „Animationen reduzieren“ beachten.
+
+## Mehr Sprachen: Deutsch, Englisch, Spanisch, Französisch, Italienisch
+
+Die App gibt es bisher nur auf Deutsch und Englisch. Dazu kommen Spanisch, Französisch und Italienisch – weitere
+Sprachen später.
+
+- **Übersetzungen**: neue Dateien `lib/l10n/app_es.arb`, `app_fr.arb`, `app_it.arb` mit allen Schlüsseln aus
+  `app_de.arb` (Platzhalter und Mehrzahl-Formen mitnehmen), danach `flutter gen-l10n`. Texte der Android-Widgets
+  (Zusammenfassung `widget.v1`) und Datumsformate (`Fmt`) mit prüfen.
+- **Einstellung**: `SettingsStore.lang` erlaubt alle fünf Codes; beim ersten Start die Sprache des Geräts nehmen,
+  wenn sie dabei ist, sonst Englisch.
+- **Sprachauswahl als eigene Seite** (Optionen → Sprache) statt Balken: untereinander Karten mit runder Flagge,
+  dem Namen in der eigenen Sprache (*Deutsch, English, Español, Français, Italiano*) und rechts klein dem Namen in
+  der eingestellten Sprache, z. B. „(Spanisch)“. Die gewählte Karte hat einen Rahmen in der Primärfarbe und einen
+  Haken; oben rechts ein Fertig-Haken. Darunter „Wie das Gerät“. Antippen wechselt sofort.
+- **Installer** (Windows, `tool/release/installer.iss`): unter `[Languages]` zusätzlich Spanisch, Französisch und
+  Italienisch (`compiler:Languages\Spanish.isl`, `French.isl`, `Italian.isl`). Beim Start fragt der Installer
+  „Setup-Sprache auswählen“ mit allen fünf Sprachen (`ShowLanguageDialog=yes`); eigene Texte wie „Desktop-Symbol“
+  in jeder Sprache unter `[CustomMessages]`. Die gewählte Sprache wird beim ersten Start als App-Sprache übernommen.
+- **Tests**: Goldens zusätzlich in einer neuen Sprache (lange französische Wörter prüfen), Test, dass alle ARB-Dateien
+  dieselben Schlüssel haben.
+- Entwurf mit Bildschirmen: Design-Konzept „ToDo Planer – Konzept“ (Sprache wählen, Installer: Sprache).
