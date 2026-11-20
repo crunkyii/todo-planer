@@ -69,4 +69,36 @@ void main() {
     handle.dispose();
     await finishApp(tester, app);
   });
+
+  testWidgets('Auswahl-Zeile mit der Tastatur: Enter öffnet das Menü, Enter auf einem Wert wählt ihn', (tester) async {
+    final app = await makeServices();
+    await pumpApp(tester, app);
+    final l = l10n('de');
+    await goTab(tester, l.navSettings);
+
+    Focus.of(tester.element(find.descendant(of: row(l.appearance), matching: find.text(l.light)))).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectOption), findsNWidgets(3));
+
+    Focus.of(tester.element(find.descendant(of: option(l.system), matching: find.text(l.system)))).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectOption), findsNothing);
+    expect(app.settings.mode, AppMode.system);
+    await finishApp(tester, app);
+  });
+
+  testWidgets('Screenreader: Zeile „Sprache“ nennt die gewählte Sprache', (tester) async {
+    final app = await makeServices();
+    await pumpApp(tester, app);
+    final l = l10n('de');
+    await goTab(tester, l.navSettings);
+    final handle = tester.ensureSemantics();
+    expect(find.bySemanticsLabel('${l.language}: Deutsch'), findsOneWidget);
+    handle.dispose();
+    await finishApp(tester, app);
+  });
 }

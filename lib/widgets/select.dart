@@ -137,7 +137,7 @@ class _SelectRowState<T> extends State<SelectRow<T>> {
       onTap: _openMenu,
       pressScale: title == null ? 0.95 : 0.97,
       radius: title == null ? const BorderRadius.all(Radius.circular(999)) : BorderRadius.zero,
-      semanticLabel: '${widget.label}: $_text',
+      semanticLabel: '${[widget.label, ?widget.subtitle].join(', ')}: $_text',
       excludeChildSemantics: true,
       child: child,
     );

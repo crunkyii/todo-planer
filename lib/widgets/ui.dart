@@ -566,6 +566,7 @@ class SetRow extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.value,
     this.onTap,
     this.leading,
     this.chevron = false,
@@ -574,6 +575,9 @@ class SetRow extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? trailing;
+
+  /// Was [trailing] anzeigt, als Text für Screenreader („Sprache: Deutsch“).
+  final String? value;
   final Widget? leading;
   final VoidCallback? onTap;
 
@@ -638,7 +642,7 @@ class SetRow extends StatelessWidget {
       onTap: onTap,
       pressScale: 0.97,
       radius: BorderRadius.zero,
-      semanticLabel: subtitle == null ? title : '$title, $subtitle',
+      semanticLabel: [subtitle == null ? title : '$title, $subtitle', ?value].join(': '),
       excludeChildSemantics: true,
       child: row,
     );

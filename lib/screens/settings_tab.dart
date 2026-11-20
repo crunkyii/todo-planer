@@ -65,6 +65,7 @@ class SettingsTab extends StatelessWidget {
                     inline: true,
                     onTap: () => openLanguagePage(context, s),
                     trailing: LangValue(lang: s.lang),
+                    value: nativeLangName(l, s.lang),
                   ),
                   CapsHeading(l.navTasks),
                   SetRow(

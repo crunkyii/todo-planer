@@ -364,6 +364,9 @@ void main() {
       await choose(tester, selectRow(l.widgetContent), l.widgetUpcoming);
       expect(selectRow(l.widgetRange), findsOneWidget);
       expect(find.text(l.widgetRangeNote), findsOneWidget);
+      final handle = tester.ensureSemantics();
+      expect(find.bySemanticsLabel('${l.widgetRange}, ${l.widgetRangeHint}: ${l.widgetRangeAll}'), findsOneWidget);
+      handle.dispose();
       expect(find.descendant(of: selectRow(l.widgetRange), matching: find.text(l.widgetRangeAll)), findsOneWidget);
       expect(find.textContaining(l.widgetUntilDate(''), findRichText: true), findsNothing);
       await choose(tester, selectRow(l.widgetRange), l.widgetRange1w);
