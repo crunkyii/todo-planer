@@ -30,7 +30,6 @@ class WeekTab extends StatefulWidget {
 class _WeekTabState extends State<WeekTab> {
   late final ScrollController _scroll;
   final _gridKey = GlobalKey();
-  Timer? _tick;
 
   @override
   void initState() {
@@ -38,14 +37,10 @@ class _WeekTabState extends State<WeekTab> {
     final s = context.app.settings;
     // Beim Öffnen auf 7:00 scrollen.
     _scroll = ScrollController(initialScrollOffset: math.max(0, (7 - s.dayStart) * Sizes.hour));
-    _tick = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (mounted) setState(() {});
-    });
   }
 
   @override
   void dispose() {
-    _tick?.cancel();
     _scroll.dispose();
     super.dispose();
   }
@@ -340,9 +335,6 @@ class _DayColumn extends StatelessWidget {
     final d = addDays(ui.weekStart, day);
     final blocks = app.store.blocksOn(d);
     final lay = layoutLanes(blocks);
-    final now = clock();
-    final nm = now.hour * 60 + now.minute;
-    final showNow = sameDay(d, now) && nm >= startMin && nm <= s.dayEnd * 60;
 
     return LayoutBuilder(
       builder: (context, box) {
@@ -373,23 +365,11 @@ class _DayColumn extends StatelessWidget {
                       width: box.maxWidth / lay.lanes[b.id]!,
                       semanticLabel: blockLabel(b),
                     ),
-                  if (showNow)
-                    Positioned(
-                      top: (nm - startMin) / 60 * Sizes.hour - 1,
-                      left: -3,
-                      right: 0,
-                      child: IgnorePointer(
-                        child: SizedBox(
-                          height: 2,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned.fill(child: ColoredBox(color: tok.err)),
-                              Positioned(left: -3, top: -3, child: Dot(tok.err, size: 8)),
-                            ],
-                          ),
-                        ),
-                      ),
+                  // Nur der heutige Tag bekommt die Linie (samt Takt). Um Mitternacht meldet der
+                  // Store einen neuen Tag – dann wandert sie in die nächste Spalte.
+                  if (sameDay(d, clock()))
+                    Positioned.fill(
+                      child: _NowLine(day: d, startMin: startMin, endMin: s.dayEnd * 60),
                     ),
                 ],
               ),
@@ -397,6 +377,71 @@ class _DayColumn extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Die rote Jetzt-Linie im Raster eines Tages. Sie hat ihren eigenen Minuten-Takt – so wandert
+/// nur sie, statt dass der ganze Wochenplan jede Minute neu gebaut wird.
+class _NowLine extends StatefulWidget {
+  const _NowLine({required this.day, required this.startMin, required this.endMin});
+
+  /// Der Tag der Spalte – ist er vorbei, verschwindet die Linie.
+  final DateTime day;
+
+  /// Beginn und Ende des Rasters in Minuten ab Mitternacht.
+  final int startMin;
+  final int endMin;
+
+  @override
+  State<_NowLine> createState() => _NowLineState();
+}
+
+class _NowLineState extends State<_NowLine> {
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tok = context.tok;
+    final now = clock();
+    final nm = now.hour * 60 + now.minute;
+    final show = sameDay(widget.day, now) && nm >= widget.startMin && nm <= widget.endMin;
+    return IgnorePointer(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (show)
+            Positioned(
+              top: (nm - widget.startMin) / 60 * Sizes.hour - 1,
+              left: -3,
+              right: 0,
+              child: SizedBox(
+                height: 2,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(child: ColoredBox(color: tok.err)),
+                    Positioned(left: -3, top: -3, child: Dot(tok.err, size: 8)),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -756,6 +756,31 @@ void main() {
         await finishApp(tester, app);
       }
     });
+
+    testWidgets('Jetzt-Linie wandert mit der Uhr, nur in der Spalte von heute', (tester) async {
+      final l = l10n('de');
+      var now = fixedNow; // Mittwoch, 10:30
+      clock = () => now;
+      addTearDown(() => clock = DateTime.now);
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.weeklyPlan));
+      final tok = tester.element(find.byType(WeekTab)).tok;
+      final line = find.byWidgetPredicate((w) => w is ColoredBox && w.color == tok.err);
+      expect(line, findsOneWidget);
+      final top = tester.getTopLeft(line).dy;
+
+      // Eine halbe Stunde später: Der Minuten-Takt der Linie schiebt sie eine halbe Stunde tiefer.
+      now = fixedNow.add(const Duration(minutes: 30));
+      await tester.pump(const Duration(minutes: 1));
+      expect(tester.getTopLeft(line).dy - top, moreOrLessEquals(Sizes.hour / 2));
+
+      // Nach dem Ende des Rasters ist sie weg.
+      now = DateTime(fixedNow.year, fixedNow.month, fixedNow.day, 23, 59);
+      await tester.pump(const Duration(minutes: 1));
+      expect(line, findsNothing);
+      await finishApp(tester, app);
+    });
   });
 
   group('Formulare, Wochenbeginn und Spalten', () {
