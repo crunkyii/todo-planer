@@ -343,6 +343,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get widgetContent => 'Content';
 
   @override
+  String get widgetContentHint => 'What the widget shows';
+
+  @override
+  String get widgetRange => 'Time span';
+
+  @override
+  String get widgetRangeHint => 'How far ahead';
+
+  @override
+  String get widgetRange3d => '3 days';
+
+  @override
+  String get widgetRange1w => '1 week';
+
+  @override
+  String get widgetRange2w => '2 weeks';
+
+  @override
+  String get widgetRange1m => '1 month';
+
+  @override
+  String get widgetRangeAll => 'Everything';
+
+  @override
+  String get widgetRangeNote =>
+      'Overdue tasks are always included, whatever the time span. The number at the top only counts what the widget shows.';
+
+  @override
+  String widgetUntilDate(String date) {
+    return 'until $date';
+  }
+
+  @override
   String get widgetBackground => 'Background';
 
   @override
@@ -1267,6 +1300,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get langEn => 'English';
+
+  @override
+  String get langEs => 'Español';
+
+  @override
+  String get langFr => 'Français';
+
+  @override
+  String get langIt => 'Italiano';
+
+  @override
+  String get langNameDe => 'German';
+
+  @override
+  String get langNameEn => 'English';
+
+  @override
+  String get langNameEs => 'Spanish';
+
+  @override
+  String get langNameFr => 'French';
+
+  @override
+  String get langNameIt => 'Italian';
+
+  @override
+  String get langSameAsDevice => 'Same as device';
+
+  @override
+  String get finish => 'Done';
 
   @override
   String olderDoneLoad(int count) {

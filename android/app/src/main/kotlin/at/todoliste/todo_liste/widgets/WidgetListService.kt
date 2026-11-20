@@ -64,7 +64,7 @@ class WidgetListService : RemoteViewsService() {
             val cfg = WidgetConfig.load(context, widgetId)
             data = WidgetData.load(context)
             look = WidgetLook(context, cfg, data)
-            tasks = if (mode == ListMode.TODAY) data.dueToday(cfg.cats) else data.tasks(cfg.cats)
+            tasks = if (mode == ListMode.TODAY) data.dueToday(cfg.cats) else data.upcoming(cfg.cats, cfg.range)
         }
 
         override fun onDestroy() {}

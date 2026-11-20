@@ -15,6 +15,7 @@ class SelectRow<T> extends StatefulWidget {
   const SelectRow({
     super.key,
     this.title,
+    this.subtitle,
     String? label,
     required this.options,
     required this.value,
@@ -23,6 +24,9 @@ class SelectRow<T> extends StatefulWidget {
   }) : label = label ?? title ?? '';
 
   final String? title;
+
+  /// Kleine Erklärung unter dem Titel (nur mit [title]).
+  final String? subtitle;
   final String label;
   final List<(T, String)> options;
   final T value;
@@ -107,7 +111,18 @@ class _SelectRowState<T> extends State<SelectRow<T>> {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Text(title, style: TextStyle(fontSize: 16, color: tok.text)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(title, style: TextStyle(fontSize: 16, color: tok.text)),
+                      if (widget.subtitle case final sub?)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(sub, style: TextStyle(fontSize: 13, color: tok.sub)),
+                        ),
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 16),
                 // Wert rechtsbündig; lange Werte kürzen statt den Titel zu verdrängen.

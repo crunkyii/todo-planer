@@ -19,6 +19,9 @@ enum class WidgetShape(val drawable: Int) {
 
 enum class WidgetMode { SYSTEM, LIGHT, DARK }
 
+/** Wie weit das Widget „Demnächst“ in die Zukunft zeigt; [ALL] = alles (wie früher). */
+enum class WidgetRange { DAYS3, WEEK, WEEKS2, MONTH, ALL }
+
 /**
  * Einstellungen eines einzelnen Widgets (welche Kategorien, Hintergrund, Form, hell/dunkel,
  * Durchsichtigkeit, Farbe). Geschrieben vom Einstellungsfenster der App
@@ -34,6 +37,8 @@ class WidgetConfig private constructor(
     val transparency: Int,
     /** Was ein Listen-Widget zeigt; null = wie beim Hinzufügen gewählt. */
     val content: ListMode?,
+    /** Zeitraum für „Demnächst“. */
+    val range: WidgetRange,
     private val bgLight: Int?,
     private val bgDark: Int?,
     private val accentLight: Int?,
@@ -81,6 +86,7 @@ class WidgetConfig private constructor(
                 mode = enumOr(o.optString("mode"), WidgetMode.SYSTEM),
                 transparency = o.optInt("alpha", 0).coerceIn(0, 100),
                 content = enumValues<ListMode>().firstOrNull { it.name.equals(o.optString("content"), ignoreCase = true) },
+                range = enumOr(o.optString("range"), WidgetRange.ALL),
                 bgLight = color(o, "bgLight"),
                 bgDark = color(o, "bgDark"),
                 accentLight = color(o, "accentLight"),

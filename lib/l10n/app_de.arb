@@ -144,6 +144,23 @@
   "widgetNoHabits": "Noch keine Gewohnheiten.",
   "widgetSettings": "Widget einstellen",
   "widgetContent": "Inhalt",
+  "widgetContentHint": "Was das Widget zeigt",
+  "widgetRange": "Zeitraum",
+  "widgetRangeHint": "Wie weit in die Zukunft",
+  "widgetRange3d": "3 Tage",
+  "widgetRange1w": "1 Woche",
+  "widgetRange2w": "2 Wochen",
+  "widgetRange1m": "1 Monat",
+  "widgetRangeAll": "Alles",
+  "widgetRangeNote": "Überfälliges steht immer drin, egal welcher Zeitraum. Die Zahl oben zählt nur, was im Widget steht.",
+  "widgetUntilDate": "bis {date}",
+  "@widgetUntilDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "widgetBackground": "Hintergrund",
   "widgetShowBackground": "Hintergrund anzeigen",
   "widgetShape": "Form",

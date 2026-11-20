@@ -134,6 +134,7 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
                   if (widget.kind != WidgetKind.count)
                     SelectRow<WidgetKind>(
                       title: l.widgetContent,
+                      subtitle: l.widgetContentHint,
                       options: [
                         (WidgetKind.today, l.today),
                         (WidgetKind.upcoming, l.widgetUpcoming),
@@ -142,6 +143,22 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
                       value: _shows,
                       onChanged: (v) => _set(() => _cfg.content = v),
                     ),
+                  if (_shows == WidgetKind.upcoming) ...[
+                    SelectRow<WidgetRange>(
+                      title: l.widgetRange,
+                      subtitle: l.widgetRangeHint,
+                      options: [for (final r in WidgetRange.values) (r, rangeLabel(l, r))],
+                      value: _cfg.range,
+                      onChanged: (v) => _set(() => _cfg.range = v),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                      child: Text(
+                        l.widgetRangeNote,
+                        style: TextStyle(fontSize: Fs.meta, color: tok.sub),
+                      ),
+                    ),
+                  ],
                   if (withCats) ...[
                     CapsHeading(l.categories),
                     Padding(
@@ -255,6 +272,15 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
   }
 }
 
+/// Name eines Zeitraums für die Auswahl („3 Tage“ … „Alles“).
+String rangeLabel(AppLocalizations l, WidgetRange r) => switch (r) {
+  WidgetRange.days3 => l.widgetRange3d,
+  WidgetRange.week => l.widgetRange1w,
+  WidgetRange.weeks2 => l.widgetRange2w,
+  WidgetRange.month => l.widgetRange1m,
+  WidgetRange.all => l.widgetRangeAll,
+};
+
 /// Vorschau: so sieht das Widget mit den gewählten Einstellungen ungefähr aus.
 class WidgetPreview extends StatelessWidget {
   const WidgetPreview({
@@ -326,6 +352,14 @@ class WidgetPreview extends StatelessWidget {
       ),
     );
 
+    // Neben dem Titel wie am Handy: das Datum („Heute“) bzw. das Ende des Zeitraums („Demnächst“).
+    final rangeEnd = kind == WidgetKind.upcoming ? config.range.end(today()) : null;
+    final beside = switch (kind) {
+      WidgetKind.today => f.widgetDate(today()),
+      WidgetKind.upcoming when rangeEnd != null => l.widgetUntilDate(f.wdDayMon(rangeEnd)),
+      _ => null,
+    };
+
     // Zweite Zeile wie am Handy: heute Fälliges nur mit Uhrzeit, sonst der Tag – immer mit „bis:“.
     String due(int i) => l.widgetUntil(i == 0 ? f.time(14 * 60) : l.tomorrow);
     String sub(int i) => kind == WidgetKind.habits ? (i == 0 ? l.today : l.tomorrow) : due(i);
@@ -351,14 +385,14 @@ class WidgetPreview extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                // Wie am Handy: im Widget „Heute“ steht das Datum kleiner neben dem Titel.
+                // Wie am Handy: Datum bzw. Zeitraum steht kleiner neben dem Titel.
                 child: Text.rich(
                   TextSpan(
                     children: [
                       TextSpan(text: base),
-                      if (kind == WidgetKind.today)
+                      if (beside != null)
                         TextSpan(
-                          text: ' ${f.widgetDate(today())}',
+                          text: ' $beside',
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.normal),
                         ),
                       TextSpan(text: title.substring(base.length)),

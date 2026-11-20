@@ -125,6 +125,25 @@ void main() {
       );
     });
 
+    test('Zeitraum: neu „Alles“, hin und zurück gleich, Ende wie am Handy', () {
+      expect(WidgetConfig().range, WidgetRange.all);
+      expect(WidgetConfig.fromJson(const {'range': 'quatsch'}).range, WidgetRange.all);
+      final c = WidgetConfig(range: WidgetRange.weeks2);
+      expect(c.toJson()['range'], 'weeks2');
+      expect(
+        WidgetConfig.fromJson(jsonDecode(jsonEncode(c.toJson())) as Map<String, dynamic>).range,
+        WidgetRange.weeks2,
+      );
+      final d = DateTime(2026, 11, 20);
+      expect(WidgetRange.days3.end(d), DateTime(2026, 11, 23));
+      expect(WidgetRange.week.end(d), DateTime(2026, 11, 27));
+      expect(WidgetRange.weeks2.end(d), DateTime(2026, 12, 4));
+      expect(WidgetRange.month.end(d), DateTime(2026, 12, 20));
+      expect(WidgetRange.month.end(DateTime(2027, 1, 31)), DateTime(2027, 2, 28), reason: 'kein 31. Februar');
+      expect(WidgetRange.month.end(DateTime(2026, 12, 15)), DateTime(2027, 1, 15));
+      expect(WidgetRange.all.end(d), isNull);
+    });
+
     test('kaputte Werte fallen auf den Standard zurück', () {
       final c = WidgetConfig.fromJson(const {
         'cats': ['a', 5, null],
@@ -159,6 +178,7 @@ void main() {
       final app = await makeServices();
       seedDemo(app.store, l);
       final snap = jsonDecode(jsonEncode(buildWidgetSnapshot(app.store, l, themeId: 'himmel'))) as Map<String, dynamic>;
+      expect((snap['labels'] as Map)['untilDate'], 'bis {}');
       final got = widgetCategories(jsonEncode(snap));
       expect(got.map((c) => c.name), app.store.categories.map((c) => c.name));
       final ids = got.map((c) => c.id).toSet();
@@ -296,6 +316,12 @@ void main() {
       );
     });
 
+    testWidgets('Bild: Demnächst mit Zeitraum', (tester) async {
+      useFixedClock();
+      await open(tester, kind: WidgetKind.upcoming, initial: WidgetConfig(range: WidgetRange.week));
+      await expectLater(find.byType(WidgetConfigApp), matchesGoldenFile('goldens/widget-zeitraum_412_light_de.png'));
+    });
+
     testWidgets('„System“ folgt dem Telefon', (tester) async {
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
       addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
@@ -324,6 +350,23 @@ void main() {
       await tap(tester, find.text(l.save));
       expect(r.saved.single.content, WidgetKind.upcoming);
       expect(r.saved.single.toJson()['content'], 'upcoming');
+    });
+
+    testWidgets('Zeitraum nur bei „Demnächst“; die Vorschau zeigt, bis wann', (tester) async {
+      useFixedClock(DateTime(2026, 11, 20, 9));
+      final l = l10n('de');
+      final r = await open(tester, kind: WidgetKind.today);
+      expect(selectRow(l.widgetRange), findsNothing);
+      await choose(tester, selectRow(l.widgetContent), l.widgetUpcoming);
+      expect(selectRow(l.widgetRange), findsOneWidget);
+      expect(find.text(l.widgetRangeNote), findsOneWidget);
+      expect(find.descendant(of: selectRow(l.widgetRange), matching: find.text(l.widgetRangeAll)), findsOneWidget);
+      expect(find.textContaining(l.widgetUntilDate(''), findRichText: true), findsNothing);
+      await choose(tester, selectRow(l.widgetRange), l.widgetRange1w);
+      expect(find.textContaining(l.widgetUntilDate('Fr 27. Nov.'), findRichText: true), findsOneWidget);
+      await tap(tester, find.text(l.save));
+      expect(r.saved.single.range, WidgetRange.week);
+      expect(r.saved.single.toJson()['range'], 'week');
     });
 
     testWidgets('das Widget „Anzahl“ hat keine Inhalt-Wahl', (tester) async {

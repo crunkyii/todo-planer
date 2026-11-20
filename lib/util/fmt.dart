@@ -43,6 +43,9 @@ class Fmt {
   /// „18.11.2026“ / „11/18/2026“ – das ganze Datum mit Jahr (Export).
   String fullDate(DateTime d) => en ? DateFormat.yMd(_loc).format(d) : '${pad2(d.day)}.${pad2(d.month)}.${d.year}';
 
+  /// „Fr 27. Nov.“ / „Fr Nov 27“ – Ende des Zeitraums im Widget „Demnächst“ (wie in Kotlin).
+  String wdDayMon(DateTime d) => '${wd(wdIndex(d))} ${dayMon(d)}';
+
   /// „18. NOV.“ / „NOV 18“ – das Datum neben „Heute“ im Startbildschirm-Widget.
   String widgetDate(DateTime d) => dayMon(d).toUpperCase();
 

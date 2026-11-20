@@ -345,6 +345,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get widgetContent => 'Inhalt';
 
   @override
+  String get widgetContentHint => 'Was das Widget zeigt';
+
+  @override
+  String get widgetRange => 'Zeitraum';
+
+  @override
+  String get widgetRangeHint => 'Wie weit in die Zukunft';
+
+  @override
+  String get widgetRange3d => '3 Tage';
+
+  @override
+  String get widgetRange1w => '1 Woche';
+
+  @override
+  String get widgetRange2w => '2 Wochen';
+
+  @override
+  String get widgetRange1m => '1 Monat';
+
+  @override
+  String get widgetRangeAll => 'Alles';
+
+  @override
+  String get widgetRangeNote =>
+      'Überfälliges steht immer drin, egal welcher Zeitraum. Die Zahl oben zählt nur, was im Widget steht.';
+
+  @override
+  String widgetUntilDate(String date) {
+    return 'bis $date';
+  }
+
+  @override
   String get widgetBackground => 'Hintergrund';
 
   @override
@@ -1278,6 +1311,36 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get langEn => 'English';
+
+  @override
+  String get langEs => 'Español';
+
+  @override
+  String get langFr => 'Français';
+
+  @override
+  String get langIt => 'Italiano';
+
+  @override
+  String get langNameDe => 'Deutsch';
+
+  @override
+  String get langNameEn => 'Englisch';
+
+  @override
+  String get langNameEs => 'Spanisch';
+
+  @override
+  String get langNameFr => 'Französisch';
+
+  @override
+  String get langNameIt => 'Italienisch';
+
+  @override
+  String get langSameAsDevice => 'Wie das Gerät';
+
+  @override
+  String get finish => 'Fertig';
 
   @override
   String olderDoneLoad(int count) {

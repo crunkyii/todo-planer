@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../data/settings_store.dart';
 import '../theme/color_math.dart';
+import '../util/dates.dart';
 
 /// Welches Startbildschirm-Widget eingestellt wird.
 enum WidgetKind {
@@ -14,6 +15,25 @@ enum WidgetKind {
 
   /// Was ein Listen-Widget zeigen kann (das Widget „Anzahl“ zeigt nur eine Zahl).
   static const lists = [today, upcoming, habits];
+}
+
+/// Wie weit das Widget „Demnächst“ in die Zukunft zeigt. Überfälliges steht immer drin.
+enum WidgetRange {
+  days3,
+  week,
+  weeks2,
+  month,
+  all;
+
+  /// Letzter Tag, der noch gezeigt wird (null = alles). Gleiche Rechnung wie `WidgetData.rangeEnd`
+  /// in Kotlin: ein Monat ist derselbe Tag im nächsten Monat (oder dessen letzter).
+  DateTime? end(DateTime today) => switch (this) {
+    days3 => addDays(today, 3),
+    week => addDays(today, 7),
+    weeks2 => addDays(today, 14),
+    month => DateTime(today.year, today.month + 1, today.day.clamp(1, DateTime(today.year, today.month + 2, 0).day)),
+    all => null,
+  };
 }
 
 /// Form des Hintergrunds: rund wie die Samsung-/System-Widgets, leicht rund oder eckig.
@@ -54,6 +74,7 @@ class WidgetConfig {
     this.transparency = 0,
     this.color,
     this.content,
+    this.range = WidgetRange.all,
   }) : cats = cats ?? {};
 
   /// Was ein Listen-Widget zeigt (Heute, Demnächst oder Gewohnheiten); null = wie beim
@@ -62,6 +83,9 @@ class WidgetConfig {
 
   /// Was das Widget der Art [kind] mit diesen Einstellungen tatsächlich zeigt.
   WidgetKind shows(WidgetKind kind) => kind == WidgetKind.count ? kind : content ?? kind;
+
+  /// Zeitraum für „Demnächst“; neue Widgets zeigen alles (wie früher).
+  WidgetRange range;
 
   /// Nur diese Kategorien zeigen; leer = alle.
   Set<String> cats;
@@ -95,6 +119,7 @@ class WidgetConfig {
       transparency: (j['alpha'] is num ? (j['alpha'] as num).round() : 0).clamp(0, 100),
       color: color is String && RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(color) ? color : null,
       content: WidgetKind.lists.where((k) => k.name == j['content']).firstOrNull,
+      range: pick(WidgetRange.values, j['range'], WidgetRange.all),
     );
   }
 
@@ -120,6 +145,7 @@ class WidgetConfig {
       'alpha': transparency,
       'color': color,
       'content': content?.name,
+      'range': range.name,
       if (l != null && d != null) ...{
         'bgLight': toHex(l.bg),
         'accentLight': toHex(l.accent),

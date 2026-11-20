@@ -128,7 +128,7 @@ object Widgets {
             )
             ListMode.UPCOMING -> Triple(
                 data.label("upcoming", "Demnächst"),
-                data.tasks(cfg.cats).size.toString(),
+                data.upcoming(cfg.cats, cfg.range).size.toString(),
                 data.label("nothingDue", "Nichts fällig."),
             )
             ListMode.HABITS -> Triple(
@@ -138,12 +138,18 @@ object Widgets {
             )
         }
         look.background(v)
-        // Titel fett; im Widget „Heute“ daneben kleiner das Datum, dahinter die gewählten Kategorien.
+        // Titel fett; daneben kleiner das Datum („Heute“) bzw. das Ende des Zeitraums („Demnächst“),
+        // dahinter die gewählten Kategorien.
         val heading = SpannableStringBuilder(title)
-        if (mode == ListMode.TODAY) {
+        val beside = when (mode) {
+            ListMode.TODAY -> data.dateLabel()
+            ListMode.UPCOMING -> data.rangeLabel(cfg.range)
+            ListMode.HABITS -> ""
+        }
+        if (beside.isNotEmpty()) {
             heading.append(' ')
             val from = heading.length
-            heading.append(data.dateLabel())
+            heading.append(beside)
             heading.setSpan(RelativeSizeSpan(0.8f), from, heading.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         heading.setSpan(StyleSpan(Typeface.BOLD), 0, title.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)

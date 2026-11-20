@@ -57,6 +57,37 @@ class WidgetData private constructor(
         return if (ids.isEmpty()) allTasks else allTasks.filter { it.cat in ids }
     }
 
+    /** Letzter Tag, den „Demnächst“ mit diesem Zeitraum zeigt (null = alles). */
+    fun rangeEnd(range: WidgetRange): Int? = when (range) {
+        WidgetRange.DAYS3 -> today + 3
+        WidgetRange.WEEK -> today + 7
+        WidgetRange.WEEKS2 -> today + 14
+        WidgetRange.MONTH -> {
+            // Derselbe Tag im nächsten Monat; gibt es den nicht (31.), dann der letzte.
+            val (y, m, d) = civilFromDays(today)
+            val (ny, nm) = if (m == 12) y + 1 to 1 else y to m + 1
+            val last = daysFromCivil(if (nm == 12) ny + 1 else ny, if (nm == 12) 1 else nm + 1, 1) - 1
+            minOf(daysFromCivil(ny, nm, d), last)
+        }
+        WidgetRange.ALL -> null
+    }
+
+    /** Aufgaben für „Demnächst“: bis zum Ende des Zeitraums fällig; Überfälliges immer. */
+    fun upcoming(cats: Set<String>, range: WidgetRange): List<WTask> {
+        val end = rangeEnd(range) ?: return tasks(cats)
+        return tasks(cats).filter { it.due <= end }
+    }
+
+    /** „bis Fr 27. Nov.“ für neben „Demnächst“ (leer bei „Alles“). */
+    fun rangeLabel(range: WidgetRange): String {
+        val end = rangeEnd(range) ?: return ""
+        val (_, m, d) = civilFromDays(end)
+        val wd = weekdays.getOrNull(Math.floorMod(end + 3, 7)) ?: ""
+        val mon = months.getOrNull(m - 1).orEmpty()
+        val date = if (english) "$wd $mon $d" else "$wd $d. $mon"
+        return label("untilDate", "bis {}").replace("{}", date.trim())
+    }
+
     /** Was heute in der Liste der App steht: Überfälliges und alles, was heute dran ist. */
     fun dueToday(cats: Set<String>): List<WTask> = tasks(cats).filter { it.day <= today }
 

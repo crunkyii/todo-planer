@@ -137,7 +137,7 @@ int applyWidgetHabitToggles(Store store, String? json) {
 ///   `k` Kategorie)
 /// - `cats`: Kategorien (`id`, `n` Name, `c` Farbe) – jedes Widget kann auf einzelne davon eingestellt werden
 /// - `habits`: Gewohnheiten (`id`, `n` Name, `c` Farbe, `days` erledigte Tage der letzten 14 Tage)
-/// - `labels`: Texte in der Sprache der App (`until` mit `{}` als Platz für Tag/Uhrzeit);
+/// - `labels`: Texte in der Sprache der App (`until`/`untilDate` mit `{}` als Platz für Tag/Uhrzeit);
 ///   `wd` Wochentage Mo–So; `mon` Monate kurz (Jän.–Dez.); `en` für das Datumsformat
 /// - `accent` / `accentDark`: Primärfarbe des gewählten Themes
 Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {required String themeId}) {
@@ -165,6 +165,7 @@ Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {requi
       'noHabits': l.widgetNoHabits,
       'newTask': l.newTask,
       'until': l.widgetUntil('{}'),
+      'untilDate': l.widgetUntilDate('{}'),
     },
     'wd': [for (var i = 0; i < 7; i++) f.wd(i)],
     'mon': [for (var m = 1; m <= 12; m++) f.monShort(DateTime(2024, m))],

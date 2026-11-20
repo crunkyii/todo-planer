@@ -728,6 +728,66 @@ abstract class AppLocalizations {
   /// **'Inhalt'**
   String get widgetContent;
 
+  /// No description provided for @widgetContentHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Was das Widget zeigt'**
+  String get widgetContentHint;
+
+  /// No description provided for @widgetRange.
+  ///
+  /// In de, this message translates to:
+  /// **'Zeitraum'**
+  String get widgetRange;
+
+  /// No description provided for @widgetRangeHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Wie weit in die Zukunft'**
+  String get widgetRangeHint;
+
+  /// No description provided for @widgetRange3d.
+  ///
+  /// In de, this message translates to:
+  /// **'3 Tage'**
+  String get widgetRange3d;
+
+  /// No description provided for @widgetRange1w.
+  ///
+  /// In de, this message translates to:
+  /// **'1 Woche'**
+  String get widgetRange1w;
+
+  /// No description provided for @widgetRange2w.
+  ///
+  /// In de, this message translates to:
+  /// **'2 Wochen'**
+  String get widgetRange2w;
+
+  /// No description provided for @widgetRange1m.
+  ///
+  /// In de, this message translates to:
+  /// **'1 Monat'**
+  String get widgetRange1m;
+
+  /// No description provided for @widgetRangeAll.
+  ///
+  /// In de, this message translates to:
+  /// **'Alles'**
+  String get widgetRangeAll;
+
+  /// No description provided for @widgetRangeNote.
+  ///
+  /// In de, this message translates to:
+  /// **'Überfälliges steht immer drin, egal welcher Zeitraum. Die Zahl oben zählt nur, was im Widget steht.'**
+  String get widgetRangeNote;
+
+  /// No description provided for @widgetUntilDate.
+  ///
+  /// In de, this message translates to:
+  /// **'bis {date}'**
+  String widgetUntilDate(String date);
+
   /// No description provided for @widgetBackground.
   ///
   /// In de, this message translates to:
@@ -2311,6 +2371,66 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'English'**
   String get langEn;
+
+  /// No description provided for @langEs.
+  ///
+  /// In de, this message translates to:
+  /// **'Español'**
+  String get langEs;
+
+  /// No description provided for @langFr.
+  ///
+  /// In de, this message translates to:
+  /// **'Français'**
+  String get langFr;
+
+  /// No description provided for @langIt.
+  ///
+  /// In de, this message translates to:
+  /// **'Italiano'**
+  String get langIt;
+
+  /// No description provided for @langNameDe.
+  ///
+  /// In de, this message translates to:
+  /// **'Deutsch'**
+  String get langNameDe;
+
+  /// No description provided for @langNameEn.
+  ///
+  /// In de, this message translates to:
+  /// **'Englisch'**
+  String get langNameEn;
+
+  /// No description provided for @langNameEs.
+  ///
+  /// In de, this message translates to:
+  /// **'Spanisch'**
+  String get langNameEs;
+
+  /// No description provided for @langNameFr.
+  ///
+  /// In de, this message translates to:
+  /// **'Französisch'**
+  String get langNameFr;
+
+  /// No description provided for @langNameIt.
+  ///
+  /// In de, this message translates to:
+  /// **'Italienisch'**
+  String get langNameIt;
+
+  /// No description provided for @langSameAsDevice.
+  ///
+  /// In de, this message translates to:
+  /// **'Wie das Gerät'**
+  String get langSameAsDevice;
+
+  /// No description provided for @finish.
+  ///
+  /// In de, this message translates to:
+  /// **'Fertig'**
+  String get finish;
 
   /// No description provided for @olderDoneLoad.
   ///
