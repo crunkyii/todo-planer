@@ -38,11 +38,6 @@ class CalendarTab extends StatelessWidget {
 
         final catsByDay = openCategoriesByDay(tasks);
 
-        Widget dots(DateTime d, bool selected) => DayDots(
-          selected: selected,
-          colors: [for (final id in catsByDay[isoDate(d)] ?? const <String>{}) tok.item(store.catOf(id).color).c],
-        );
-
         void move(int dir) => ui.set((s) => s.calMonth = DateTime(m.year, m.month + dir));
         String peek(int dir) => f.month(DateTime(m.year, m.month + dir));
 
@@ -100,22 +95,16 @@ class CalendarTab extends StatelessWidget {
                 child: MonthGrid(
                   month: m,
                   weekdays: false,
-                  cell: (d, other) {
-                    final isSel = sameDay(d, sel);
-                    final holiday = holidayOn(d);
-                    return DayCell(
-                      day: d,
-                      other: other,
-                      selected: isSel,
-                      holiday: holiday != null,
-                      semanticLabel: holiday == null ? f.dayMonth(d) : '${f.dayMonth(d)}, ${holidayName(l, holiday)}',
-                      below: dots(d, isSel),
-                      onTap: () => ui.set((s) {
-                        s.calSel = d;
-                        if (d.month != m.month || d.year != m.year) s.calMonth = DateTime(d.year, d.month);
-                      }),
-                    );
-                  },
+                  cell: (d, other) => CalendarDayCell(
+                    day: d,
+                    other: other,
+                    selected: sameDay(d, sel),
+                    cats: catsByDay[isoDate(d)],
+                    onTap: () => ui.set((s) {
+                      s.calSel = d;
+                      if (d.month != m.month || d.year != m.year) s.calMonth = DateTime(d.year, d.month);
+                    }),
+                  ),
                 ),
               ),
             ];
@@ -174,6 +163,49 @@ class CalendarTab extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+/// Ein Tag im Monatsraster des Kalenders – im Kalender-Tab und ([small]) im Monat der
+/// Seitenleiste: am Feiertag rote Zahl und Name im Screenreader-Text, darunter je offener
+/// Kategorie ein Punkt ([cats] = deren IDs, aus [openCategoriesByDay]).
+class CalendarDayCell extends StatelessWidget {
+  const CalendarDayCell({
+    super.key,
+    required this.day,
+    required this.other,
+    required this.cats,
+    required this.onTap,
+    this.selected = false,
+    this.small = false,
+  });
+  final DateTime day;
+  final bool other;
+  final Set<String>? cats;
+  final VoidCallback onTap;
+  final bool selected;
+  final bool small;
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.app.store;
+    final tok = context.tok;
+    final f = Fmt.of(context);
+    final holiday = holidayOn(day);
+    return DayCell(
+      day: day,
+      other: other,
+      selected: selected,
+      holiday: holiday != null,
+      height: small ? Sizes.calDayHSmall : Sizes.calDayH,
+      circle: small ? Sizes.calDayCircleSmall : Sizes.calDayCircle,
+      semanticLabel: holiday == null ? f.dayMonth(day) : '${f.dayMonth(day)}, ${holidayName(context.l, holiday)}',
+      below: DayDots(
+        selected: selected,
+        colors: [for (final id in cats ?? const <String>{}) tok.item(store.catOf(id).color).c],
+      ),
+      onTap: onTap,
     );
   }
 }

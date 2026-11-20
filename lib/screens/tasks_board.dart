@@ -9,11 +9,11 @@ import '../l10n/gen/app_localizations.dart';
 import '../theme/tokens.dart';
 import '../util/dates.dart';
 import '../util/fmt.dart';
-import '../util/holidays.dart';
 import '../util/task_logic.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/pickers.dart';
 import '../widgets/ui.dart';
+import 'calendar_tab.dart';
 import 'drag_order.dart';
 import 'older_done.dart';
 import 'task_card.dart';
@@ -465,25 +465,9 @@ class TasksSide extends StatelessWidget {
   );
 }
 
-class _Panel extends StatelessWidget {
-  const _Panel({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final tok = context.tok;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: tok.card,
-        borderRadius: BorderRadius.circular(Sizes.rCard),
-        boxShadow: tok.cardShadow,
-      ),
-      child: child,
-    );
-  }
-}
+/// Abstände der Karten in der Seitenleiste ([AppCard] mit [Sizes.rCard]).
+const _panelMargin = EdgeInsets.fromLTRB(12, 0, 12, 8);
+const _panelPadding = EdgeInsets.all(16);
 
 /// Wie viel von heute geschafft ist: Ring mit „erledigt/gesamt“ und was noch offen ist.
 /// Es zählt, was heute dran ist oder war (überfällig oder heute zu tun) – eine Aufgabe von
@@ -511,7 +495,10 @@ class _TodayPanel extends StatelessWidget {
     }
     final total = open + done;
     final summary = open == 0 ? l.todayAllDone : (late > 0 ? l.todayOpenLate(open, late) : l.todayOpen(open));
-    return _Panel(
+    return AppCard(
+      margin: _panelMargin,
+      padding: _panelPadding,
+      radius: Sizes.rCard,
       child: Semantics(
         container: true,
         label: '${l.today}: ${l.progress(done, total)}, $summary',
@@ -599,12 +586,14 @@ class _MonthPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = context.app.store;
     final tok = context.tok;
-    final l = context.l;
     final f = Fmt.of(context);
     final now = today();
     final month = DateTime(now.year, now.month);
     final catsByDay = openCategoriesByDay(store.tasksWithOlder);
-    return _Panel(
+    return AppCard(
+      margin: _panelMargin,
+      padding: _panelPadding,
+      radius: Sizes.rCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -621,28 +610,17 @@ class _MonthPanel extends StatelessWidget {
             padding: EdgeInsets.zero,
             wdFontSize: 11,
             wdPadding: 4,
-            cell: (d, other) {
-              final holiday = holidayOn(d);
-              return DayCell(
-                day: d,
-                other: other,
-                selected: false,
-                holiday: holiday != null,
-                height: 42,
-                circle: 30,
-                semanticLabel: holiday == null ? f.dayMonth(d) : '${f.dayMonth(d)}, ${holidayName(l, holiday)}',
-                below: DayDots(
-                  colors: [
-                    for (final id in catsByDay[isoDate(d)] ?? const <String>{}) tok.item(store.catOf(id).color).c,
-                  ],
-                ),
-                onTap: () {
-                  ui.calSel = d;
-                  ui.calMonth = DateTime(d.year, d.month);
-                  ui.goTab(AppTab.calendar);
-                },
-              );
-            },
+            cell: (d, other) => CalendarDayCell(
+              day: d,
+              other: other,
+              small: true,
+              cats: catsByDay[isoDate(d)],
+              onTap: () {
+                ui.calSel = d;
+                ui.calMonth = DateTime(d.year, d.month);
+                ui.goTab(AppTab.calendar);
+              },
+            ),
           ),
         ],
       ),

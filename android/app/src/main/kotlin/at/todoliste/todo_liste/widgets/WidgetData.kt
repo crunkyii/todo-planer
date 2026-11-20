@@ -253,7 +253,7 @@ class WidgetData private constructor(
                 labels = labels,
                 weekdays = wd,
                 months = mon,
-                lang = o.optString("lang").ifEmpty { if (o.optBoolean("en", false)) "en" else "de" },
+                lang = o.optString("lang").ifEmpty { "de" },
                 accentLight = parseColor(o.optString("accent")),
                 accentDark = parseColor(o.optString("accentDark")),
             )
