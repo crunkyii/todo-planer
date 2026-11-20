@@ -71,6 +71,7 @@ void main() {
       expect(es.dayMonth(d), '27 de noviembre');
       expect(it.wdLong(0), 'Lunedì');
       expect(fr.monthYear(d), 'Novembre 2026');
+      expect(it.month(d), 'Novembre');
       expect(es.day(addDays(d, 3)), endsWith('30/11'));
       expect(de.day(addDays(d, 3)), endsWith('30.11.'));
       expect(it.weekRange(DateTime(2026, 11, 16)), '16–22 nov');

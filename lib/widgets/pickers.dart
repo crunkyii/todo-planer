@@ -354,6 +354,7 @@ class MonthGrid extends StatelessWidget {
     this.wdFontSize = 12,
     this.wdPadding = 6,
     this.padding = const EdgeInsets.symmetric(horizontal: 8),
+    this.weekdays = true,
   });
   final DateTime month;
   final Widget Function(DateTime day, bool otherMonth) cell;
@@ -361,10 +362,12 @@ class MonthGrid extends StatelessWidget {
   final double wdPadding;
   final EdgeInsets padding;
 
+  /// `false`: Die Zeile mit den Wochentagen steht außerhalb ([MonthWeekdays]) – im Kalender
+  /// bleibt sie beim Blättern stehen, nur die Tage gleiten.
+  final bool weekdays;
+
   @override
   Widget build(BuildContext context) {
-    final f = Fmt.of(context);
-    final tok = context.tok;
     final first = weekStartOf(DateTime(month.year, month.month));
     final days = <DateTime>[];
     for (var i = 0; i < 42; i++) {
@@ -376,28 +379,42 @@ class MonthGrid extends StatelessWidget {
       padding: padding,
       child: Column(
         children: [
-          ExcludeSemantics(
-            child: Row(
-              children: [
-                for (var i = 0; i < 7; i++)
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: wdPadding),
-                      child: Text(
-                        f.wd(wdAt(i)),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: wdFontSize, color: tok.sub),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          if (weekdays) MonthWeekdays(fontSize: wdFontSize, vPadding: wdPadding),
           for (var r = 0; r < days.length; r += 7)
             Padding(
               padding: const EdgeInsets.only(bottom: 2),
               child: Row(
                 children: [for (final d in days.sublist(r, r + 7)) Expanded(child: cell(d, d.month != month.month))],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Zeile mit den Wochentagen über einem [MonthGrid].
+class MonthWeekdays extends StatelessWidget {
+  const MonthWeekdays({super.key, this.fontSize = 12, this.vPadding = 6});
+  final double fontSize;
+  final double vPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = Fmt.of(context);
+    final tok = context.tok;
+    return ExcludeSemantics(
+      child: Row(
+        children: [
+          for (var i = 0; i < 7; i++)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: vPadding),
+                child: Text(
+                  f.wd(wdAt(i)),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: fontSize, color: tok.sub),
+                ),
               ),
             ),
         ],

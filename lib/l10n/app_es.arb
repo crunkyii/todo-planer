@@ -464,5 +464,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "allHabitsDone": "Todos los hábitos de hoy completados. ¡Bien hecho!"
 }

@@ -92,7 +92,18 @@ class _WeekTabState extends State<WeekTab> {
             // Wischen links/rechts: nächste/vorige Woche (in der Tagesansicht: Tag)
             Expanded(
               child: ClipRect(
-                child: SwipeStep(onMove: ui.weekStep, child: body),
+                child: SwipePager(
+                  page: one ? addDays(ui.weekStart, ui.weekDay!) : ui.weekStart,
+                  group: one,
+                  onMove: ui.weekStep,
+                  peek: (dir) {
+                    final f = Fmt.of(context);
+                    return one
+                        ? f.day(addDays(ui.weekStart, ui.weekDay! + dir))
+                        : f.weekLabel(addDays(ui.weekStart, 7 * dir));
+                  },
+                  child: body,
+                ),
               ),
             ),
           ],
@@ -129,25 +140,31 @@ class _WeekHead extends StatelessWidget {
               }),
             ),
           Expanded(
-            child: Semantics(
-              header: true,
-              liveRegion: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    one ? f.day(sel!) : f.weekLabel(ws),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+            child: ClipRect(
+              child: Semantics(
+                header: true,
+                liveRegion: true,
+                child: PageTitle(
+                  page: one ? sel! : ws,
+                  group: one,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        one ? f.day(sel!) : f.weekLabel(ws),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: tok.text),
+                      ),
+                      Text(
+                        one ? l.dayAndWeek(f.dayMonth(sel!), f.weekLabel(ws)) : f.weekRange(ws),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, color: tok.sub),
+                      ),
+                    ],
                   ),
-                  Text(
-                    one ? l.dayAndWeek(f.dayMonth(sel!), f.weekLabel(ws)) : f.weekRange(ws),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: tok.sub),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

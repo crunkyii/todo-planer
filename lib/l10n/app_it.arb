@@ -464,5 +464,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "allHabitsDone": "Tutte le abitudini di oggi fatte. Ottimo lavoro!"
 }

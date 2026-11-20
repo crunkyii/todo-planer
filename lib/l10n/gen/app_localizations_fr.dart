@@ -1495,4 +1495,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String applyCount(int count) {
     return 'Ajouter $count';
   }
+
+  @override
+  String get allHabitsDone => 'Toutes les habitudes du jour sont faites. Bravo !';
 }

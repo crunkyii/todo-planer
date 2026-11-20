@@ -979,5 +979,9 @@
         "type": "int"
       }
     }
+  },
+  "allHabitsDone": "Alle Gewohnheiten für heute erledigt. Stark!",
+  "@allHabitsDone": {
+    "description": "Meldung, wenn alle Gewohnheiten des Tages abgehakt sind"
   }
 }

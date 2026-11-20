@@ -287,6 +287,21 @@ abstract final class Sizes {
 
   /// Bis zu dieser Breite gilt ein Handy als schmal: kleinere Schrift im Wochenplan, kürzere Chips.
   static const double narrowWidth = 360;
+
+  /// Blättern per Wischen: so weit gezogen, gleitet der Monat bzw. die Woche hinaus;
+  /// kürzer federt er zurück.
+  static const double swipeThreshold = 90;
+
+  /// Breite des Streifens, in dem beim Ziehen der Name des nächsten Monats steht.
+  static const double swipePeek = 120;
+
+  /// So weit gleitet der Titel (Monat, Kalenderwoche) beim Blättern hinaus.
+  static const double titleShift = 30;
+
+  /// Funken, wenn alle Gewohnheiten des Tages erledigt sind: Anzahl, Größe und Flugweite.
+  static const int sparkCount = 14;
+  static const double spark = 8;
+  static const double sparkDistance = 80;
 }
 
 /// Farben der Flaggen auf der Seite „Sprache“ (feste Farben, unabhängig vom Design).
@@ -361,8 +376,60 @@ abstract final class Motion {
   /// Hervorheben einer Aufgabe (zweimal größer werden und leuchten).
   static const Duration focus = Duration(milliseconds: 1600);
 
-  /// Betonte Standard-Kurve (Pfeil der Auswahl dreht sich).
+  // Blättern im Kalender und im Wochenplan: Der Inhalt gleitet hinaus ([pageOut]), ab
+  // [pageInAt] kommt der neue von der anderen Seite herein ([pageIn]). Der Titel läuft mit.
+  static const Curve pageOutCurve = Cubic(0.4, 0, 1, 1);
+
+  /// Betonte Standard-Kurve (Pfeil der Auswahl, Blättern).
   static const Curve emphasized = Cubic(0.2, 0, 0, 1);
+  static const Curve swipeBack = Cubic(0.34, 1.5, 0.64, 1);
+  static const Duration pageOut = Duration(milliseconds: 180);
+  static const Duration pageInAt = Duration(milliseconds: 220);
+  static const Duration pageIn = Duration(milliseconds: 320);
+  static const Duration pageInFade = Duration(milliseconds: 220);
+  static const Duration titleOut = Duration(milliseconds: 150);
+  static const Duration titleIn = Duration(milliseconds: 260);
+  static const Duration swipeBackDur = Duration(milliseconds: 360);
+
+  /// Deckkraft des Inhalts, während er hinaus- bzw. hereingleitet.
+  static const double pageDim = 0.4;
+
+  /// Bei „Animationen reduzieren“: statt Gleiten nur ein kurzes Überblenden.
+  static const Duration crossFade = Duration(milliseconds: 150);
+
+  // Abhaken: Kreis springt (0,6 → 1,2 → 1), Haken zeichnet sich, Splash spritzt und vergeht.
+  static const Duration checkGrowAt = Duration(milliseconds: 30);
+  static const Duration checkGrow = Duration(milliseconds: 200);
+  static const Duration checkSettleAt = Duration(milliseconds: 300);
+  static const Duration checkSettle = Duration(milliseconds: 220);
+  static const Duration checkDraw = Duration(milliseconds: 260);
+  static const Duration checkTotal = Duration(milliseconds: 1100);
+  static const double checkFrom = 0.6;
+  static const double checkPeak = 1.2;
+
+  /// Tropfen fliegen hinaus ([splashFly], Spritzer [splashDotFly]) und ziehen sich ab
+  /// [checkSettleAt] zusammen ([splashFade]).
+  static const Curve splashOut = Cubic(0.2, 0.8, 0.3, 1);
+  static const Duration splashFly = Duration(milliseconds: 240);
+  static const Duration splashDotFly = Duration(milliseconds: 280);
+  static const Duration splashDotFade = Duration(milliseconds: 120);
+  static const Duration splashFade = Duration(milliseconds: 360);
+  static const Duration splashTotal = Duration(milliseconds: 660);
+
+  /// Titel wird durchgestrichen und blasser.
+  static const Duration strikeDelay = Duration(milliseconds: 150);
+  static const Duration strike = Duration(milliseconds: 320);
+  static const Duration doneFadeDelay = Duration(milliseconds: 300);
+  static const Duration doneFade = Duration(milliseconds: 400);
+
+  /// Serie zählt hoch: die neue Zahl kommt von unten.
+  static const Duration countDelay = Duration(milliseconds: 200);
+  static const Duration count = Duration(milliseconds: 300);
+  static const double countShift = 10;
+
+  /// Funken, wenn alle Gewohnheiten erledigt sind; jeder dritte startet [sparkStagger] später.
+  static const Duration sparks = Duration(milliseconds: 750);
+  static const Duration sparkStagger = Duration(milliseconds: 40);
 
   /// „Animationen reduzieren“ des Systems.
   static bool reduced(BuildContext context) => MediaQuery.maybeDisableAnimationsOf(context) ?? false;

@@ -2662,6 +2662,12 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'{count} übernehmen'**
   String applyCount(int count);
+
+  /// Meldung, wenn alle Gewohnheiten des Tages abgehakt sind
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Gewohnheiten für heute erledigt. Stark!'**
+  String get allHabitsDone;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

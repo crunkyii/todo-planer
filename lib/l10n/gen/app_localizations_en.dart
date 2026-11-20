@@ -1483,4 +1483,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String applyCount(int count) {
     return 'Add $count';
   }
+
+  @override
+  String get allHabitsDone => 'All habits done for today. Nice work!';
 }

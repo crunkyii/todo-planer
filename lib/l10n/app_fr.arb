@@ -464,5 +464,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "allHabitsDone": "Toutes les habitudes du jour sont faites. Bravo !"
 }
