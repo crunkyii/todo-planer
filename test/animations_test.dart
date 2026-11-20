@@ -173,6 +173,30 @@ void main() {
       await finishApp(tester, app);
     });
 
+    testWidgets('Zweimal schnell weiter: der alte Monat gleitet weiter hinaus, kein Sprung', (tester) async {
+      useFixedClock();
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await _tap(tester, find.bySemanticsLabel(l.navCalendar));
+      final grid = find.byType(MonthGrid);
+      final rest = tester.getTopLeft(grid).dx;
+      await tester.tap(find.bySemanticsLabel(l.nextMonth));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final x1 = tester.getTopLeft(grid).dx;
+      expect(x1, lessThan(rest));
+      await tester.tap(find.bySemanticsLabel(l.nextMonth));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.getTopLeft(grid).dx, lessThanOrEqualTo(x1), reason: 'springt nicht zurück in die Mitte');
+      expect(find.text('Dezember 2026'), findsNothing, reason: 'der übersprungene Monat kommt nie herein');
+      await tester.pumpAndSettle();
+      expect(find.text('Dezember 2026'), findsNothing);
+      expect(tester.getTopLeft(grid).dx, rest);
+      await finishApp(tester, app);
+    });
+
     testWidgets('Wochenplan: Wischen zeigt die nächste Woche und blättert', (tester) async {
       useFixedClock(); // KW 47
       final l = l10n('de');
@@ -234,7 +258,8 @@ void main() {
       );
       final strike = find.byWidgetPredicate((w) => w is CustomPaint && w.foregroundPainter != null);
       expect(find.descendant(of: find.byType(StrikeText), matching: strike), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 16)); // die Uhr des Splashs läuft ab hier
+      await tester.pump(const Duration(milliseconds: 700));
       expect(_splash, findsNothing, reason: 'nach gut einer halben Sekunde weg');
       await tester.pumpAndSettle();
       expect(app.store.tasks.firstWhere((t) => t.title == 'Müll rausbringen').done, isTrue);
@@ -275,6 +300,21 @@ void main() {
       expect(find.text(l.allHabitsDone), findsOneWidget);
       await tester.pumpAndSettle();
       expect(_sparks, findsNothing);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Ohne Gewohnheiten: „alle abhaken“ spritzt nicht und meldet nichts', (tester) async {
+      useFixedClock();
+      final l = l10n('de');
+      final app = await makeServices();
+      await pumpApp(tester, app);
+      await tester.tap(find.bySemanticsLabel(l.habitsCheckAll));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(_splash, findsNothing);
+      expect(_sparks, findsNothing);
+      expect(find.text(l.allHabitsDone), findsNothing);
+      await tester.pumpAndSettle();
       await finishApp(tester, app);
     });
 
