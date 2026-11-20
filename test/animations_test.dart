@@ -82,6 +82,9 @@ void main() {
       expect(CheckMark.scaleAt(0), Motion.checkFrom);
       expect(CheckMark.scaleAt(230), closeTo(Motion.checkPeak, 0.001));
       expect(CheckMark.scaleAt(600), 1);
+      // Die Animation endet, sobald Sprung und Haken fertig sind – nicht später.
+      expect(CheckMark.scaleAt(Motion.checkTotal.inMilliseconds.toDouble()), 1);
+      expect(Motion.checkTotal, Motion.checkSettleAt + Motion.checkDraw);
     });
 
     test('Blättern: hinaus in Wischrichtung, herein von der anderen Seite', () {

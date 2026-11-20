@@ -362,7 +362,6 @@ abstract final class Motion {
   static const Curve zoom = Cubic(0.22, 1.2, 0.36, 1);
   static const Curve grow = Cubic(0.34, 1.35, 0.5, 1);
   static const Curve growX = Cubic(0.34, 1.3, 0.5, 1);
-  static const Curve check = Cubic(0.34, 1.9, 0.5, 1);
   static const Curve release = Cubic(0.25, 0.8, 0.35, 1);
 
   static const Duration press = Duration(milliseconds: 120);
@@ -408,7 +407,9 @@ abstract final class Motion {
   static const Duration checkSettleAt = Duration(milliseconds: 300);
   static const Duration checkSettle = Duration(milliseconds: 220);
   static const Duration checkDraw = Duration(milliseconds: 260);
-  static const Duration checkTotal = Duration(milliseconds: 1100);
+
+  /// Bis Sprung und Haken fertig sind – danach läuft nichts mehr.
+  static final Duration checkTotal = checkSettleAt + (checkSettle > checkDraw ? checkSettle : checkDraw);
   static const double checkFrom = 0.6;
   static const double checkPeak = 1.2;
 
