@@ -394,12 +394,12 @@ class HabitsTaskCard extends StatelessWidget {
     final metaStyle = TextStyle(fontSize: Fs.meta, color: tok.sub, fontFeatures: Fs.tabular);
     // Alle Gewohnheiten des Tages erledigt: kurze Funken über der Karte und eine Meldung.
     void celebrate() {
-      if (!context.mounted || !hs.every((h) => store.habitDone(h.id, k))) return;
+      if (!context.mounted || hs.isEmpty || !hs.every((h) => store.habitDone(h.id, k))) return;
       app.snack.show(l.allHabitsDone, icon: Ic.check);
       if (Motion.reduced(context)) return;
       final colors = [for (final p in _sparkColors) tok.item(p.hex).c];
       showBurst(
-        context,
+        BurstAnchor.of(context),
         duration: Motion.checkGrowAt + Motion.sparkStagger * 2 + Motion.sparks,
         painter: (ms) => SparkPainter(colors: colors, ms: ms),
       );

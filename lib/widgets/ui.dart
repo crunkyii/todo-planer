@@ -794,23 +794,31 @@ class _CheckMarkState extends State<CheckMark> with SingleTickerProviderStateMix
   /// Gerade per Tipp abgehakt: Sprung und Haken laufen.
   bool _fresh = false;
 
+  /// Getippt, um abzuhaken – ob es wirklich abgehakt ist, zeigt erst das nächste Bild.
+  bool _checking = false;
+
   void _tap() {
-    final checking = !widget.on;
+    final color = widget.colors.c;
+    _checking = !widget.on && !Motion.reduced(context);
+    // Stelle schon jetzt merken: Rutscht die Aufgabe nach „Erledigt“, ist der Kreis gleich weg.
+    final anchor = _checking && widget.splash ? BurstAnchor.of(context) : null;
     widget.onTap();
-    if (!checking || Motion.reduced(context)) {
-      _fresh = false;
-      _c.value = 1;
-      return;
-    }
-    setState(() => _fresh = true);
-    _c.forward(from: 0);
-    if (widget.splash) showSplash(context, color: widget.colors.c, link: _link);
+    if (!_checking) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Abgehakt (oder samt Zeile verschwunden, weil sie nach „Erledigt“ gewandert ist)?
+      final checked = mounted ? widget.on : true;
+      if (mounted) _checking = false;
+      if (checked) showSplash(anchor, color: color, link: _link);
+    });
   }
 
   @override
   void didUpdateWidget(CheckMark old) {
     super.didUpdateWidget(old);
-    if (!widget.on && _fresh) {
+    if (!old.on && widget.on && _checking) {
+      _fresh = true;
+      _c.forward(from: 0);
+    } else if (!widget.on && _fresh) {
       _fresh = false;
       _c.value = 1;
     }

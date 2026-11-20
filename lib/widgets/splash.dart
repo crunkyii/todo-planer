@@ -231,32 +231,50 @@ class SparkPainter extends CustomPainter {
   bool shouldRepaint(SparkPainter old) => old.ms != ms || old.colors != colors;
 }
 
+/// Wo eine Zeichnung über allem erscheint: das Overlay und darin die Mitte eines Widgets. Wird
+/// beim Tippen festgehalten – auch wenn das Widget danach verschwindet.
+class BurstAnchor {
+  BurstAnchor._(this.overlay, this.at);
+  final OverlayState overlay;
+  final Offset at;
+
+  /// Mitte von [context]; `null`, wenn es (noch) nicht gezeichnet ist oder kein Overlay hat.
+  static BurstAnchor? of(BuildContext context) {
+    final overlay = Overlay.maybeOf(context);
+    final box = context.findRenderObject() as RenderBox?;
+    final ob = overlay?.context.findRenderObject() as RenderBox?;
+    if (overlay == null || box == null || ob == null || !box.hasSize || !box.attached) return null;
+    return BurstAnchor._(overlay, ob.globalToLocal(box.localToGlobal(box.size.center(Offset.zero))));
+  }
+}
+
 /// Spielt eine kurze Zeichnung ([painter], abhängig von der Zeit in ms) über allem anderen ab
 /// – also auch über den Nachbarzeilen – und entfernt sie danach wieder.
 ///
-/// Mittelpunkt ist die Mitte von [context]. Mit [link] folgt sie dem Ziel, solange es da ist
-/// (z. B. wenn die abgehakte Gewohnheit nach unten rutscht); verschwindet es, bleibt sie an
-/// der alten Stelle stehen.
+/// Mit [link] folgt sie dem Ziel, solange es da ist (z. B. wenn die abgehakte Gewohnheit nach
+/// unten rutscht); verschwindet es, bleibt sie an der Stelle von [anchor] stehen.
 void showBurst(
-  BuildContext context, {
+  BurstAnchor? anchor, {
   required Duration duration,
   required CustomPainter Function(double ms) painter,
   LayerLink? link,
 }) {
-  final overlay = Overlay.maybeOf(context);
-  final box = context.findRenderObject() as RenderBox?;
-  final ob = overlay?.context.findRenderObject() as RenderBox?;
-  if (overlay == null || box == null || ob == null || !box.hasSize) return;
-  final at = ob.globalToLocal(box.localToGlobal(box.size.center(Offset.zero)));
+  if (anchor == null || !anchor.overlay.mounted) return;
+  final overlay = anchor.overlay;
+  var removed = false;
   late final OverlayEntry entry;
   entry = OverlayEntry(
     builder: (_) => _BurstLayer(
-      at: at,
+      at: anchor.at,
       link: link,
       duration: duration,
       painter: painter,
       onDone: () {
-        if (entry.mounted) entry.remove();
+        if (removed) return;
+        removed = true;
+        // Ist das Overlay schon abgebaut (App geschlossen), ist der Eintrag mit ihm weg.
+        if (!overlay.mounted) return;
+        entry.remove();
         entry.dispose();
       },
     ),
@@ -265,10 +283,10 @@ void showBurst(
 }
 
 /// Der Splash in den Farben eines abgehakten Kreises – eine zufällige der 50 Varianten.
-void showSplash(BuildContext context, {required Color color, LayerLink? link, int? variant}) {
+void showSplash(BurstAnchor? anchor, {required Color color, LayerLink? link, int? variant}) {
   final v = SplashVariant.of(variant ?? math.Random().nextInt(SplashVariant.count));
   showBurst(
-    context,
+    anchor,
     link: link,
     duration: Motion.splashTotal,
     painter: (ms) => SplashPainter(variant: v, color: color, ms: ms),
@@ -295,11 +313,13 @@ class _BurstLayer extends StatefulWidget {
 }
 
 class _BurstLayerState extends State<_BurstLayer> with SingleTickerProviderStateMixin {
-  // Nur nach dem Ablauf entfernen – wird die Overlay-Ebene vorher abgebaut, ist es schon weg.
   late final _c = AnimationController(vsync: this, duration: widget.duration)..forward().then((_) => widget.onDone());
 
   @override
   void dispose() {
+    // Vorzeitig abgebaut (z. B. von einer Seite verdeckt): Eintrag trotzdem entfernen, sonst
+    // spielte die Zeichnung beim Zurückkehren noch einmal.
+    if (!_c.isCompleted) WidgetsBinding.instance.addPostFrameCallback((_) => widget.onDone());
     _c.dispose();
     super.dispose();
   }
