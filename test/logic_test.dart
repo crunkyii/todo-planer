@@ -275,6 +275,17 @@ void main() {
       expect(sectionOf(_task('e', DateTime(2026, 11, 1), done: true), 0, now: now), Section.done);
     });
 
+    test('Offene Aufgaben nach Erledigen-Tag, dann nach Fälligkeit', () {
+      final spaet = _task('spät', DateTime(2026, 11, 20), time: 18 * 60);
+      final frueh = _task('früh', DateTime(2026, 11, 20), time: 8 * 60);
+      final vorlauf = _task('Hausübung', DateTime(2026, 11, 21), cat: 'hue');
+      final erledigt = _task('erledigt', DateTime(2026, 11, 1), done: true);
+      int offset(Task t) => t.categoryId == 'hue' ? 2 : 0;
+      // Hausübung: Abgabe am 21., mit zwei Tagen Vorlauf schon am 19. zu erledigen.
+      expect(openTasksByDo([spaet, erledigt, frueh, vorlauf], offset), [vorlauf, frueh, spaet]);
+      expect(openTasksByDo([erledigt], offset), isEmpty);
+    });
+
     test('Filter und Suche (auch in Unteraufgaben)', () {
       final a = _task('Mathe', DateTime(2026, 11, 18), cat: 'x');
       final b = _task('Deutsch', DateTime(2026, 11, 18), done: true)

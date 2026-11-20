@@ -143,8 +143,7 @@ List<({String name, Task? task})> _flickRows(Store store, AppLocalizations l, Da
   final f = Fmt(l);
   int offset(Task t) => store.catOf(t.categoryId).offset;
   final rows = <(Task, String)>[];
-  final open = store.tasks.where((t) => !t.done).toList()..sort((a, b) => byDo(a, b, offset));
-  for (final t in open) {
+  for (final t in openTasksByDo(store.tasks, offset)) {
     final s = sectionOf(t, offset(t), now: n);
     if (s != Section.overdue && s != Section.today) continue;
     if (!shownInList(store.catOf(t.categoryId).listFrom, s)) continue;

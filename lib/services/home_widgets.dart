@@ -144,7 +144,7 @@ Map<String, Object?> buildWidgetSnapshot(Store store, AppLocalizations l, {requi
   final f = Fmt(l);
   int offset(Task t) => store.catOf(t.categoryId).offset;
   // Gleiche Reihenfolge wie die Aufgabenliste der App.
-  final open = store.tasks.where((t) => !t.done).toList()..sort((a, b) => byDo(a, b, offset));
+  final open = openTasksByDo(store.tasks, offset);
   final t0 = today();
   final recent = [for (var i = 0; i < 14; i++) isoDate(addDays(t0, -i))];
   final th = themeOf(themeId);

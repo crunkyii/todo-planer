@@ -105,6 +105,11 @@ int byDo(Task a, Task b, int Function(Task) offsetOf) {
   return c != 0 ? c : a.due.compareTo(b.due);
 }
 
+/// Die offenen Aufgaben, nach [byDo] sortiert – gleiche Reihenfolge wie die Aufgabenliste
+/// (für Startbildschirm-Widgets und den Flick-Export).
+List<Task> openTasksByDo(Iterable<Task> tasks, int Function(Task) offsetOf) =>
+    tasks.where((t) => !t.done).toList()..sort((a, b) => byDo(a, b, offsetOf));
+
 /// Offene vor erledigten; `null` = beide gleich (dann weiter sortieren).
 int? doneLast(Task a, Task b) => a.done == b.done ? null : (a.done ? 1 : -1);
 
