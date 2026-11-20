@@ -84,6 +84,10 @@ Richtung es geht.
 Beim Abhaken soll mehr passieren, damit es sich nach Erfolg anfühlt.
 
 - Haken zeichnet sich, der Kreis füllt sich mit der Farbe der Kategorie bzw. Gewohnheit, kleiner Sprung (Feder).
+- **Splash** beim Abhaken: von oben gesehen spritzen aus dem Kreis Tropfen in seiner Farbe in alle Richtungen
+  (unterschiedlich lang, mit kleinem Glanzlicht, dazwischen ein paar runde Spritzer), ziehen sich dann zusammen und
+  verschwinden nach gut einer halben Sekunde. Nur beim gerade abgehakten Kreis, nicht beim Öffnen; gezeichnet über
+  den Nachbarzeilen (`CustomPainter` in einem `Overlay`, kein Paket nötig).
 - Aufgaben: Titel wird animiert durchgestrichen, die Karte rutscht dann sanft in „Erledigt“, die Liste schließt
   die Lücke weich.
 - Gewohnheiten: Serie (Streak) zählt sichtbar hoch; bei allen Gewohnheiten des Tages oder einer runden Serie
