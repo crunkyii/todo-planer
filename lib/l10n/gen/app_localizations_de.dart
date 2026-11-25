@@ -1149,7 +1149,36 @@ class AppLocalizationsDe extends AppLocalizations {
   String get notifChannelName => 'Erinnerungen';
 
   @override
-  String get notifChannelDesc => 'Erinnert an Aufgaben mit Uhrzeit';
+  String get notification => 'Benachrichtigung';
+
+  @override
+  String get remindNone => 'Keine';
+
+  @override
+  String get remindAtTime => 'Zum Zeitpunkt';
+
+  @override
+  String remindBefore(String duration) {
+    return '$duration vorher';
+  }
+
+  @override
+  String get remindCustom => 'Eigene Zeit …';
+
+  @override
+  String get remindMinutes => 'Minuten vorher';
+
+  @override
+  String get remindNeedsTime => 'Nur mit Uhrzeit';
+
+  @override
+  String get remindOff => 'In den Optionen ausgeschaltet';
+
+  @override
+  String get errRemindMinutes => 'Bitte 1 bis 10080 Minuten eingeben (höchstens 7 Tage).';
+
+  @override
+  String get notifChannelDesc => 'Erinnert an Aufgaben mit Uhrzeit und an Blöcke';
 
   @override
   String get yearly => 'Jährlich';

@@ -2081,10 +2081,64 @@ abstract class AppLocalizations {
   /// **'Erinnerungen'**
   String get notifChannelName;
 
+  /// No description provided for @notification.
+  ///
+  /// In de, this message translates to:
+  /// **'Benachrichtigung'**
+  String get notification;
+
+  /// No description provided for @remindNone.
+  ///
+  /// In de, this message translates to:
+  /// **'Keine'**
+  String get remindNone;
+
+  /// No description provided for @remindAtTime.
+  ///
+  /// In de, this message translates to:
+  /// **'Zum Zeitpunkt'**
+  String get remindAtTime;
+
+  /// No description provided for @remindBefore.
+  ///
+  /// In de, this message translates to:
+  /// **'{duration} vorher'**
+  String remindBefore(String duration);
+
+  /// No description provided for @remindCustom.
+  ///
+  /// In de, this message translates to:
+  /// **'Eigene Zeit …'**
+  String get remindCustom;
+
+  /// No description provided for @remindMinutes.
+  ///
+  /// In de, this message translates to:
+  /// **'Minuten vorher'**
+  String get remindMinutes;
+
+  /// No description provided for @remindNeedsTime.
+  ///
+  /// In de, this message translates to:
+  /// **'Nur mit Uhrzeit'**
+  String get remindNeedsTime;
+
+  /// No description provided for @remindOff.
+  ///
+  /// In de, this message translates to:
+  /// **'In den Optionen ausgeschaltet'**
+  String get remindOff;
+
+  /// No description provided for @errRemindMinutes.
+  ///
+  /// In de, this message translates to:
+  /// **'Bitte 1 bis 10080 Minuten eingeben (höchstens 7 Tage).'**
+  String get errRemindMinutes;
+
   /// No description provided for @notifChannelDesc.
   ///
   /// In de, this message translates to:
-  /// **'Erinnert an Aufgaben mit Uhrzeit'**
+  /// **'Erinnert an Aufgaben mit Uhrzeit und an Blöcke'**
   String get notifChannelDesc;
 
   /// No description provided for @yearly.

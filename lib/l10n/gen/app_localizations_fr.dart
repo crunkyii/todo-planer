@@ -1149,7 +1149,36 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notifChannelName => 'Rappels';
 
   @override
-  String get notifChannelDesc => 'Te rappelle les tâches avec une heure';
+  String get notification => 'Notification';
+
+  @override
+  String get remindNone => 'Aucune';
+
+  @override
+  String get remindAtTime => 'À l\'heure prévue';
+
+  @override
+  String remindBefore(String duration) {
+    return '$duration avant';
+  }
+
+  @override
+  String get remindCustom => 'Autre durée …';
+
+  @override
+  String get remindMinutes => 'Minutes avant';
+
+  @override
+  String get remindNeedsTime => 'Seulement avec une heure';
+
+  @override
+  String get remindOff => 'Désactivée dans les réglages';
+
+  @override
+  String get errRemindMinutes => 'Saisis de 1 à 10080 minutes (7 jours maximum).';
+
+  @override
+  String get notifChannelDesc => 'Te rappelle les tâches avec une heure et les blocs';
 
   @override
   String get yearly => 'Chaque année';

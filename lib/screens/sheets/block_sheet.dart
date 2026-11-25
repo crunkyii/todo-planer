@@ -15,6 +15,7 @@ import '../../widgets/pressable.dart';
 import '../../widgets/ui.dart';
 import '../ui_state.dart';
 import 'pick_tasks_page.dart';
+import 'remind_field.dart';
 import 'sheet_parts.dart';
 
 /// Welches Zeit-Rad aufgeklappt ist.
@@ -49,6 +50,7 @@ class _BlockSheetState extends State<BlockSheet> {
   late int _start = widget.start;
   late int _end = widget.end;
   late bool _repeat = widget.block?.repeat ?? true;
+  late int? _remind = widget.block?.remind ?? remindNone;
   _Edge? _open;
   String? _error;
 
@@ -183,7 +185,9 @@ class _BlockSheetState extends State<BlockSheet> {
     } else if (end <= start) {
       err = l.errToAfterFrom;
     }
-    if (err != null) {
+    final remind = _remind;
+    if (remind == null) err ??= l.errRemindMinutes;
+    if (err != null || remind == null) {
       setState(() => _error = err);
       return;
     }
@@ -202,6 +206,7 @@ class _BlockSheetState extends State<BlockSheet> {
         end: end,
         repeat: _repeat,
         weekStart: widget.ui.weekStart,
+        remind: remind,
       );
       Navigator.pop(context);
       app.snack.show(l.saved);
@@ -216,6 +221,7 @@ class _BlockSheetState extends State<BlockSheet> {
         weekStart: widget.ui.weekStart,
         // Die Ansicht des Blocks zeigt später diese Aufgabe (mit Abgabe, Unteraufgaben, Notiz).
         taskId: _taskId,
+        remind: remind,
       );
       // Die gewählte Aufgabe bekommt die Zeit des Blocks – wenn es sie noch gibt.
       final task = _taskId == null ? null : app.store.taskById(_taskId!);
@@ -395,6 +401,7 @@ class _BlockSheetState extends State<BlockSheet> {
             ],
           ),
         ),
+        RemindField(value: _remind, onChanged: (v) => setState(() => _remind = v)),
       ],
     );
   }

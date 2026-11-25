@@ -771,7 +771,23 @@
   "connectToDb": "Mit Datenbank verbinden",
   "connectToDbSub": "Aufgaben auf Handy und PC abgleichen",
   "notifChannelName": "Erinnerungen",
-  "notifChannelDesc": "Erinnert an Aufgaben mit Uhrzeit",
+  "notification": "Benachrichtigung",
+  "remindNone": "Keine",
+  "remindAtTime": "Zum Zeitpunkt",
+  "remindBefore": "{duration} vorher",
+  "@remindBefore": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "remindCustom": "Eigene Zeit …",
+  "remindMinutes": "Minuten vorher",
+  "remindNeedsTime": "Nur mit Uhrzeit",
+  "remindOff": "In den Optionen ausgeschaltet",
+  "errRemindMinutes": "Bitte 1 bis 10080 Minuten eingeben (höchstens 7 Tage).",
+  "notifChannelDesc": "Erinnert an Aufgaben mit Uhrzeit und an Blöcke",
   "yearly": "Jährlich",
   "yearlyHint": "Wiederholt sich jedes Jahr",
   "doneYearly": "Erledigt – nächstes Jahr wieder",

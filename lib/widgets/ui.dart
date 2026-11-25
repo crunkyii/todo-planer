@@ -249,6 +249,7 @@ class AppField extends StatelessWidget {
     this.autofocus = false,
     this.focusNode,
     this.onSubmitted,
+    this.onChanged,
     this.textInputAction,
   });
 
@@ -263,6 +264,7 @@ class AppField extends StatelessWidget {
   final bool autofocus;
   final FocusNode? focusNode;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
   final TextInputAction? textInputAction;
 
   @override
@@ -281,6 +283,7 @@ class AppField extends StatelessWidget {
         autofocus: autofocus,
         focusNode: focusNode,
         onSubmitted: onSubmitted,
+        onChanged: onChanged,
         textInputAction: textInputAction,
       ),
     );

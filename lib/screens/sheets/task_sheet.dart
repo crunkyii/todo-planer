@@ -11,6 +11,7 @@ import '../../widgets/pickers.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/ui.dart';
 import '../ui_state.dart';
+import 'remind_field.dart';
 import 'sheet_parts.dart';
 
 /// Höchstlänge der Notiz in sichtbaren Zeichen (der Server erlaubt das Zehnfache, siehe schema.sql).
@@ -83,6 +84,7 @@ class _TaskSheetState extends State<TaskSheet> {
   late String _cat;
   late DateTime _date;
   int? _time;
+  late int? _remind = widget.task?.remind ?? 0;
   late bool _dateTouched;
   late List<_SubEdit> _subs;
 
@@ -155,6 +157,11 @@ class _TaskSheetState extends State<TaskSheet> {
       setState(() => _error = l.errTaskTitle);
       return;
     }
+    final remind = _remind;
+    if (remind == null) {
+      setState(() => _error = l.errRemindMinutes);
+      return;
+    }
     // Der Stand von jetzt, nicht der vom Öffnen: Der Abgleich kann die Aufgabe inzwischen
     // ersetzt (abgehakt, Unteraufgabe erledigt) oder gelöscht haben.
     final opened = widget.task;
@@ -176,6 +183,7 @@ class _TaskSheetState extends State<TaskSheet> {
         categoryId: cat,
         dueDate: _date,
         dueTime: _time,
+        remind: remind,
         subs: [for (final s in subs) (title: s.title, done: false)],
       );
     } else {
@@ -188,6 +196,7 @@ class _TaskSheetState extends State<TaskSheet> {
         categoryId: cat,
         dueDate: _date,
         dueTime: _time,
+        remind: remind,
         subs: subs,
         removedSubIds: _openedSubIds.difference(kept),
         notes: notes,
@@ -426,6 +435,7 @@ class _TaskSheetState extends State<TaskSheet> {
                       }),
                     ),
                   ),
+                RemindField(value: _remind, hasTime: _time != null, onChanged: (v) => setState(() => _remind = v)),
               ],
             ),
           ),

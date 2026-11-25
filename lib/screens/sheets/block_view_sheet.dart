@@ -113,6 +113,7 @@ class BlockViewSheet extends StatelessWidget {
             _Info(Ic.calendar, f.wdLong(b.day)),
             _Info(Ic.clock, '${l.rangeDash(f.time(b.start), f.time(b.end))} · ${f.duration(b.end - b.start)}'),
             _Info(Ic.sync, week == null ? l.everyWeek : l.blockOnlyWeek(f.weekRange(week))),
+            if (b.remind != remindNone) _Info(Ic.alert, '${l.notification}: ${f.remindLabel(b.remind)}'),
             if (taskId != null) ...[
               CapsHeading(l.blockTask, padding: const EdgeInsets.fromLTRB(4, 20, 4, 8)),
               if (task == null)

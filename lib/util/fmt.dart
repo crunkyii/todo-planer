@@ -128,6 +128,14 @@ class Fmt {
   /// „Am selben Tag“ / „2 Tage vorher“ / „1 Woche vorher“ (für Kategorien).
   String offsetLabel(int o) => o == 0 ? l.offsetSameDay : (o == 7 ? l.offsetWeekBefore : l.offsetDaysBefore(o));
 
+  /// „Keine“ / „Zum Zeitpunkt“ / „15 Min. vorher“ / „1 Tag vorher“ (Benachrichtigung).
+  String remindLabel(int minutes) {
+    const day = 24 * 60;
+    if (minutes < 0) return l.remindNone;
+    if (minutes == 0) return l.remindAtTime;
+    return minutes % day == 0 ? offsetLabel(minutes ~/ day) : l.remindBefore(duration(minutes));
+  }
+
   String categoryInfo(int offset, int open, [ListFrom from = ListFrom.always]) {
     final s = offset == 0
         ? l.catDoSameDay(open)

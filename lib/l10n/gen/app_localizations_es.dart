@@ -1143,7 +1143,36 @@ class AppLocalizationsEs extends AppLocalizations {
   String get notifChannelName => 'Recordatorios';
 
   @override
-  String get notifChannelDesc => 'Te recuerda las tareas con hora';
+  String get notification => 'Notificación';
+
+  @override
+  String get remindNone => 'Ninguna';
+
+  @override
+  String get remindAtTime => 'A la hora';
+
+  @override
+  String remindBefore(String duration) {
+    return '$duration antes';
+  }
+
+  @override
+  String get remindCustom => 'Otro tiempo …';
+
+  @override
+  String get remindMinutes => 'Minutos antes';
+
+  @override
+  String get remindNeedsTime => 'Solo con hora';
+
+  @override
+  String get remindOff => 'Desactivada en los ajustes';
+
+  @override
+  String get errRemindMinutes => 'Introduce de 1 a 10080 minutos (máximo 7 días).';
+
+  @override
+  String get notifChannelDesc => 'Te recuerda las tareas con hora y los bloques';
 
   @override
   String get yearly => 'Anual';

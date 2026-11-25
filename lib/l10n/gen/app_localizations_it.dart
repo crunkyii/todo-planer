@@ -1145,7 +1145,36 @@ class AppLocalizationsIt extends AppLocalizations {
   String get notifChannelName => 'Promemoria';
 
   @override
-  String get notifChannelDesc => 'Ti ricorda le attività con un orario';
+  String get notification => 'Notifica';
+
+  @override
+  String get remindNone => 'Nessuna';
+
+  @override
+  String get remindAtTime => 'All\'ora esatta';
+
+  @override
+  String remindBefore(String duration) {
+    return '$duration prima';
+  }
+
+  @override
+  String get remindCustom => 'Altro tempo …';
+
+  @override
+  String get remindMinutes => 'Minuti prima';
+
+  @override
+  String get remindNeedsTime => 'Solo con un orario';
+
+  @override
+  String get remindOff => 'Disattivata nelle opzioni';
+
+  @override
+  String get errRemindMinutes => 'Inserisci da 1 a 10080 minuti (massimo 7 giorni).';
+
+  @override
+  String get notifChannelDesc => 'Ti ricorda le attività con un orario e i blocchi';
 
   @override
   String get yearly => 'Ogni anno';
