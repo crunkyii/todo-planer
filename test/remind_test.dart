@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart' show AndroidScheduleMode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
@@ -13,6 +15,7 @@ import 'package:todo_liste/services/reminders.dart';
 import 'package:todo_liste/util/dates.dart';
 import 'package:todo_liste/util/fmt.dart';
 import 'package:todo_liste/widgets/select.dart';
+import 'package:todo_liste/widgets/ui.dart';
 
 import 'harness.dart';
 
@@ -43,6 +46,20 @@ WeekBlock _block({int day = 2, int start = 600, int remind = 15, bool repeat = t
       remind: remind,
       updatedAt: nowUtc(),
     );
+
+class _FakeReminders extends Reminders {
+  int asked = 0;
+  bool? lastExact;
+
+  @override
+  Future<void> askExact() async {
+    asked++;
+    exactAllowed.value = true;
+  }
+
+  @override
+  Future<void> reschedule(List<Reminder> items, {required bool enabled, bool exact = false}) async => lastExact = exact;
+}
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -381,6 +398,74 @@ void main() {
       await tester.tap(find.bySemanticsLabel(l.dateAndTime));
       await tester.pumpAndSettle();
       expect(find.text(l.remindOff), findsOneWidget);
+      await finishApp(tester, app);
+    });
+  });
+
+  group('Pünktliche Benachrichtigungen', () {
+    Future<(bool, List<AndroidScheduleMode>)> plan({required bool exact, bool denied = false}) async {
+      final modes = <AndroidScheduleMode>[];
+      final ok = await scheduleExactOrInexact((m) async {
+        modes.add(m);
+        if (denied && m == AndroidScheduleMode.exactAllowWhileIdle) {
+          throw PlatformException(code: 'exact_alarms_not_permitted');
+        }
+      }, exact: exact);
+      return (ok, modes);
+    }
+
+    test('mit Erlaubnis genau, ohne ungenau, bei Verweigerung wird trotzdem geplant', () async {
+      const genau = AndroidScheduleMode.exactAllowWhileIdle, ungenau = AndroidScheduleMode.inexactAllowWhileIdle;
+      final a = await plan(exact: true), b = await plan(exact: false), c = await plan(exact: true, denied: true);
+      expect((a.$1, b.$1, c.$1), (true, false, false));
+      expect(
+        [a.$2, b.$2, c.$2],
+        [
+          [genau],
+          [ungenau],
+          [genau, ungenau],
+        ],
+      );
+    });
+
+    testWidgets('Schalter: nur mit Android, fragt nur beim Einschalten, abwählbar', (tester) async {
+      final l = l10n('de');
+      final reminders = _FakeReminders();
+      final app = await makeServices(reminders: reminders);
+      await pumpApp(tester, app);
+      await tester.tap(find.bySemanticsLabel(l.settings).last);
+      await tester.pumpAndSettle();
+      expect(find.text(l.exactRemind, skipOffstage: false), findsNothing);
+
+      reminders.exactAllowed.value = false;
+      await tester.pumpAndSettle();
+      expect(reminders.asked, 0);
+      final toggle = find.byWidgetPredicate((w) => w is AppSwitch && w.label == l.exactRemind);
+      await tester.ensureVisible(toggle);
+      await tester.pumpAndSettle();
+      bool on() => tester.widget<AppSwitch>(toggle).value;
+      expect(on(), isFalse);
+
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect((reminders.asked, on()), (1, true));
+      await tester.pump(const Duration(seconds: 1));
+      expect(reminders.lastExact, isTrue);
+
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+      expect((on(), reminders.asked, reminders.lastExact), (false, 1, false));
+      expect(app.settings.remind, isTrue);
+
+      // Das System entzieht die Erlaubnis: neu geplant, ohne zu fragen.
+      app.settings.updateDevice((s) => s.exactRemind = true);
+      await tester.pump(const Duration(seconds: 1));
+      expect(reminders.lastExact, isTrue);
+      reminders.exactAllowed.value = false;
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+      expect((on(), reminders.asked, reminders.lastExact), (false, 1, false));
       await finishApp(tester, app);
     });
   });

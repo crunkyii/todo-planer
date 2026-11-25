@@ -59,6 +59,7 @@ Future<AppServices> makeServices({
   Cloud? cloud,
   Updater? updater,
   FlickExport? flick,
+  Reminders? reminders,
 }) async {
   // keepPrefs: „App neu gestartet“ – die gespeicherten Einstellungen bleiben, wie sie sind.
   if (!keepPrefs) {
@@ -80,7 +81,7 @@ Future<AppServices> makeServices({
     store: store,
     cloud: c,
     sync: sync?.call(store, settings, c) ?? SyncService(store: store, settings: settings, cloud: c),
-    reminders: Reminders(),
+    reminders: reminders ?? Reminders(),
     updater: updater,
     // Sonst hinge es vom PC ab, ob die Optionen den Abschnitt „Flick“ zeigen (nur Windows).
     flick: flick ?? FlickExport.off(),
