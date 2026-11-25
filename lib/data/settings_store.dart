@@ -100,15 +100,19 @@ class SettingsStore extends ChangeNotifier {
   static const boardVisibleMin = 2, boardVisibleMax = 4;
   int boardVisible = 3;
 
-  /// Aufgaben am PC: ausgeblendete Zeitraum-Listen (`Section.name`).
+  /// Aufgaben am PC: ausgeblendete Listen (`Section.name` bzw. `BoardColumn.listId`).
   Set<String> boardHidden = {};
 
   /// Aufgaben am PC: Kategorien (IDs), die zusätzlich eine eigene Liste bekommen.
   List<String> boardCats = [];
 
   /// Aufgaben am PC: Reihenfolge der Listen, wie man sie sich zurechtgezogen hat
-  /// (`Section.name` bzw. `k-<Kategorie-ID>`). Leer = Zeiträume der Reihe nach, dann Kategorien.
+  /// (`Section.name`, `k-<Kategorie-ID>` bzw. `c-<ID der eigenen Spalte>`). Leer = Zeiträume der
+  /// Reihe nach, dann Kategorien, dann eigene Spalten.
   List<String> boardOrder = [];
+
+  /// Welche eigenen Spalten es gibt (`BoardColumn.listId`) – sie liegen im Store.
+  List<String> Function() customColumns = () => const [];
 
   /// Windows: die heutigen Aufgaben für den Launcher Flick bereitstellen (`lib/services/flick_export.dart`).
   bool flick = false;
@@ -142,7 +146,7 @@ class SettingsStore extends ChangeNotifier {
 
   /// Alle möglichen Listen in der eingestellten Reihenfolge; neue stehen hinten.
   List<String> boardColumnOrder() {
-    final all = [for (final s in Section.values) s.name, for (final id in boardCats) 'k-$id'];
+    final all = [for (final s in Section.values) s.name, for (final id in boardCats) 'k-$id', ...customColumns()];
     return [...boardOrder.where(all.contains), ...all.where((id) => !boardOrder.contains(id))];
   }
 

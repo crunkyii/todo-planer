@@ -178,9 +178,46 @@ const blocksTable = TableSpec(
   },
 );
 
+const boardColumnsTable = TableSpec(
+  'board_columns',
+  ['id'],
+  {
+    'id': 'TEXT NOT NULL',
+    'name': 'TEXT NOT NULL',
+    'color': 'TEXT NOT NULL',
+    'category_ids': 'TEXT NOT NULL',
+    'periods': 'TEXT NOT NULL',
+    'status': 'TEXT NOT NULL',
+    'query': 'TEXT NOT NULL',
+    'position': 'INTEGER NOT NULL',
+    'updated_at': 'TEXT NOT NULL',
+    'deleted': 'INTEGER NOT NULL',
+    ..._fieldTimes,
+  },
+  bools: {'deleted'},
+  groups: {
+    'name': ['name'],
+    'color': ['color'],
+    'categories': ['category_ids'],
+    'periods': ['periods'],
+    'status': ['status'],
+    'query': ['query'],
+    'position': ['position'],
+    'deleted': ['deleted'],
+  },
+);
+
 /// Alle Tabellen. Die Reihenfolge ist wichtig für den Upload: Kategorien vor Aufgaben,
 /// Aufgaben vor Unteraufgaben …
-const syncTables = [categoriesTable, habitsTable, tasksTable, subtasksTable, habitLogsTable, blocksTable];
+const syncTables = [
+  categoriesTable,
+  habitsTable,
+  tasksTable,
+  subtasksTable,
+  habitLogsTable,
+  blocksTable,
+  boardColumnsTable,
+];
 
 /// Lokale SQLite-Datenbank (über drift). Jede Zeile hat zusätzlich `dirty`:
 /// 1 = noch nicht an Supabase geschickt (Sync-Warteschlange).
@@ -193,9 +230,10 @@ class LocalDb extends GeneratedDatabase {
   /// Bei jeder Änderung an den Spalten um eins erhöhen und unten in `onUpgrade` nachziehen.
   /// 2: `tasks.notes` · 3: `categories.list_from` · 4: Tabelle `done_archive` ·
   /// 5: `field_times` (Zeitstempel je Feld-Gruppe) · 6: leere `list_from`/`notes` auffüllen ·
-  /// 7: `week_blocks.task_id` · 8: `remind_min` (Aufgaben und Blöcke).
+  /// 7: `week_blocks.task_id` · 8: `remind_min` (Aufgaben und Blöcke) ·
+  /// 9: Tabelle `board_columns`.
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   /// Merkzettel der erledigten Aufgaben, die nur noch online liegen (siehe [ArchivedDone]).
   /// Nur am Gerät – diese Tabelle wird nie abgeglichen.
@@ -207,15 +245,13 @@ class LocalDb extends GeneratedDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       for (final t in syncTables) {
-        final cols = t.columns.entries.map((e) => '"${e.key}" ${e.value}').join(', ');
-        await customStatement(
-          'CREATE TABLE "${t.name}" ($cols, "dirty" INTEGER NOT NULL DEFAULT 0, '
-          'PRIMARY KEY (${t.keys.map((k) => '"$k"').join(', ')}))',
-        );
+        await _createTable(t);
       }
       await customStatement(_createArchive);
     },
     onUpgrade: (m, from, to) async {
+      // Zuerst: Die Schritte unten gehen über alle Tabellen.
+      if (from < 9) await _createTable(boardColumnsTable);
       if (from < 2) await _addColumn('tasks', 'notes', 'TEXT');
       if (from < 3) await _addColumn('categories', 'list_from', 'TEXT');
       if (from < 4) await customStatement(_createArchive);
@@ -242,6 +278,14 @@ class LocalDb extends GeneratedDatabase {
       }
     },
   );
+
+  Future<void> _createTable(TableSpec t) {
+    final cols = t.columns.entries.map((e) => '"${e.key}" ${e.value}').join(', ');
+    return customStatement(
+      'CREATE TABLE IF NOT EXISTS "${t.name}" ($cols, "dirty" INTEGER NOT NULL DEFAULT 0, '
+      'PRIMARY KEY (${t.keys.map((k) => '"$k"').join(', ')}))',
+    );
+  }
 
   /// Spalte anlegen, falls es sie noch nicht gibt (ein abgebrochenes Update kann sie schon haben).
   Future<void> _addColumn(String table, String column, String type) async {

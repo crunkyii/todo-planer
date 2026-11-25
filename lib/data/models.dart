@@ -41,6 +41,79 @@ typedef ArchivedDone = ({String id, String day, String cat, String? due});
 /// Die Namen stehen so in der Datenbank (`categories.list_from`) – nicht umbenennen.
 enum ListFrom { always, week, tomorrow, today, never }
 
+/// Welche Aufgaben eine eigene Spalte zeigt. Die Namen stehen so in der Datenbank
+/// (`board_columns.status`) – nicht umbenennen.
+enum ColumnStatus { all, open, done }
+
+/// Eine eigene Spalte im Aufgaben-Tab (am Handy ein Abschnitt): alle Aufgaben, die zu ihren
+/// Filtern passen (siehe `columnTasks`). Jeder leere Filter lässt alles durch.
+class BoardColumn {
+  BoardColumn({
+    required this.id,
+    required this.name,
+    required this.color,
+    required this.position,
+    required this.updatedAt,
+    this.categories = const [],
+    this.periods = const [],
+    this.status = ColumnStatus.all,
+    this.query = '',
+    this.deleted = false,
+  });
+
+  final String id;
+  String name;
+  String color;
+
+  /// IDs der Kategorien.
+  List<String> categories;
+
+  /// Zeiträume (`Section.name`, ohne „erledigt“ – dafür gibt es [status]).
+  List<String> periods;
+  ColumnStatus status;
+
+  /// Steht in Titel, Notiz oder einer Unteraufgabe.
+  String query;
+  int position;
+  DateTime updatedAt;
+  bool deleted;
+
+  /// So heißt die Spalte in der Reihenfolge und bei den ausgeblendeten Listen.
+  String get listId => 'c-$id';
+
+  static String _join(List<String> list) => list.join(',');
+  static List<String> _split(Object? v) => [
+    for (final x in (v as String? ?? '').split(','))
+      if (x.isNotEmpty) x,
+  ];
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'color': color,
+    'category_ids': _join(categories),
+    'periods': _join(periods),
+    'status': status.name,
+    'query': query,
+    'position': position,
+    'updated_at': _ts(updatedAt),
+    'deleted': deleted,
+  };
+
+  factory BoardColumn.fromJson(Map<String, Object?> j) => BoardColumn(
+    id: j['id'] as String,
+    name: j['name'] as String,
+    color: j['color'] as String,
+    categories: _split(j['category_ids']),
+    periods: _split(j['periods']),
+    status: ColumnStatus.values.asNameMap()[j['status']] ?? ColumnStatus.all,
+    query: j['query'] as String? ?? '',
+    position: (j['position'] as num).toInt(),
+    updatedAt: _t(j['updated_at']),
+    deleted: _b(j['deleted']),
+  );
+}
+
 class TaskCategory {
   TaskCategory({
     required this.id,

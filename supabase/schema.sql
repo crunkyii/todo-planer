@@ -91,6 +91,22 @@ create table if not exists public.week_blocks (
   check (end_min > start_min)
 );
 
+create table if not exists public.board_columns (
+  id           uuid        primary key,
+  user_id      uuid        not null default auth.uid() references auth.users (id) on delete cascade,
+  name         text        not null check (char_length(name) between 1 and 300),
+  color        text        not null check (color ~ '^#[0-9A-Fa-f]{6}$'),
+  category_ids text        not null default '' check (char_length(category_ids) <= 20000),
+  periods      text        not null default '' check (char_length(periods) <= 200),
+  status       text        not null default 'all' check (status in ('all', 'open', 'done')),
+  query        text        not null default '' check (char_length(query) <= 600),
+  position     integer     not null default 0,
+  field_times  jsonb,
+  updated_at   timestamptz not null default now(),
+  synced_at    timestamptz not null default now(),
+  deleted      boolean     not null default false
+);
+
 create table if not exists public.settings (
   user_id     uuid        primary key default auth.uid() references auth.users (id) on delete cascade,
   lang        text        not null default 'de' check (lang in ('de', 'en', 'es', 'fr', 'it')),
@@ -272,10 +288,11 @@ declare
     "tasks":       {"title": ["title"], "notes": ["notes"], "category": ["category_id"], "due": ["due_date", "due_time"], "remind": ["remind_min"], "done": ["done", "done_at"], "deleted": ["deleted"]},
     "subtasks":    {"title": ["title"], "done": ["done"], "position": ["position"], "deleted": ["deleted"]},
     "habits":      {"name": ["name"], "color": ["color"], "position": ["position"], "deleted": ["deleted"]},
-    "week_blocks": {"name": ["name"], "color": ["color"], "time": ["day", "start_min", "end_min", "repeat", "week_start"], "task": ["task_id"], "remind": ["remind_min"], "deleted": ["deleted"]}
+    "week_blocks": {"name": ["name"], "color": ["color"], "time": ["day", "start_min", "end_min", "repeat", "week_start"], "task": ["task_id"], "remind": ["remind_min"], "deleted": ["deleted"]},
+    "board_columns": {"name": ["name"], "color": ["color"], "categories": ["category_ids"], "periods": ["periods"], "status": ["status"], "query": ["query"], "position": ["position"], "deleted": ["deleted"]}
   }';
 begin
-  foreach t in array array['categories', 'tasks', 'subtasks', 'habits', 'habit_logs', 'week_blocks', 'settings'] loop
+  foreach t in array array['categories', 'tasks', 'subtasks', 'habits', 'habit_logs', 'week_blocks', 'board_columns', 'settings'] loop
     execute format('drop trigger if exists %I on public.%I', t || '_sync_guard', t);
     if field_groups ? t then
       execute format('create trigger %I before insert or update on public.%I for each row execute function public.sync_guard(%L)', t || '_sync_guard', t, field_groups -> t);

@@ -28,6 +28,7 @@ class Store extends ChangeNotifier {
   final Map<String, Habit> _habits = {};
   final Map<String, HabitLog> _logs = {};
   final Map<String, WeekBlock> _blocks = {};
+  final Map<String, BoardColumn> _columns = {};
 
   /// Merkzettel der erledigten Aufgaben, die nur noch online liegen (ID → Tag, Kategorie).
   final Map<String, ArchivedDone> _archived = {};
@@ -116,6 +117,11 @@ class Store extends ChangeNotifier {
 
   List<WeekBlock> get blocks => _blocks.values.where((b) => !b.deleted).toList();
 
+  /// Die eigenen Spalten, in der Reihenfolge, in der sie angelegt wurden.
+  List<BoardColumn> get boardColumns =>
+      _columns.values.where((c) => !c.deleted).toList()
+        ..sort((a, b) => a.position != b.position ? a.position.compareTo(b.position) : a.id.compareTo(b.id));
+
   /// Die Kategorie einer Aufgabe. Gibt es sie nicht mehr (gelöscht, noch nicht abgeglichen),
   /// springt eine gleichnamige ein (nach [mergeDuplicateCategories] ist das ihre Nachfolgerin),
   /// sonst die erste vorhandene – und ganz ohne Kategorien ein namenloser Platzhalter, damit
@@ -145,6 +151,7 @@ class Store extends ChangeNotifier {
   Task? taskById(String id) => _tasks[id]?.deleted == false ? _tasks[id] : _older[id];
   Habit? habitById(String id) => _habits[id]?.deleted == false ? _habits[id] : null;
   WeekBlock? blockById(String id) => _blocks[id]?.deleted == false ? _blocks[id] : null;
+  BoardColumn? boardColumnById(String id) => _columns[id]?.deleted == false ? _columns[id] : null;
   TaskCategory? categoryById(String id) => _cats[id]?.deleted == false ? _cats[id] : null;
 
   bool habitDone(String habitId, String day) => _logs[HabitLog.keyOf(habitId, day)]?.done ?? false;
@@ -216,6 +223,10 @@ class Store extends ChangeNotifier {
         final b = WeekBlock.fromJson(row);
         _blocks[b.id] = b;
         json = b.toJson();
+      case 'board_columns':
+        final c = BoardColumn.fromJson(row);
+        _columns[c.id] = c;
+        json = c.toJson();
       default:
         throw ArgumentError.value(t.name, 'table');
     }
@@ -229,6 +240,7 @@ class Store extends ChangeNotifier {
     _habits.clear();
     _logs.clear();
     _blocks.clear();
+    _columns.clear();
     _saved.clear();
     _olderSaved.clear();
     _archived.clear();
@@ -309,6 +321,7 @@ class Store extends ChangeNotifier {
       Habit h => (habitsTable, h.toJson, (at) => h.updatedAt = at),
       HabitLog l => (habitLogsTable, l.toJson, (at) => l.updatedAt = at),
       WeekBlock b => (blocksTable, b.toJson, (at) => b.updatedAt = at),
+      BoardColumn c => (boardColumnsTable, c.toJson, (at) => c.updatedAt = at),
       _ => throw ArgumentError(model),
     };
     switch (model) {
@@ -330,6 +343,8 @@ class Store extends ChangeNotifier {
         _logs[l.key] = l;
       case WeekBlock b:
         _blocks[b.id] = b;
+      case BoardColumn c:
+        _columns[c.id] = c;
     }
     setAt(now);
     final json = toJson();
@@ -719,6 +734,16 @@ class Store extends ChangeNotifier {
     for (final t in moved) {
       _put(t..categoryId = target.id);
     }
+    // Eigene Spalten: ohne die Kategorie weiter; war es die einzige, gilt ihre Nachfolgerin –
+    // ohne Kategorie stünde sonst plötzlich alles darin.
+    final columns = {
+      for (final k in boardColumns)
+        if (k.categories.contains(c.id)) k: k.categories,
+    };
+    columns.forEach((k, before) {
+      final rest = [...before]..remove(c.id);
+      _put(k..categories = rest.isEmpty ? [target.id] : rest);
+    });
     _changed();
     return (
       target: target,
@@ -728,6 +753,7 @@ class Store extends ChangeNotifier {
         for (final t in moved) {
           _put(t..categoryId = c.id);
         }
+        columns.forEach((k, before) => _put(k..categories = before));
         _changed();
       },
     );
@@ -749,6 +775,9 @@ class Store extends ChangeNotifier {
         for (final t in _tasks.values.where((t) => t.categoryId == dup.id).toList()) {
           _put(t..categoryId = keep.id);
         }
+        for (final c in boardColumns.where((c) => c.categories.contains(dup.id))) {
+          _put(c..categories = {for (final id in c.categories) id == dup.id ? keep.id : id}.toList());
+        }
         _put(dup..deleted = true);
         changed = true;
       }
@@ -757,6 +786,48 @@ class Store extends ChangeNotifier {
   }
 
   int openCount(String catId) => tasks.where((t) => t.categoryId == catId && !t.done).length;
+
+  // Eigene Spalten
+
+  /// Legt eine Spalte an oder ändert [column].
+  void saveBoardColumn(
+    BoardColumn? column, {
+    required String name,
+    required String color,
+    required List<String> categories,
+    required List<String> periods,
+    required ColumnStatus status,
+    required String query,
+  }) {
+    final c =
+        column ??
+        BoardColumn(
+          id: newId(),
+          name: name,
+          color: color,
+          position: _columns.values.fold<int>(-1, (m, c) => c.position > m ? c.position : m) + 1,
+          updatedAt: nowUtc(),
+        );
+    _put(
+      c
+        ..name = name
+        ..color = color
+        ..categories = categories
+        ..periods = periods
+        ..status = status
+        ..query = query,
+    );
+    _changed();
+  }
+
+  Undo deleteBoardColumn(BoardColumn c) {
+    _put(c..deleted = true);
+    _changed();
+    return () {
+      _put(c..deleted = false);
+      _changed();
+    };
+  }
 
   // Gewohnheiten
 
@@ -1088,6 +1159,7 @@ class Store extends ChangeNotifier {
       'subtasks' => Subtask.fromJson(r).toJson(),
       'habits' => Habit.fromJson(r).toJson(),
       'week_blocks' => WeekBlock.fromJson(r).toJson(),
+      'board_columns' => BoardColumn.fromJson(r).toJson(),
       _ => r,
     };
     return mergeRemote(t, local, {...same, fieldTimesColumn: r[fieldTimesColumn]});

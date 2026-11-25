@@ -1097,6 +1097,58 @@ void main() {
       expect(serverTask(t.id)['field_times'], isA<Map<String, Object?>>());
     });
 
+    test('Eigene Spalten: erst nach schema.sql am Server, der übrige Abgleich geht weiter', () async {
+      server.unknownTables.add('board_columns');
+      final a = await device();
+      void save(BoardColumn? c, {String name = 'Schule', List<String> cats = const []}) => a.store.saveBoardColumn(
+        c,
+        name: name,
+        color: '#3D9BE9',
+        categories: cats,
+        periods: const ['today', 'tomorrow'],
+        status: ColumnStatus.open,
+        query: 'mathe',
+      );
+      add(a, 'Arzt');
+      save(null, cats: [cat(a)]);
+      await a.sync.sync();
+      expect(server.rows('tasks'), hasLength(1));
+      expect(server.rows('board_columns'), isEmpty);
+      expect(await a.pending(), 1);
+
+      server.unknownTables.clear();
+      await a.sync.sync();
+      expect(await a.pending(), 0);
+      final b = await device();
+      await b.sync.sync();
+      final c = b.store.boardColumns.single;
+      expect((c.name, c.categories.single, c.status, c.query), ('Schule', cat(a), ColumnStatus.open, 'mathe'));
+      expect(c.periods, ['today', 'tomorrow']);
+
+      // Zwei Geräte ändern verschiedene Felder: beides gilt.
+      await tick();
+      save(a.store.boardColumns.single, name: 'HTL', cats: [cat(a)]);
+      b.store.saveBoardColumn(
+        c,
+        name: c.name,
+        color: '#34C38F',
+        categories: c.categories,
+        periods: c.periods,
+        status: c.status,
+        query: c.query,
+      );
+      await a.sync.sync();
+      await b.sync.sync();
+      await a.sync.sync();
+      for (final d in [a, b]) {
+        expect((d.store.boardColumns.single.name, d.store.boardColumns.single.color), ('HTL', '#34C38F'));
+      }
+      a.store.deleteBoardColumn(a.store.boardColumns.single);
+      await a.sync.sync();
+      await b.sync.sync();
+      expect(b.store.boardColumns, isEmpty);
+    });
+
     test('Die Feld-Gruppen in schema.sql sind dieselben wie in der App', () {
       final sql = File('supabase/schema.sql').readAsStringSync();
       final start = sql.indexOf("field_groups constant jsonb := '") + "field_groups constant jsonb := '".length;

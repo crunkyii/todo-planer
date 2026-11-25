@@ -266,6 +266,15 @@ class SyncService extends ChangeNotifier {
     return any;
   }
 
+  /// Kennt der Server die ganze Tabelle [t] noch nicht (älteres `schema.sql`)? Nur bei Tabellen,
+  /// die später dazugekommen sind – dann geht der Abgleich ohne sie weiter, ihre Zeilen bleiben
+  /// in der Warteschlange.
+  bool _unknownTable(TableSpec t, PostgrestException e) {
+    if (t != boardColumnsTable || (e.code != 'PGRST205' && e.code != '42P01')) return false;
+    _schemaHint();
+    return true;
+  }
+
   /// Einmal je Sitzung: „Bitte schema.sql neu ausführen“.
   void _schemaHint() {
     if (_schemaHintShown) return;
@@ -292,7 +301,11 @@ class SyncService extends ChangeNotifier {
               if (!_unknownColumn(t, e)) rethrow;
             }
           }
-        } on PostgrestException {
+        } on PostgrestException catch (e) {
+          if (_unknownTable(t, e)) {
+            bad += rows.length;
+            break;
+          }
           // Lehnt der Server ein Paket ab, Zeile für Zeile versuchen: Eine fehlerhafte Zeile
           // darf nicht die ganze Warteschlange blockieren. Sie bleibt `dirty` und wird gezählt.
           ok = [];
@@ -333,29 +346,10 @@ class SyncService extends ChangeNotifier {
     final db = cloud.client;
     var again = false;
     for (final t in syncTables) {
-      final saved = settings.pullCursor[t.name];
-      // Beim ersten Abruf etwas Überlappung, damit gleichzeitig gespeicherte Zeilen nicht fehlen
-      // (doppelt geladene Zeilen schaden nicht: der neueste Stand gewinnt).
-      String? since = saved == null ? null : DateTime.parse(saved).subtract(_overlap).toUtc().toIso8601String();
-      while (true) {
-        var q = db.from(t.name).select();
-        // `gte` statt `gt`: Ein Paket (höchstens [_pushChunk] Zeilen) hat beim Server dasselbe
-        // `synced_at`. Fällt eine Seitengrenze mitten hinein, kommt der Rest so auf der nächsten
-        // Seite. Doppelt geladene Zeilen schaden nicht; weil ein Paket kleiner als eine Seite
-        // ist, geht es immer weiter.
-        if (since != null) q = q.gte('synced_at', since);
-        final rows = (await q.order('synced_at', ascending: true).limit(_pullPage)).cast<Map<String, Object?>>();
-        // Kommt eine ausgelagerte Aufgabe verändert zurück, zuerst ihre Unteraufgaben holen –
-        // scheitert das, wird die Seite beim nächsten Abgleich noch einmal geladen.
-        final back = t.name == 'tasks' ? store.returningFromArchive(rows) : const <String>[];
-        final subs = await _rowsFor(subtasksTable, 'task_id', back);
-        again = await _sendLater(t, rows) || again;
-        await store.applyRemote(t, rows);
-        await store.applyRemote(subtasksTable, subs);
-        if (rows.isEmpty) break;
-        since = rows.last['synced_at'] as String;
-        await settings.setCursor(t.name, since);
-        if (rows.length < _pullPage) break;
+      try {
+        again = await _pullTable(t) || again;
+      } on PostgrestException catch (e) {
+        if (!_unknownTable(t, e)) rethrow;
       }
     }
     final s = await db.from('settings').select().maybeSingle();
@@ -364,6 +358,37 @@ class SyncService extends ChangeNotifier {
       await store.flush();
       await _push();
     }
+  }
+
+  /// Holt das Neue aus [t]. Gibt zurück, ob danach noch etwas hochzuladen ist ([_sendLater]).
+  Future<bool> _pullTable(TableSpec t) async {
+    final db = cloud.client;
+    var again = false;
+    final saved = settings.pullCursor[t.name];
+    // Beim ersten Abruf etwas Überlappung, damit gleichzeitig gespeicherte Zeilen nicht fehlen
+    // (doppelt geladene Zeilen schaden nicht: der neueste Stand gewinnt).
+    String? since = saved == null ? null : DateTime.parse(saved).subtract(_overlap).toUtc().toIso8601String();
+    while (true) {
+      var q = db.from(t.name).select();
+      // `gte` statt `gt`: Ein Paket (höchstens [_pushChunk] Zeilen) hat beim Server dasselbe
+      // `synced_at`. Fällt eine Seitengrenze mitten hinein, kommt der Rest so auf der nächsten
+      // Seite. Doppelt geladene Zeilen schaden nicht; weil ein Paket kleiner als eine Seite
+      // ist, geht es immer weiter.
+      if (since != null) q = q.gte('synced_at', since);
+      final rows = (await q.order('synced_at', ascending: true).limit(_pullPage)).cast<Map<String, Object?>>();
+      // Kommt eine ausgelagerte Aufgabe verändert zurück, zuerst ihre Unteraufgaben holen –
+      // scheitert das, wird die Seite beim nächsten Abgleich noch einmal geladen.
+      final back = t.name == 'tasks' ? store.returningFromArchive(rows) : const <String>[];
+      final subs = await _rowsFor(subtasksTable, 'task_id', back);
+      again = await _sendLater(t, rows) || again;
+      await store.applyRemote(t, rows);
+      await store.applyRemote(subtasksTable, subs);
+      if (rows.isEmpty) break;
+      since = rows.last['synced_at'] as String;
+      await settings.setCursor(t.name, since);
+      if (rows.length < _pullPage) break;
+    }
+    return again;
   }
 
   // ---------- Ältere erledigte Aufgaben nachladen ----------

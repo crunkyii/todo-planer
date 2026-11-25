@@ -30,6 +30,9 @@ class FakeSupabase {
   /// Weitere Spalten, die dieser Server noch nicht kennt (älteres `schema.sql`).
   final Set<String> unknownColumns = {};
 
+  /// Tabellen, die dieser Server noch nicht kennt (älteres `schema.sql`).
+  final Set<String> unknownTables = {};
+
   /// `true` = Abrufe scheitern (Server nicht erreichbar).
   bool failReads = false;
 
@@ -72,7 +75,15 @@ class FakeSupabase {
     final body = await utf8.decoder.bind(req).join();
     Object? out;
     var status = 200;
-    if (req.method == 'POST') {
+    if (unknownTables.contains(table)) {
+      status = 404;
+      out = {
+        'code': 'PGRST205',
+        'message': "Could not find the table 'public.$table' in the schema cache",
+        'details': null,
+        'hint': null,
+      };
+    } else if (req.method == 'POST') {
       final data = jsonDecode(body);
       final list = (data is List ? data : [data]).cast<Map>().map((m) => m.cast<String, Object?>()).toList();
       if (reject != null && list.any((r) => reject!(table, r))) {
