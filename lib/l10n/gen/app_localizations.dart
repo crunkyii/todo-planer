@@ -2129,6 +2129,18 @@ abstract class AppLocalizations {
   /// **'In den Optionen ausgeschaltet'**
   String get remindOff;
 
+  /// No description provided for @exactRemind.
+  ///
+  /// In de, this message translates to:
+  /// **'Pünktliche Benachrichtigungen'**
+  String get exactRemind;
+
+  /// No description provided for @exactRemindSub.
+  ///
+  /// In de, this message translates to:
+  /// **'Freiwillig. Ohne Erlaubnis kommen sie auch, aber manchmal etwas später.'**
+  String get exactRemindSub;
+
   /// No description provided for @errRemindMinutes.
   ///
   /// In de, this message translates to:

@@ -786,6 +786,8 @@
   "remindMinutes": "Minuten vorher",
   "remindNeedsTime": "Nur mit Uhrzeit",
   "remindOff": "In den Optionen ausgeschaltet",
+  "exactRemind": "Pünktliche Benachrichtigungen",
+  "exactRemindSub": "Freiwillig. Ohne Erlaubnis kommen sie auch, aber manchmal etwas später.",
   "errRemindMinutes": "Bitte 1 bis 10080 Minuten eingeben (höchstens 7 Tage).",
   "notifChannelDesc": "Erinnert an Aufgaben mit Uhrzeit und an Blöcke",
   "yearly": "Jährlich",

@@ -113,6 +113,9 @@ class SettingsStore extends ChangeNotifier {
   /// Windows: die heutigen Aufgaben für den Launcher Flick bereitstellen (`lib/services/flick_export.dart`).
   bool flick = false;
 
+  /// Android: Benachrichtigungen pünktlich auf die Minute, sofern das System es erlaubt (nur dieses Gerät).
+  bool exactRemind = true;
+
   /// Der Hinweis „… Aufgaben ausgeblendet – einstellbar bei der Kategorie“ kam schon einmal.
   bool hiddenHintSeen = false;
 
@@ -192,6 +195,7 @@ class SettingsStore extends ChangeNotifier {
       boardCats = [...?(d['board_cats'] as List?)?.whereType<String>()];
       boardOrder = [...?(d['board_order'] as List?)?.whereType<String>()];
       flick = d['flick'] == true;
+      exactRemind = d['exactRemind'] != false;
       hiddenHintSeen = d['hidden_hint_seen'] == true;
     }
     dates.weekFirstDay = weekFirstDay;
@@ -337,6 +341,7 @@ class SettingsStore extends ChangeNotifier {
         'board_cats': boardCats,
         'board_order': boardOrder,
         'flick': flick,
+        'exactRemind': exactRemind,
         'hidden_hint_seen': hiddenHintSeen,
       }),
     );

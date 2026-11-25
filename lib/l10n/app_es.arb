@@ -362,6 +362,8 @@
   "remindMinutes": "Minutos antes",
   "remindNeedsTime": "Solo con hora",
   "remindOff": "Desactivada en los ajustes",
+  "exactRemind": "Notificaciones puntuales",
+  "exactRemindSub": "Opcional. Sin permiso también llegan, a veces un poco más tarde.",
   "errRemindMinutes": "Introduce de 1 a 10080 minutos (máximo 7 días).",
   "notifChannelDesc": "Te recuerda las tareas con hora y los bloques",
   "yearly": "Anual",

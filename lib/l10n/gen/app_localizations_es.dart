@@ -1169,6 +1169,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get remindOff => 'Desactivada en los ajustes';
 
   @override
+  String get exactRemind => 'Notificaciones puntuales';
+
+  @override
+  String get exactRemindSub => 'Opcional. Sin permiso también llegan, a veces un poco más tarde.';
+
+  @override
   String get errRemindMinutes => 'Introduce de 1 a 10080 minutos (máximo 7 días).';
 
   @override

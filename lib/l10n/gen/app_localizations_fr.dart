@@ -1175,6 +1175,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get remindOff => 'Désactivée dans les réglages';
 
   @override
+  String get exactRemind => 'Notifications à l\'heure exacte';
+
+  @override
+  String get exactRemindSub => 'Facultatif. Sans autorisation, elles arrivent aussi, parfois un peu plus tard.';
+
+  @override
   String get errRemindMinutes => 'Saisis de 1 à 10080 minutes (7 jours maximum).';
 
   @override

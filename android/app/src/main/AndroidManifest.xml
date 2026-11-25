@@ -4,6 +4,8 @@
     <!-- Erinnerungen: anzeigen und nach einem Neustart neu planen -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Freiwillig: pünktliche Benachrichtigungen. Ohne Erlaubnis kommen sie trotzdem, nur ungenauer -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- Auto-Update: die geprüfte APK an den Installer des Systems übergeben -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application

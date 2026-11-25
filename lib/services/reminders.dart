@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -98,6 +99,24 @@ List<Reminder> mergeReminders(List<Reminder> tasks, List<Reminder> blocks) {
   ];
 }
 
+/// Plant mit [schedule] auf die Minute genau, wenn [exact]; verweigert Android das (Erlaubnis
+/// inzwischen entzogen), stattdessen ungenau. Ergebnis: ob es genau geklappt hat.
+Future<bool> scheduleExactOrInexact(
+  Future<void> Function(AndroidScheduleMode mode) schedule, {
+  required bool exact,
+}) async {
+  if (exact) {
+    try {
+      await schedule(AndroidScheduleMode.exactAllowWhileIdle);
+      return true;
+    } on PlatformException catch (e) {
+      debugPrint('Genaue Erinnerung nicht erlaubt: ${e.code}');
+    }
+  }
+  await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
+  return false;
+}
+
 /// Erinnerungen per System-Benachrichtigung (Android, Windows). Unter Linux kann das
 /// Plugin nicht vorplanen – dort erinnert die App, solange sie läuft (Timer).
 class Reminders {
@@ -107,6 +126,32 @@ class Reminders {
   bool _asked = false;
   String _channelName = 'Reminders';
   String _channelDesc = '';
+
+  /// Android: ob das System genaue Alarme erlaubt; `null` = gibt es hier nicht (Windows, Linux).
+  final exactAllowed = ValueNotifier<bool?>(null);
+
+  AndroidFlutterLocalNotificationsPlugin? get _android =>
+      _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
+  /// Fragt das System neu – die Erlaubnis lässt sich jederzeit dort ändern.
+  Future<void> refreshExact() async {
+    if (!_ready || !Platform.isAndroid) return;
+    try {
+      exactAllowed.value = await _android?.canScheduleExactNotifications() ?? false;
+    } on Object catch (e) {
+      debugPrint('Genaue Alarme nicht abfragbar: ${e.runtimeType}');
+    }
+  }
+
+  /// Öffnet die Systemseite für genaue Alarme (nur wenn sie noch nicht erlaubt sind).
+  Future<void> askExact() async {
+    try {
+      await _android?.requestExactAlarmsPermission();
+    } on Object catch (e) {
+      debugPrint('Genaue Alarme nicht anfragbar: ${e.runtimeType}');
+    }
+    await refreshExact();
+  }
 
   bool get _canSchedule => !kIsWeb && (Platform.isAndroid || Platform.isWindows);
 
@@ -126,6 +171,7 @@ class Reminders {
         ),
       );
       _ready = true;
+      await refreshExact();
     } on Object catch (e) {
       debugPrint('Erinnerungen nicht verfügbar: ${e.runtimeType}');
     }
@@ -151,14 +197,15 @@ class Reminders {
   Future<void> _last = Future.value();
   int _run = 0;
 
-  /// Plant alle Erinnerungen neu. [enabled] = Schalter „Erinnerungen“. Läuft noch eine Planung,
+  /// Plant alle Erinnerungen neu. [enabled] = Schalter „Erinnerungen“,
+  /// [exact] = pünktlich, sofern das System es erlaubt. Läuft noch eine Planung,
   /// hört sie auf – sonst legte sie nach dem Löschen hier noch Veraltetes an.
-  Future<void> reschedule(List<Reminder> items, {required bool enabled}) {
+  Future<void> reschedule(List<Reminder> items, {required bool enabled, bool exact = false}) {
     final run = ++_run;
-    return _last = _last.then((_) => run == _run ? _reschedule(items, run, enabled: enabled) : null);
+    return _last = _last.then((_) => run == _run ? _reschedule(items, run, enabled: enabled, exact: exact) : null);
   }
 
-  Future<void> _reschedule(List<Reminder> items, int run, {required bool enabled}) async {
+  Future<void> _reschedule(List<Reminder> items, int run, {required bool enabled, required bool exact}) async {
     if (!_ready) return;
     for (final t in _timers) {
       t.cancel();
@@ -170,20 +217,22 @@ class Reminders {
       if (!enabled || items.isEmpty) return;
       if (Platform.isAndroid && !_asked) {
         _asked = true;
-        await _plugin
-            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-            ?.requestNotificationsPermission();
+        await _android?.requestNotificationsPermission();
       }
+      var precise = exact && exactAllowed.value == true;
       for (final r in items) {
         if (run != _run) return;
         if (_canSchedule) {
-          await _plugin.zonedSchedule(
-            id: r.id,
-            title: r.title,
-            body: r.body,
-            scheduledDate: tz.TZDateTime.from(r.at, tz.UTC),
-            notificationDetails: _details,
-            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          precise = await scheduleExactOrInexact(
+            (mode) => _plugin.zonedSchedule(
+              id: r.id,
+              title: r.title,
+              body: r.body,
+              scheduledDate: tz.TZDateTime.from(r.at, tz.UTC),
+              notificationDetails: _details,
+              androidScheduleMode: mode,
+            ),
+            exact: precise,
           );
         } else {
           final wait = r.at.difference(DateTime.now());

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../app_services.dart';
@@ -40,7 +42,7 @@ class SettingsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     return ListenableBuilder(
-      listenable: Listenable.merge([app, app.settings, app.store, app.sync, ?app.updater]),
+      listenable: Listenable.merge([app, app.settings, app.store, app.sync, ?app.updater, app.reminders.exactAllowed]),
       builder: (context, _) {
         final s = app.settings;
         final l = context.l;
@@ -86,6 +88,20 @@ class SettingsTab extends StatelessWidget {
                       onChanged: (v) => s.update((x) => x.remind = v),
                     ),
                   ),
+                  if (app.reminders.exactAllowed.value case final allowed? when s.remind)
+                    SetRow(
+                      title: l.exactRemind,
+                      subtitle: l.exactRemindSub,
+                      inline: true,
+                      trailing: AppSwitch(
+                        value: s.exactRemind && allowed,
+                        label: l.exactRemind,
+                        onChanged: (v) {
+                          s.updateDevice((x) => x.exactRemind = v);
+                          if (v && !allowed) unawaited(app.reminders.askExact());
+                        },
+                      ),
+                    ),
                   CapsHeading(l.weeklyPlan),
                   SelectRow<int>(
                     title: l.weekStartsOn,

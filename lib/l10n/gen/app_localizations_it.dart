@@ -1171,6 +1171,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get remindOff => 'Disattivata nelle opzioni';
 
   @override
+  String get exactRemind => 'Notifiche puntuali';
+
+  @override
+  String get exactRemindSub => 'Facoltativo. Senza permesso arrivano comunque, a volte un po\' più tardi.';
+
+  @override
   String get errRemindMinutes => 'Inserisci da 1 a 10080 minuti (massimo 7 giorni).';
 
   @override

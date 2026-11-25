@@ -38,6 +38,7 @@ class AppServices extends ChangeNotifier {
     store.addListener(_refreshRemindersAndWidgets);
     settings.addListener(_onSettingsChanged);
     sync.onPulled = _afterPull;
+    reminders.exactAllowed.addListener(_refreshRemindersAndWidgets);
     _lifecycle = AppLifecycleListener(onResume: _onResume);
     store.addListener(_scheduleNextChange);
     _scheduleNextChange();
@@ -59,6 +60,8 @@ class AppServices extends ChangeNotifier {
   /// Zurück in der App: Neues vom Server holen und „heute“ neu berechnen.
   void _onResume() {
     if (signedIn) sync.schedule(remote: true);
+    // Die Erlaubnis für pünktliche Benachrichtigungen kann sich im System geändert haben.
+    unawaited(reminders.refreshExact());
     // War die App im Hintergrund, kann der Zeitpunkt inzwischen vorbei sein.
     if (!clock().isBefore(_nextChange)) _listChanged();
   }
@@ -278,11 +281,12 @@ class AppServices extends ChangeNotifier {
       // Nur neu planen, wenn sich an den Erinnerungen wirklich etwas geändert hat
       // (der Store meldet auch Gewohnheiten, Sync-Status usw.) – und einmal am Tag, weil nicht
       // überall beliebig weit vorausgeplant wird.
+      final exact = settings.exactRemind && reminders.exactAllowed.value == true;
       final sig =
-          '${isoDate(today())}|${settings.remind}|${items.map((r) => '${r.id}@${r.at.millisecondsSinceEpoch}:${r.title}:${r.body}').join(',')}';
+          '${isoDate(today())}|${settings.remind}|$exact|${items.map((r) => '${r.id}@${r.at.millisecondsSinceEpoch}:${r.title}:${r.body}').join(',')}';
       if (sig == _reminderSig) return;
       _reminderSig = sig;
-      reminders.reschedule(items, enabled: settings.remind);
+      reminders.reschedule(items, enabled: settings.remind, exact: exact);
     });
   }
 
@@ -299,6 +303,7 @@ class AppServices extends ChangeNotifier {
       ..removeListener(_refreshRemindersAndWidgets)
       ..onLocalChange = null;
     settings.removeListener(_onSettingsChanged);
+    reminders.exactAllowed.removeListener(_refreshRemindersAndWidgets);
     sync.onPulled = null;
     updater
       ?..removeListener(_announceUpdate)

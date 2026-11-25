@@ -362,6 +362,8 @@
   "remindMinutes": "Minutes before",
   "remindNeedsTime": "Needs a time",
   "remindOff": "Turned off in Settings",
+  "exactRemind": "Exact notifications",
+  "exactRemindSub": "Optional. Without permission they still arrive, sometimes a bit later.",
   "errRemindMinutes": "Enter 1 to 10080 minutes (7 days at most).",
   "notifChannelDesc": "Reminds you of tasks with a time and of blocks",
   "yearly": "Yearly",

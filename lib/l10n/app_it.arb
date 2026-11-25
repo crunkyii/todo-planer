@@ -362,6 +362,8 @@
   "remindMinutes": "Minuti prima",
   "remindNeedsTime": "Solo con un orario",
   "remindOff": "Disattivata nelle opzioni",
+  "exactRemind": "Notifiche puntuali",
+  "exactRemindSub": "Facoltativo. Senza permesso arrivano comunque, a volte un po' più tardi.",
   "errRemindMinutes": "Inserisci da 1 a 10080 minuti (massimo 7 giorni).",
   "notifChannelDesc": "Ti ricorda le attività con un orario e i blocchi",
   "yearly": "Ogni anno",
