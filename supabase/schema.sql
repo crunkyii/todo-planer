@@ -136,6 +136,15 @@ alter table public.tasks       add column if not exists field_times jsonb;
 alter table public.subtasks    add column if not exists field_times jsonb;
 alter table public.habits      add column if not exists field_times jsonb;
 alter table public.week_blocks add column if not exists field_times jsonb;
+
+-- Benachrichtigung: so viele Minuten vorher (0 = zum Zeitpunkt, -1 = keine):
+alter table public.tasks       add column if not exists remind_min smallint not null default 0;
+alter table public.tasks       drop constraint if exists tasks_remind_min_check;
+alter table public.tasks       add  constraint tasks_remind_min_check       check (remind_min between -1 and 10080);
+alter table public.week_blocks add column if not exists remind_min smallint not null default -1;
+alter table public.week_blocks drop constraint if exists week_blocks_remind_min_check;
+alter table public.week_blocks add  constraint week_blocks_remind_min_check check (remind_min between -1 and 10080);
+
 -- Die Aufgabe, aus der ein Block entstanden ist (ohne Fremdschlüssel: sie kann gelöscht sein).
 alter table public.week_blocks add column if not exists task_id uuid;
 
@@ -260,10 +269,10 @@ declare
   -- Tabellen, die hier fehlen, gewinnen oder verlieren als ganze Zeile.
   field_groups constant jsonb := '{
     "categories":  {"name": ["name"], "color": ["color"], "offset": ["offset_days"], "list_from": ["list_from"], "position": ["position"], "deleted": ["deleted"]},
-    "tasks":       {"title": ["title"], "notes": ["notes"], "category": ["category_id"], "due": ["due_date", "due_time"], "done": ["done", "done_at"], "deleted": ["deleted"]},
+    "tasks":       {"title": ["title"], "notes": ["notes"], "category": ["category_id"], "due": ["due_date", "due_time"], "remind": ["remind_min"], "done": ["done", "done_at"], "deleted": ["deleted"]},
     "subtasks":    {"title": ["title"], "done": ["done"], "position": ["position"], "deleted": ["deleted"]},
     "habits":      {"name": ["name"], "color": ["color"], "position": ["position"], "deleted": ["deleted"]},
-    "week_blocks": {"name": ["name"], "color": ["color"], "time": ["day", "start_min", "end_min", "repeat", "week_start"], "task": ["task_id"], "deleted": ["deleted"]}
+    "week_blocks": {"name": ["name"], "color": ["color"], "time": ["day", "start_min", "end_min", "repeat", "week_start"], "task": ["task_id"], "remind": ["remind_min"], "deleted": ["deleted"]}
   }';
 begin
   foreach t in array array['categories', 'tasks', 'subtasks', 'habits', 'habit_logs', 'week_blocks', 'settings'] loop

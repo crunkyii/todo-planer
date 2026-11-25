@@ -227,7 +227,7 @@ class SyncService extends ChangeNotifier {
 
   /// Spalten, die spätere Versionen von `schema.sql` dazubringen. Fehlen sie am Server (das neue
   /// `schema.sql` ist noch nicht ausgeführt), geht der Abgleich ohne sie weiter.
-  static const _optionalColumns = {fieldTimesColumn, 'task_id'};
+  static const _optionalColumns = {fieldTimesColumn, 'task_id', 'remind_min'};
 
   /// Die davon, die der Server abgelehnt hat (bis zum nächsten App-Start).
   final Set<String> _missing = {};

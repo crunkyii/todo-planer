@@ -447,6 +447,7 @@ class Store extends ChangeNotifier {
     required String categoryId,
     required DateTime dueDate,
     required int? dueTime,
+    int remind = 0,
     required List<({String title, bool done})> subs,
   }) {
     final now = nowUtc();
@@ -457,6 +458,7 @@ class Store extends ChangeNotifier {
       categoryId: categoryId,
       dueDate: sod(dueDate),
       dueTime: dueTime,
+      remind: remind,
       done: false,
       doneAt: null,
       createdAt: now,
@@ -470,7 +472,7 @@ class Store extends ChangeNotifier {
 
   /// Speichert das Bearbeiten-Formular. [subs] sind die Unteraufgaben in der Reihenfolge des
   /// Formulars – mit `id`, wenn es sie schon gab, ohne für neue. [removedSubIds] sind die, die
-  /// im Formular entfernt wurden. [notes] `null` = Notiz bleibt, wie sie ist.
+  /// im Formular entfernt wurden. [notes] und [remind] `null` = bleibt, wie es ist.
   ///
   /// Abgeglichen wird nach ID, nicht nach Platz: Eine Unteraufgabe, die während des Bearbeitens
   /// am anderen Gerät dazukam, bleibt (hinten angehängt), und der Haken jeder Unteraufgabe
@@ -484,13 +486,15 @@ class Store extends ChangeNotifier {
     required List<({String? id, String title})> subs,
     Set<String> removedSubIds = const {},
     String? notes,
+    int? remind,
   }) {
     t
       ..title = title
       ..notes = notes ?? t.notes
       ..categoryId = categoryId
       ..dueDate = sod(dueDate)
-      ..dueTime = dueTime;
+      ..dueTime = dueTime
+      ..remind = remind ?? t.remind;
     _put(t);
     final rest = {for (final s in t.subs) s.id: s};
     var position = 0;
@@ -557,6 +561,7 @@ class Store extends ChangeNotifier {
           made.title == t.title &&
           made.categoryId == t.categoryId &&
           made.dueTime == t.dueTime &&
+          made.remind == t.remind &&
           sameDay(made.dueDate, next) &&
           made.subs.length == t.subs.length &&
           made.subs.every((s) => !s.done);
@@ -575,6 +580,7 @@ class Store extends ChangeNotifier {
         categoryId: t.categoryId,
         dueDate: next,
         dueTime: t.dueTime,
+        remind: t.remind,
         done: false,
         doneAt: null,
         createdAt: now,
@@ -792,6 +798,7 @@ class Store extends ChangeNotifier {
     required bool repeat,
     required DateTime weekStart,
     String? taskId,
+    int remind = remindNone,
   }) {
     for (final d in days) {
       _put(
@@ -805,6 +812,7 @@ class Store extends ChangeNotifier {
           repeat: repeat,
           weekStart: repeat ? null : _blockWeek(weekStart, d),
           taskId: taskId,
+          remind: remind,
           updatedAt: nowUtc(),
         ),
       );
@@ -813,6 +821,7 @@ class Store extends ChangeNotifier {
     return days.length;
   }
 
+  /// [remind] `null` = Benachrichtigung bleibt, wie sie ist.
   void updateBlock(
     WeekBlock b, {
     required String name,
@@ -822,6 +831,7 @@ class Store extends ChangeNotifier {
     required int end,
     required bool repeat,
     required DateTime weekStart,
+    int? remind,
   }) {
     _put(
       b
@@ -831,7 +841,8 @@ class Store extends ChangeNotifier {
         ..start = start
         ..end = end
         ..repeat = repeat
-        ..weekStart = repeat ? null : _blockWeek(weekStart, day),
+        ..weekStart = repeat ? null : _blockWeek(weekStart, day)
+        ..remind = remind ?? b.remind,
     );
     _changed();
   }

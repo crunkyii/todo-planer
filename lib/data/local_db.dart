@@ -77,6 +77,7 @@ const tasksTable = TableSpec(
     'category_id': 'TEXT NOT NULL',
     'due_date': 'TEXT NOT NULL',
     'due_time': 'TEXT',
+    'remind_min': 'INTEGER',
     'done': 'INTEGER NOT NULL',
     'done_at': 'TEXT',
     'created_at': 'TEXT NOT NULL',
@@ -90,6 +91,7 @@ const tasksTable = TableSpec(
     'notes': ['notes'],
     'category': ['category_id'],
     'due': ['due_date', 'due_time'],
+    'remind': ['remind_min'],
     'done': ['done', 'done_at'],
     'deleted': ['deleted'],
   },
@@ -159,6 +161,7 @@ const blocksTable = TableSpec(
     'repeat': 'INTEGER NOT NULL',
     'week_start': 'TEXT',
     'task_id': 'TEXT',
+    'remind_min': 'INTEGER',
     'updated_at': 'TEXT NOT NULL',
     'deleted': 'INTEGER NOT NULL',
     ..._fieldTimes,
@@ -170,6 +173,7 @@ const blocksTable = TableSpec(
     'color': ['color'],
     'time': ['day', 'start_min', 'end_min', 'repeat', 'week_start'],
     'task': ['task_id'],
+    'remind': ['remind_min'],
     'deleted': ['deleted'],
   },
 );
@@ -189,9 +193,9 @@ class LocalDb extends GeneratedDatabase {
   /// Bei jeder Änderung an den Spalten um eins erhöhen und unten in `onUpgrade` nachziehen.
   /// 2: `tasks.notes` · 3: `categories.list_from` · 4: Tabelle `done_archive` ·
   /// 5: `field_times` (Zeitstempel je Feld-Gruppe) · 6: leere `list_from`/`notes` auffüllen ·
-  /// 7: `week_blocks.task_id`.
+  /// 7: `week_blocks.task_id` · 8: `remind_min` (Aufgaben und Blöcke).
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   /// Merkzettel der erledigten Aufgaben, die nur noch online liegen (siehe [ArchivedDone]).
   /// Nur am Gerät – diese Tabelle wird nie abgeglichen.
@@ -228,6 +232,14 @@ class LocalDb extends GeneratedDatabase {
         await customStatement("UPDATE \"tasks\" SET \"notes\" = '' WHERE \"notes\" IS NULL");
       }
       if (from < 7) await _addColumn('week_blocks', 'task_id', 'TEXT');
+      // Wie bisher: Aufgaben melden sich zu ihrer Uhrzeit, Blöcke gar nicht. Ein Wert muss
+      // stehen, weil Supabase leere ablehnt (siehe Version 6).
+      if (from < 8) {
+        await _addColumn('tasks', 'remind_min', 'INTEGER');
+        await _addColumn('week_blocks', 'remind_min', 'INTEGER');
+        await customStatement('UPDATE "tasks" SET "remind_min" = 0 WHERE "remind_min" IS NULL');
+        await customStatement('UPDATE "week_blocks" SET "remind_min" = $remindNone WHERE "remind_min" IS NULL');
+      }
     },
   );
 

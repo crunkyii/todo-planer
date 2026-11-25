@@ -130,6 +130,15 @@ class Subtask {
   );
 }
 
+/// Benachrichtigung einer Aufgabe oder eines Blocks: so viele Minuten vorher
+/// (0 = genau zum Zeitpunkt) oder [remindNone]. Steht so in der Datenbank (`remind_min`).
+const remindNone = -1;
+
+/// Frühestens eine Woche vorher.
+const remindMax = 7 * 24 * 60;
+
+int _remind(Object? v, int orElse) => v is num ? v.toInt().clamp(remindNone, remindMax) : orElse;
+
 class Task {
   Task({
     required this.id,
@@ -138,6 +147,7 @@ class Task {
     required this.categoryId,
     required this.dueDate,
     required this.dueTime,
+    this.remind = 0,
     required this.done,
     required this.doneAt,
     required this.createdAt,
@@ -157,6 +167,9 @@ class Task {
 
   /// Uhrzeit in Minuten seit Mitternacht oder `null` = ganztägig.
   int? dueTime;
+
+  /// Minuten vor [due], zu denen die Benachrichtigung kommt, oder [remindNone] (nur mit Uhrzeit).
+  int remind;
   bool done;
   DateTime? doneAt;
   final DateTime createdAt;
@@ -188,6 +201,7 @@ class Task {
     'category_id': categoryId,
     'due_date': isoDate(dueDate),
     'due_time': dueTime == null ? null : hmString(dueTime!),
+    'remind_min': remind,
     'done': done,
     'done_at': doneAt == null ? null : _ts(doneAt!),
     'created_at': _ts(createdAt),
@@ -202,6 +216,7 @@ class Task {
     categoryId: j['category_id'] as String,
     dueDate: parseIsoDate(j['due_date'] as String),
     dueTime: j['due_time'] == null ? null : parseHm(j['due_time'] as String),
+    remind: _remind(j['remind_min'], 0),
     done: _b(j['done']),
     doneAt: _tn(j['done_at']),
     createdAt: _t(j['created_at']),
@@ -290,6 +305,7 @@ class WeekBlock {
     required this.updatedAt,
     this.deleted = false,
     this.taskId,
+    this.remind = remindNone,
   });
 
   final String id;
@@ -299,6 +315,9 @@ class WeekBlock {
   /// Die Aufgabe, aus der der Block entstanden ist (`null` = freier Block). Sie kann inzwischen
   /// gelöscht oder nur noch online sein – dann zeigt die Ansicht des Blocks sie nicht.
   String? taskId;
+
+  /// Minuten vor dem Beginn, zu denen die Benachrichtigung kommt, oder [remindNone].
+  int remind;
 
   /// Wochentag 0 = Montag … 6 = Sonntag.
   int day;
@@ -323,6 +342,7 @@ class WeekBlock {
     'repeat': repeat,
     'week_start': weekStart,
     'task_id': taskId,
+    'remind_min': remind,
     'updated_at': _ts(updatedAt),
     'deleted': deleted,
   };
@@ -337,6 +357,7 @@ class WeekBlock {
     repeat: _b(j['repeat']),
     weekStart: (j['week_start'] as String?)?.substring(0, 10),
     taskId: j['task_id'] as String?,
+    remind: _remind(j['remind_min'], remindNone),
     updatedAt: _t(j['updated_at']),
     deleted: _b(j['deleted']),
   );
