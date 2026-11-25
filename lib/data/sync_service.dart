@@ -217,7 +217,7 @@ class SyncService extends ChangeNotifier {
   /// kennt ([_missing]), bleiben weg – ohne `field_times` gilt dort wie früher die ganze Zeile.
   Map<String, Object?> _remote(TableSpec t, Map<String, Object?> row) => {
     for (final k in t.columns.keys)
-      if (!_missing.contains(k))
+      if (!_missing.contains('${t.name}.$k'))
         k: k == fieldTimesColumn
             ? decodeFieldTimes(row[k])
             : t.bools.contains(k)
@@ -229,19 +229,41 @@ class SyncService extends ChangeNotifier {
   /// `schema.sql` ist noch nicht ausgeführt), geht der Abgleich ohne sie weiter.
   static const _optionalColumns = {fieldTimesColumn, 'task_id', 'remind_min'};
 
-  /// Die davon, die der Server abgelehnt hat (bis zum nächsten App-Start).
+  /// Die davon, die der Server abgelehnt hat (`tabelle.spalte`) – bis zum nächsten App-Start
+  /// oder bis ein Abruf die Spalte bringt.
   final Set<String> _missing = {};
 
   /// Der Server kennt eine Spalte nicht: einmal je App-Start melden. Ist es eine der
   /// [_optionalColumns], geht es ohne sie weiter, statt die Warteschlange zu blockieren.
   /// Gibt zurück, ob es sich lohnt, das Hochladen gleich noch einmal zu versuchen.
-  bool _unknownColumn(PostgrestException e) {
+  bool _unknownColumn(TableSpec t, PostgrestException e) {
     if (e.code != 'PGRST204') return false; // „Spalte nicht gefunden“
     _schemaHint();
-    final col = _optionalColumns.where((c) => !_missing.contains(c) && e.message.contains("'$c'")).firstOrNull;
+    final col = _optionalColumns
+        .where((c) => !_missing.contains('${t.name}.$c') && e.message.contains("'$c'"))
+        .firstOrNull;
     if (col == null) return false;
-    _missing.add(col);
+    _missing.add('${t.name}.$col');
+    if (col != fieldTimesColumn) unawaited(settings.addUnsent('${t.name}.$col'));
     return true;
+  }
+
+  /// Bringt der Abruf eine Spalte, die bisher gefehlt hat (das neue `schema.sql` ist
+  /// ausgeführt), gehen ihre Werte von diesem Gerät nachträglich hoch. Der Server hat die
+  /// Zeilen schon, aber ohne den Wert – sonst gälte dort (und bald auch hier) der Standardwert.
+  /// Vor [Store.applyRemote] aufrufen. Gibt zurück, ob etwas hochzuladen ist.
+  Future<bool> _sendLater(TableSpec t, List<Map<String, Object?>> rows) async {
+    if (rows.isEmpty) return false;
+    var any = false;
+    for (final c in _optionalColumns) {
+      final key = '${t.name}.$c';
+      if (!rows.first.containsKey(c)) continue;
+      _missing.remove(key);
+      if (!settings.unsent.contains(key)) continue;
+      any = store.resend(t, c) || any;
+      await settings.removeUnsent(key);
+    }
+    return any;
   }
 
   /// Einmal je Sitzung: „Bitte schema.sql neu ausführen“.
@@ -261,11 +283,14 @@ class SyncService extends ChangeNotifier {
         final chunk = rows.sublist(i, i + _pushChunk > rows.length ? rows.length : i + _pushChunk);
         var ok = chunk;
         try {
-          try {
-            await send([for (final r in chunk) _remote(t, r)]);
-          } on PostgrestException catch (e) {
-            if (!_unknownColumn(e)) rethrow;
-            await send([for (final r in chunk) _remote(t, r)]); // jetzt ohne die unbekannte Spalte
+          // Fehlt am Server eine Spalte, gleich noch einmal ohne sie (es können mehrere fehlen).
+          while (true) {
+            try {
+              await send([for (final r in chunk) _remote(t, r)]);
+              break;
+            } on PostgrestException catch (e) {
+              if (!_unknownColumn(t, e)) rethrow;
+            }
           }
         } on PostgrestException {
           // Lehnt der Server ein Paket ab, Zeile für Zeile versuchen: Eine fehlerhafte Zeile
@@ -278,7 +303,7 @@ class SyncService extends ChangeNotifier {
             } on PostgrestException catch (e) {
               bad++;
               debugPrint('Zeile in ${t.name} abgelehnt: ${e.code}');
-              _unknownColumn(e);
+              _unknownColumn(t, e);
             }
           }
         }
@@ -306,6 +331,7 @@ class SyncService extends ChangeNotifier {
 
   Future<void> _pull() async {
     final db = cloud.client;
+    var again = false;
     for (final t in syncTables) {
       final saved = settings.pullCursor[t.name];
       // Beim ersten Abruf etwas Überlappung, damit gleichzeitig gespeicherte Zeilen nicht fehlen
@@ -323,6 +349,7 @@ class SyncService extends ChangeNotifier {
         // scheitert das, wird die Seite beim nächsten Abgleich noch einmal geladen.
         final back = t.name == 'tasks' ? store.returningFromArchive(rows) : const <String>[];
         final subs = await _rowsFor(subtasksTable, 'task_id', back);
+        again = await _sendLater(t, rows) || again;
         await store.applyRemote(t, rows);
         await store.applyRemote(subtasksTable, subs);
         if (rows.isEmpty) break;
@@ -333,6 +360,10 @@ class SyncService extends ChangeNotifier {
     }
     final s = await db.from('settings').select().maybeSingle();
     if (s != null) settings.mergeRemote(s);
+    if (again) {
+      await store.flush();
+      await _push();
+    }
   }
 
   // ---------- Ältere erledigte Aufgaben nachladen ----------

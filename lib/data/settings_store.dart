@@ -88,6 +88,9 @@ class SettingsStore extends ChangeNotifier {
   /// Zeitstempel des letzten Downloads je Tabelle (Server-Zeit `synced_at`).
   Map<String, String> pullCursor = {};
 
+  /// Spalten (`tabelle.spalte`), die dieser Server noch nicht kannte: Ihre Werte sind erst am Gerät.
+  Set<String> unsent = {};
+
   // ---- Nur an diesem Gerät (nicht synchronisiert): [updateDevice] ----
 
   /// Mit welchem Wochentag die Woche beginnt (0 = Montag … 6 = Sonntag).
@@ -179,6 +182,7 @@ class SettingsStore extends ChangeNotifier {
       if (url != null && key != null) cloud = CloudConfig(url, key);
       owner = sync['owner'] as String?;
       pullCursor = Map<String, String>.from((sync['cursor'] as Map?) ?? const {});
+      unsent = {...?(sync['unsent'] as List?)?.whereType<String>()};
     }
     final d = _decode(_kDevice);
     if (d != null) {
@@ -239,7 +243,14 @@ class SettingsStore extends ChangeNotifier {
 
   Future<void> _saveSync() => _prefs.setString(
     _kSync,
-    jsonEncode({'mode': syncMode.name, 'url': cloud?.url, 'key': cloud?.key, 'owner': owner, 'cursor': pullCursor}),
+    jsonEncode({
+      'mode': syncMode.name,
+      'url': cloud?.url,
+      'key': cloud?.key,
+      'owner': owner,
+      'cursor': pullCursor,
+      'unsent': [...unsent],
+    }),
   );
 
   /// Ändert Benutzer-Einstellungen und merkt sie für den Upload vor.
@@ -281,6 +292,7 @@ class SettingsStore extends ChangeNotifier {
     syncMode = SyncMode.cloud;
     cloud = c;
     pullCursor = {};
+    unsent = {};
     await _saveSync();
     notifyListeners();
   }
@@ -295,6 +307,14 @@ class SettingsStore extends ChangeNotifier {
     if (pullCursor[table] == value) return;
     pullCursor[table] = value;
     await _saveSync();
+  }
+
+  Future<void> addUnsent(String column) async {
+    if (unsent.add(column)) await _saveSync();
+  }
+
+  Future<void> removeUnsent(String column) async {
+    if (unsent.remove(column)) await _saveSync();
   }
 
   Future<void> resetCursors() async {

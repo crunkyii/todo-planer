@@ -21,10 +21,18 @@ class Reminder {
   final String body;
 }
 
-/// [minutes] vor [time], nach der Uhr gerechnet: „1 Tag vorher“ ist auch über die
-/// Zeitumstellung hinweg dieselbe Uhrzeit.
-DateTime _before(DateTime time, int minutes) =>
-    DateTime(time.year, time.month, time.day, time.hour, time.minute - minutes);
+/// [minutes] vor [time]. Ganze Tage nach dem Kalender: „1 Tag vorher“ ist auch über die
+/// Zeitumstellung hinweg dieselbe Uhrzeit. Der Rest ist echte Zeit.
+DateTime _before(DateTime time, int minutes) {
+  const day = 24 * 60;
+  return DateTime(
+    time.year,
+    time.month,
+    time.day - minutes ~/ day,
+    time.hour,
+    time.minute,
+  ).subtract(Duration(minutes: minutes % day));
+}
 
 /// So viele Tage im Voraus werden Blöcke geplant. Die App plant bei jedem Start neu.
 const _blockDays = 14;
@@ -44,8 +52,8 @@ List<Reminder> upcomingReminders(Iterable<Task> tasks, String Function(Task) bod
 }
 
 /// Die nächsten Blöcke, die sich melden sollen (höchstens [limit]). [blocksOn] liefert die
-/// Blöcke eines Tages, [body] bekommt den Block und seinen Tag. Blöcke, deren Aufgabe erledigt
-/// ist ([taskDone]), melden sich nicht.
+/// Blöcke eines Tages, [body] bekommt den Block und seinen Tag. Einmalige Blöcke, deren Aufgabe
+/// erledigt ist ([taskDone]), melden sich nicht; wöchentliche gehen weiter.
 List<Reminder> upcomingBlockReminders(
   List<WeekBlock> Function(DateTime day) blocksOn,
   String Function(WeekBlock, DateTime day) body, {
@@ -61,7 +69,7 @@ List<Reminder> upcomingBlockReminders(
     final day = addDays(sod(n), i);
     for (final b in blocksOn(day)) {
       if (b.remind == remindNone) continue;
-      if (b.taskId case final id? when taskDone?.call(id) ?? false) continue;
+      if (b.taskId case final id? when !b.repeat && (taskDone?.call(id) ?? false)) continue;
       final at = _before(DateTime(day.year, day.month, day.day, 0, b.start), b.remind);
       if (at.isAfter(n) && at.isBefore(end)) list.add((b, day, at));
     }
@@ -140,15 +148,25 @@ class Reminders {
     windows: const WindowsNotificationDetails(),
   );
 
-  /// Plant alle Erinnerungen neu. [enabled] = Schalter „Erinnerungen“.
-  Future<void> reschedule(List<Reminder> items, {required bool enabled}) async {
+  Future<void> _last = Future.value();
+  int _run = 0;
+
+  /// Plant alle Erinnerungen neu. [enabled] = Schalter „Erinnerungen“. Läuft noch eine Planung,
+  /// hört sie auf – sonst legte sie nach dem Löschen hier noch Veraltetes an.
+  Future<void> reschedule(List<Reminder> items, {required bool enabled}) {
+    final run = ++_run;
+    return _last = _last.then((_) => run == _run ? _reschedule(items, run, enabled: enabled) : null);
+  }
+
+  Future<void> _reschedule(List<Reminder> items, int run, {required bool enabled}) async {
     if (!_ready) return;
     for (final t in _timers) {
       t.cancel();
     }
     _timers.clear();
     try {
-      if (_canSchedule) await _plugin.cancelAll();
+      // Am Handy bleibt stehen, was schon angezeigt wird; nur das Geplante fällt weg.
+      if (_canSchedule) await (Platform.isAndroid ? _plugin.cancelAllPendingNotifications() : _plugin.cancelAll());
       if (!enabled || items.isEmpty) return;
       if (Platform.isAndroid && !_asked) {
         _asked = true;
@@ -157,6 +175,7 @@ class Reminders {
             ?.requestNotificationsPermission();
       }
       for (final r in items) {
+        if (run != _run) return;
         if (_canSchedule) {
           await _plugin.zonedSchedule(
             id: r.id,

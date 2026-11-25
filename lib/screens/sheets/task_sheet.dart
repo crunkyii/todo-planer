@@ -96,6 +96,7 @@ class _TaskSheetState extends State<TaskSheet> {
   late bool _notesOpen;
   _Picker? _picker;
   String? _error;
+  bool _remindError = false;
   bool _yearly = false;
 
   // Hinweis „Wiederholt sich jedes Jahr“ ein-/ausblenden, sobald das Wort getippt ist.
@@ -159,7 +160,11 @@ class _TaskSheetState extends State<TaskSheet> {
     }
     final remind = _remind;
     if (remind == null) {
-      setState(() => _error = l.errRemindMinutes);
+      setState(() {
+        _error = null;
+        _remindError = true;
+        _dateOpen = true; // sonst sieht man weder Feld noch Meldung
+      });
       return;
     }
     // Der Stand von jetzt, nicht der vom Öffnen: Der Abgleich kann die Aufgabe inzwischen
@@ -435,7 +440,15 @@ class _TaskSheetState extends State<TaskSheet> {
                       }),
                     ),
                   ),
-                RemindField(value: _remind, hasTime: _time != null, onChanged: (v) => setState(() => _remind = v)),
+                RemindField(
+                  value: _remind,
+                  hasTime: _time != null,
+                  error: _remindError ? l.errRemindMinutes : null,
+                  onChanged: (v) => setState(() {
+                    _remind = v;
+                    _remindError = false;
+                  }),
+                ),
               ],
             ),
           ),

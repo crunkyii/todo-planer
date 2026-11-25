@@ -110,7 +110,13 @@ void main() {
 
     test('Block mit erledigter Aufgabe schweigt; gleichzeitig mit der Aufgabe kommt nur eine', () {
       final b = _block(taskId: 't');
-      expect(blocks(b, done: (_) => true), isEmpty);
+      expect(
+        blocks(
+          _block(repeat: false, week: '2026-11-16', taskId: 't'),
+          done: (_) => true,
+        ),
+        isEmpty,
+      );
       final own = tasks([_task(DateTime(2026, 11, 18), time: 600, remind: 15)]);
       expect(
         mergeReminders(own, blocks(b)),
@@ -119,6 +125,10 @@ void main() {
       );
       expect(mergeReminders(own, blocks(_block(remind: 5, taskId: 't'))), hasLength(3));
     });
+  });
+
+  test('Wöchentlicher Block zu einer erledigten Aufgabe geht weiter', () {
+    expect(blocks(_block(taskId: 't'), done: (_) => true), hasLength(2));
   });
 
   group('Speichern', () {
@@ -266,6 +276,63 @@ void main() {
       await tester.tap(find.bySemanticsLabel(l.add));
       await tester.pumpAndSettle();
       expect(app.store.tasks.singleWhere((t) => t.title == 'Zug').remind, 42);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Ungültige eigene Zeit: zuklappen und speichern zeigt Feld und Meldung, „Keine“ geht', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      await pumpApp(tester, app, size: const Size(412, 1400));
+      await tester.tap(find.bySemanticsLabel(l.newTask).last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText).first, 'Bus');
+      await tester.tap(find.bySemanticsLabel(l.dateAndTime));
+      await tester.pumpAndSettle();
+      await choose(tester, row(l), l.remindCustom);
+      await tester.tap(find.bySemanticsLabel(l.dateAndTime));
+      await tester.pumpAndSettle();
+      expect(find.byType(RemindField), findsNothing);
+      await tester.tap(find.bySemanticsLabel(l.add));
+      await tester.pumpAndSettle();
+      expect(find.text(l.errRemindMinutes), findsOneWidget);
+      expect(find.text(l.remindMinutes), findsOneWidget, reason: 'das Feld ist wieder da');
+      await choose(tester, row(l), l.remindNone);
+      expect(find.text(l.errRemindMinutes), findsNothing);
+      await tester.tap(find.bySemanticsLabel(l.add));
+      await tester.pumpAndSettle();
+      expect(app.store.tasks.singleWhere((t) => t.title == 'Bus').remind, remindNone);
+      await finishApp(tester, app);
+    });
+
+    testWidgets('Block aus einer Aufgabe des Tages: „Keine“ gilt dann auch für die Aufgabe', (tester) async {
+      final l = l10n('de');
+      useFixedClock();
+      final app = await makeServices();
+      app.ensureCategoriesNow(l);
+      final t = app.store.addTask(
+        title: 'Referat',
+        categoryId: app.store.categories.last.id,
+        dueDate: today(),
+        dueTime: null,
+        subs: const [],
+      );
+      await pumpApp(tester, app, size: const Size(412, 1400));
+      await tester.tap(find.bySemanticsLabel(l.weeklyPlan));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel(l.newBlock).last);
+      await tester.pumpAndSettle();
+      int? shown() => tester.widget<SelectRow<int>>(selectRow(l.notification)).value as int?;
+      expect(shown(), remindNone);
+      await tester.tap(find.text('Referat').last);
+      await tester.pumpAndSettle();
+      expect(shown(), 0, reason: 'die Aufgabe meldet sich zu ihrer Zeit');
+      await choose(tester, row(l), l.remindNone);
+      await tester.tap(find.text(l.save));
+      await tester.pumpAndSettle();
+      expect(app.store.blocks.single.remind, remindNone);
+      expect(app.store.taskById(t.id)!.hasTime, isTrue);
+      expect(app.store.taskById(t.id)!.remind, remindNone);
       await finishApp(tester, app);
     });
 

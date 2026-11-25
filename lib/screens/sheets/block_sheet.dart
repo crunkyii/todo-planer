@@ -51,6 +51,9 @@ class _BlockSheetState extends State<BlockSheet> {
   late int _end = widget.end;
   late bool _repeat = widget.block?.repeat ?? true;
   late int? _remind = widget.block?.remind ?? remindNone;
+
+  /// Der User hat die Benachrichtigung selbst gewählt – eine Aufgabe gibt sie dann nicht mehr vor.
+  bool _remindTouched = false;
   _Edge? _open;
   String? _error;
 
@@ -131,9 +134,12 @@ class _BlockSheetState extends State<BlockSheet> {
     _taskStart = null;
     if (_taskId == t.id) {
       _taskId = null;
+      if (!_remindTouched) _remind = remindNone;
       return;
     }
     _taskId = t.id;
+    // Am Abgabetag meldet sich die Aufgabe selbst – ihre Einstellung gilt dann auch für den Block.
+    if (!_remindTouched) _remind = _dueThatDay(t) ? t.remind : remindNone;
     _name.text = t.title.length > 60 ? t.title.substring(0, 60) : t.title;
     _color = context.app.store.catOf(t.categoryId).color;
     // Eine Aufgabe ist an einem bestimmten Tag dran – der Block gilt nur für diese Woche.
@@ -228,7 +234,8 @@ class _BlockSheetState extends State<BlockSheet> {
       // Kam „Von“ unverändert von ihrer eigenen Uhrzeit, bleibt die Aufgabe, wie sie ist.
       // Nur am Abgabetag: Ein Block zum Lernen davor verschiebt nicht die Uhrzeit der Abgabe.
       if (task != null && !task.done && !fromTask && _dueThatDay(task) && _rowTasks.any((t) => t.id == task.id)) {
-        app.store.setTaskTime(task, start);
+        // Block und Aufgabe melden sich dann gleich – nicht einmal so und einmal so.
+        app.store.setTaskTime(task, start, remind: remind);
       }
       Navigator.pop(context);
       app.snack.show(n > 1 ? l.blocksAdded(n) : l.blockAdded);
@@ -401,7 +408,13 @@ class _BlockSheetState extends State<BlockSheet> {
             ],
           ),
         ),
-        RemindField(value: _remind, onChanged: (v) => setState(() => _remind = v)),
+        RemindField(
+          value: _remind,
+          onChanged: (v) => setState(() {
+            _remind = v;
+            _remindTouched = true;
+          }),
+        ),
       ],
     );
   }

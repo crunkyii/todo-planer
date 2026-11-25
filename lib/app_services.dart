@@ -276,9 +276,10 @@ class AppServices extends ChangeNotifier {
         ),
       );
       // Nur neu planen, wenn sich an den Erinnerungen wirklich etwas geändert hat
-      // (der Store meldet auch Gewohnheiten, Sync-Status usw.).
+      // (der Store meldet auch Gewohnheiten, Sync-Status usw.) – und einmal am Tag, weil nicht
+      // überall beliebig weit vorausgeplant wird.
       final sig =
-          '${settings.remind}|${items.map((r) => '${r.id}@${r.at.millisecondsSinceEpoch}:${r.title}:${r.body}').join(',')}';
+          '${isoDate(today())}|${settings.remind}|${items.map((r) => '${r.id}@${r.at.millisecondsSinceEpoch}:${r.title}:${r.body}').join(',')}';
       if (sig == _reminderSig) return;
       _reminderSig = sig;
       reminders.reschedule(items, enabled: settings.remind);

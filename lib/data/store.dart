@@ -342,6 +342,27 @@ class Store extends ChangeNotifier {
     _track(db.put(t, json, dirty: true));
   }
 
+  /// Schickt die Werte der Spalte [column] noch einmal hoch, als wären sie gerade geändert worden
+  /// (der Server kannte sie bisher nicht). Nur die vom Standard abweichenden – den hat er schon.
+  bool resend(TableSpec t, String column) {
+    final (Iterable<Object> models, Object? standard) = switch ((t.name, column)) {
+      ('tasks', 'remind_min') => (_tasks.values.where((x) => x.remind != 0), 0),
+      ('week_blocks', 'remind_min') => (_blocks.values.where((b) => b.remind != remindNone), remindNone),
+      ('week_blocks', 'task_id') => (_blocks.values.where((b) => b.taskId != null), null),
+      _ => (const <Object>[], null),
+    };
+    final list = models.toList();
+    for (final m in list) {
+      final id = m is Task ? m.id : (m as WeekBlock).id;
+      final key = _savedKey(t, id);
+      // Mit dem Standardwert als vorigem Stand bekommt genau diese Spalte einen neuen Zeitstempel.
+      if (_saved[key] case final before?) _saved[key] = {...before, column: standard};
+      _put(m);
+    }
+    if (list.isNotEmpty) _changed();
+    return list.isNotEmpty;
+  }
+
   /// Merkt sich einen lokalen Schreibvorgang, damit [flush] auf ihn wartet.
   void _track(Future<void> write) {
     late final Future<void> f;
@@ -522,10 +543,15 @@ class Store extends ChangeNotifier {
     _changed();
   }
 
-  /// Setzt nur die Uhrzeit der Aufgabe (Minuten seit Mitternacht, `null` = ohne Uhrzeit).
-  void setTaskTime(Task t, int? minutes) {
-    if (t.dueTime == minutes) return;
-    _put(t..dueTime = minutes);
+  /// Setzt nur die Uhrzeit der Aufgabe (Minuten seit Mitternacht, `null` = ohne Uhrzeit) und
+  /// ihre Benachrichtigung ([remind] `null` = bleibt).
+  void setTaskTime(Task t, int? minutes, {int? remind}) {
+    if (t.dueTime == minutes && (remind ?? t.remind) == t.remind) return;
+    _put(
+      t
+        ..dueTime = minutes
+        ..remind = remind ?? t.remind,
+    );
     _changed();
   }
 

@@ -5,11 +5,12 @@ import '../../data/models.dart';
 import '../../util/fmt.dart';
 import '../../widgets/select.dart';
 import '../../widgets/ui.dart';
+import 'sheet_parts.dart';
 
 /// Zeile „Benachrichtigung“ in Aufgabe und Block: keine, zum Zeitpunkt, fertige Vorlaufzeiten
 /// oder eine eigene Zeit in Minuten.
 class RemindField extends StatefulWidget {
-  const RemindField({super.key, required this.value, required this.onChanged, this.hasTime = true});
+  const RemindField({super.key, required this.value, required this.onChanged, this.hasTime = true, this.error});
 
   /// Minuten vorher, [remindNone] oder `null` = die eigene Zeit ist (noch) keine gültige Zahl.
   final int? value;
@@ -17,6 +18,9 @@ class RemindField extends StatefulWidget {
 
   /// `false` = noch keine Uhrzeit, es käme also keine Benachrichtigung.
   final bool hasTime;
+
+  /// Fehlermeldung unter dem Feld für die eigene Zeit.
+  final String? error;
 
   @override
   State<RemindField> createState() => _RemindFieldState();
@@ -29,7 +33,10 @@ class _RemindFieldState extends State<RemindField> {
   static const _customOption = remindMax + 1;
 
   final _minutes = TextEditingController();
-  bool _custom = false;
+
+  /// Das Feld für die eigene Zeit ist offen – auch, wenn die Zeile mit einer noch ungültigen
+  /// eigenen Zeit zu- und wieder aufgeklappt wurde.
+  late bool _custom = widget.value == null;
 
   @override
   void dispose() {
@@ -85,6 +92,7 @@ class _RemindFieldState extends State<RemindField> {
             autofocus: true,
             onChanged: _typed,
           ),
+        if (widget.error case final e?) SheetError(e),
       ],
     );
   }

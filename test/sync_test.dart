@@ -964,6 +964,66 @@ void main() {
       expect(a.store.taskById(t.id)!.remind, 30);
     });
 
+    for (final restart in [false, true]) {
+      test('schema.sql erst später ausgeführt (${restart ? 'App neu gestartet' : 'App offen'}): '
+          'die Benachrichtigung geht nach', () async {
+        server.unknownColumns.addAll({'remind_min', 'task_id'});
+        var a = await device();
+        final t = add(a, 'Arzt');
+        a.store.updateTask(
+          t,
+          title: t.title,
+          categoryId: t.categoryId,
+          dueDate: t.dueDate,
+          dueTime: 600,
+          subs: const [],
+          remind: 30,
+        );
+        a.store.addBlocks(
+          name: 'Schule',
+          color: '#3D9BE9',
+          days: [0],
+          start: 480,
+          end: 540,
+          repeat: true,
+          weekStart: today(),
+          taskId: t.id,
+          remind: 10,
+        );
+        await a.sync.sync();
+        expect(await a.pending(), 0);
+        expect(a.sync.rejected, 0, reason: 'auch zwei fehlende Spalten auf einmal');
+
+        // schema.sql: die Spalten kommen mit Standardwert dazu.
+        server.unknownColumns.clear();
+        for (final r in server.rows('tasks')) {
+          r['remind_min'] = 0;
+        }
+        for (final r in server.rows('week_blocks')) {
+          r['remind_min'] = remindNone;
+          r['task_id'] = null;
+        }
+        if (restart) {
+          final before = a.settings.unsent;
+          a = await device(db: a.store.db);
+          a.settings.unsent = {...before};
+        }
+        await tick();
+        // Eine andere Änderung an derselben Zeile darf den Wert nicht zurücksetzen.
+        edit(a, a.store.taskById(t.id)!, title: 'Zahnarzt', dueTime: 600);
+        await a.sync.sync();
+        await a.sync.sync();
+        expect(a.store.taskById(t.id)!.remind, 30);
+        expect((a.store.blocks.single.remind, a.store.blocks.single.taskId), (10, t.id));
+        expect(serverTask(t.id)['remind_min'], 30);
+        expect(serverTask(t.id)['title'], 'Zahnarzt');
+        final block = server.rows('week_blocks').single;
+        expect((block['remind_min'], block['task_id']), (10, t.id));
+        expect(a.settings.unsent, isEmpty);
+        expect(await a.pending(), 0);
+      });
+    }
+
     test('Block aus einer Aufgabe: die Verbindung kommt auf dem anderen Gerät an', () async {
       final a = await device();
       final t = add(a, 'Referat');
