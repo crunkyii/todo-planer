@@ -438,6 +438,45 @@ class AppLocalizationsDe extends AppLocalizations {
   String get columnsPeriods => 'Zeiträume';
 
   @override
+  String get columnsOwn => 'Eigene Spalten';
+
+  @override
+  String get addColumn => 'Spalte hinzufügen';
+
+  @override
+  String get newColumn => 'Neue Spalte';
+
+  @override
+  String get editColumn => 'Spalte bearbeiten';
+
+  @override
+  String get columnHint => 'z. B. Schule';
+
+  @override
+  String get columnStatus => 'Status';
+
+  @override
+  String get columnOnlyOpen => 'Nur offene';
+
+  @override
+  String get columnOnlyDone => 'Nur erledigte';
+
+  @override
+  String get columnText => 'Text enthält';
+
+  @override
+  String get columnTextHint => 'z. B. Mathe';
+
+  @override
+  String get columnFilterNote =>
+      'Alle Filter sind freiwillig. Die Aufgaben stehen zusätzlich in ihren bisherigen Spalten.';
+
+  @override
+  String editNamed(String name) {
+    return '„$name“ bearbeiten';
+  }
+
+  @override
   String get columnsCategories => 'Kategorien als eigene Spalte';
 
   @override

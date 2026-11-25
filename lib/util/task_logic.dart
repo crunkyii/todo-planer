@@ -78,13 +78,43 @@ Section sectionOf(Task t, int offset, {DateTime? now}) {
   if (t.done) return Section.done;
   final n = now ?? clock();
   if (isLate(t, now: n)) return Section.overdue;
-  final d = dayDiff(doDate(t, offset), n);
   // Erledigen-Tag heute oder schon vorbei, Abgabe aber noch offen: gehört zu „Heute“.
-  if (d <= 0) return Section.today;
-  if (d == 1) return Section.tomorrow;
-  if (d <= 6 - weekPos(n)) return Section.week;
-  return Section.later;
+  return _periodIn(dayDiff(doDate(t, offset), n), n);
 }
+
+/// Ob [t] zum Zeitraum-Filter einer eigenen Spalte passt. Erledigte zählen zu dem Zeitraum, in
+/// dem sie stünden, wären sie noch offen; liegen sie zurück, passen sie zu keinem.
+bool _inPeriods(Task t, List<String> periods, int offset, DateTime now) {
+  if (!t.done) return periods.contains(sectionOf(t, offset, now: now).name);
+  final d = dayDiff(doDate(t, offset), now);
+  if (dayDiff(sod(t.dueDate), now) < 0) return false;
+  return periods.contains(_periodIn(d, now).name);
+}
+
+/// Der Zeitraum, der in [days] Tagen liegt (heute und früher: „Heute“).
+Section _periodIn(int days, DateTime now) {
+  if (days <= 0) return Section.today;
+  if (days == 1) return Section.tomorrow;
+  return days <= 6 - weekPos(now) ? Section.week : Section.later;
+}
+
+/// Die Aufgaben einer eigenen Spalte: offene zuerst, dann nach [byDo].
+List<Task> columnTasks(BoardColumn c, Iterable<Task> tasks, int Function(Task) offsetOf, {DateTime? now}) {
+  final n = now ?? clock();
+  final q = c.query.trim().toLowerCase();
+  return [
+    for (final t in tasks)
+      if ((c.categories.isEmpty || c.categories.contains(t.categoryId)) &&
+          (c.status == ColumnStatus.all || t.done == (c.status == ColumnStatus.done)) &&
+          (c.periods.isEmpty || _inPeriods(t, c.periods, offsetOf(t), n)) &&
+          _hasText(t, q))
+        t,
+  ]..sort((a, b) => doneLast(a, b) ?? byDo(a, b, offsetOf));
+}
+
+/// Ob [q] (klein geschrieben) in Titel, Notiz oder einer Unteraufgabe steht.
+bool _hasText(Task t, String q) =>
+    q.isEmpty || '${t.title} ${t.notes} ${t.subs.map((s) => s.title).join(' ')}'.toLowerCase().contains(q);
 
 /// Ob eine Aufgabe in diesem Abschnitt in der Liste steht – laut „In Aufgaben zeigen“ ihrer
 /// Kategorie. Überfällige und erledigte zählen wie „Heute“: Die sieht man, außer bei „Nie“.
@@ -135,10 +165,7 @@ List<Task> filterTasks(Iterable<Task> tasks, {required String filter, required b
   final q = (search ?? '').trim().toLowerCase();
   return [
     for (final t in tasks)
-      if ((filter == filterAll || t.categoryId == filter) &&
-          !(hideDone && t.done) &&
-          (q.isEmpty || '${t.title} ${t.notes} ${t.subs.map((s) => s.title).join(' ')}'.toLowerCase().contains(q)))
-        t,
+      if ((filter == filterAll || t.categoryId == filter) && !(hideDone && t.done) && _hasText(t, q)) t,
   ];
 }
 

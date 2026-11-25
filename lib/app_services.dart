@@ -38,6 +38,7 @@ class AppServices extends ChangeNotifier {
     store.addListener(_refreshRemindersAndWidgets);
     settings.addListener(_onSettingsChanged);
     sync.onPulled = _afterPull;
+    settings.customColumns = () => [for (final c in store.boardColumns) c.listId];
     reminders.exactAllowed.addListener(_refreshRemindersAndWidgets);
     _lifecycle = AppLifecycleListener(onResume: _onResume);
     store.addListener(_scheduleNextChange);

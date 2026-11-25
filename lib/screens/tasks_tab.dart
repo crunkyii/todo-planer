@@ -395,12 +395,14 @@ class _TaskListState extends State<_TaskList> {
     final l = context.l;
     final tok = context.tok;
     int off(Task t) => store.catOf(t.categoryId).offset;
-    final all = filterTasks(
+    List<Task> filtered({required bool hideDone}) => filterTasks(
       store.tasksWithOlder,
       filter: filter == filterHabits ? filterAll : filter,
-      hideDone: ui.hideDone,
+      hideDone: hideDone,
       search: ui.search,
     );
+    final all = filtered(hideDone: ui.hideDone);
+    List<Task> withDone() => ui.hideDone ? filtered(hideDone: false) : all;
     // „In Aufgaben zeigen“ der Kategorie gilt nur in der normalen Liste: Die Suche und der
     // Chip einer Kategorie zeigen alles.
     final byFrom = ui.search == null && (filter == filterAll || filter == filterHabits);
@@ -454,6 +456,17 @@ class _TaskListState extends State<_TaskList> {
           final c = store.categoryById(id);
           // Alles aus der Kategorie – auch was „In Aufgaben zeigen“ sonst noch zurückhält.
           if (c != null) groups.add(_catGroup(c, all, tok, off));
+        }
+        for (final c in store.boardColumns) {
+          if (hiddenSections.contains(c.listId)) continue;
+          groups.add((
+            id: c.listId,
+            label: c.name,
+            // „Nur erledigte“ zeigt sie auch, wenn sie sonst ausgeblendet sind.
+            items: columnTasks(c, c.status == ColumnStatus.done ? withDone() : all, off, now: now),
+            color: tok.item(c.color).c,
+            section: null,
+          ));
         }
         // Reihenfolge, wie man sie sich an den Überschriften zurechtgezogen hat.
         final order = set.boardColumnOrder();
@@ -538,7 +551,7 @@ class _TaskListState extends State<_TaskList> {
     if (filter != filterHabits) {
       if (allHidden) {
         children.add(EmptyState(icon: Ic.week, text: l.columnsAllHidden));
-      } else if (list.isEmpty && !showOlder) {
+      } else if (list.isEmpty && !showOlder && (groups == null || groups.every((g) => g.items.isEmpty))) {
         children.add(EmptyState(icon: searching ? Ic.search : Ic.tasks, text: searching ? l.nothingFound : l.noTasks));
       } else if (groups == null) {
         children

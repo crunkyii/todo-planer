@@ -911,6 +911,78 @@ abstract class AppLocalizations {
   /// **'Zeiträume'**
   String get columnsPeriods;
 
+  /// No description provided for @columnsOwn.
+  ///
+  /// In de, this message translates to:
+  /// **'Eigene Spalten'**
+  String get columnsOwn;
+
+  /// No description provided for @addColumn.
+  ///
+  /// In de, this message translates to:
+  /// **'Spalte hinzufügen'**
+  String get addColumn;
+
+  /// No description provided for @newColumn.
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Spalte'**
+  String get newColumn;
+
+  /// No description provided for @editColumn.
+  ///
+  /// In de, this message translates to:
+  /// **'Spalte bearbeiten'**
+  String get editColumn;
+
+  /// No description provided for @columnHint.
+  ///
+  /// In de, this message translates to:
+  /// **'z. B. Schule'**
+  String get columnHint;
+
+  /// No description provided for @columnStatus.
+  ///
+  /// In de, this message translates to:
+  /// **'Status'**
+  String get columnStatus;
+
+  /// No description provided for @columnOnlyOpen.
+  ///
+  /// In de, this message translates to:
+  /// **'Nur offene'**
+  String get columnOnlyOpen;
+
+  /// No description provided for @columnOnlyDone.
+  ///
+  /// In de, this message translates to:
+  /// **'Nur erledigte'**
+  String get columnOnlyDone;
+
+  /// No description provided for @columnText.
+  ///
+  /// In de, this message translates to:
+  /// **'Text enthält'**
+  String get columnText;
+
+  /// No description provided for @columnTextHint.
+  ///
+  /// In de, this message translates to:
+  /// **'z. B. Mathe'**
+  String get columnTextHint;
+
+  /// No description provided for @columnFilterNote.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Filter sind freiwillig. Die Aufgaben stehen zusätzlich in ihren bisherigen Spalten.'**
+  String get columnFilterNote;
+
+  /// No description provided for @editNamed.
+  ///
+  /// In de, this message translates to:
+  /// **'„{name}“ bearbeiten'**
+  String editNamed(String name);
+
   /// No description provided for @columnsCategories.
   ///
   /// In de, this message translates to:

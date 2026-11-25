@@ -19,8 +19,8 @@ import 'older_done.dart';
 import 'task_card.dart';
 import 'ui_state.dart';
 
-/// Eine Liste im Aufgaben-Tab: ein Zeitraum („Heute“, [section] gesetzt) oder eine Kategorie
-/// ([color] gesetzt).
+/// Eine Liste im Aufgaben-Tab: ein Zeitraum („Heute“, [section] gesetzt), eine Kategorie
+/// oder eine eigene Spalte ([color] gesetzt).
 typedef TaskGroup = ({String id, String label, List<Task> items, Color? color, Section? section});
 
 /// Name eines Zeitraums („Heute“, „Diese Woche“ …).

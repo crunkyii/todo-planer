@@ -187,6 +187,25 @@
   "columns": "Spalten",
   "columnsVisible": "Nebeneinander sichtbar",
   "columnsPeriods": "Zeiträume",
+  "columnsOwn": "Eigene Spalten",
+  "addColumn": "Spalte hinzufügen",
+  "newColumn": "Neue Spalte",
+  "editColumn": "Spalte bearbeiten",
+  "columnHint": "z. B. Schule",
+  "columnStatus": "Status",
+  "columnOnlyOpen": "Nur offene",
+  "columnOnlyDone": "Nur erledigte",
+  "columnText": "Text enthält",
+  "columnTextHint": "z. B. Mathe",
+  "columnFilterNote": "Alle Filter sind freiwillig. Die Aufgaben stehen zusätzlich in ihren bisherigen Spalten.",
+  "editNamed": "„{name}“ bearbeiten",
+  "@editNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "columnsCategories": "Kategorien als eigene Spalte",
   "close": "Schließen",
   "columnsAllHidden": "Alle Spalten sind ausgeblendet. Unter ⋮ → Spalten lassen sie sich wieder einschalten.",

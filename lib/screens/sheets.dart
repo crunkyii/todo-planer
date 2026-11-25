@@ -9,6 +9,7 @@ import '../widgets/overlays.dart';
 import 'sheets/block_sheet.dart';
 import 'sheets/block_view_sheet.dart';
 import 'sheets/category_sheet.dart';
+import 'sheets/column_sheet.dart';
 import 'sheets/columns_sheet.dart';
 import 'sheets/export_sheet.dart';
 import 'sheets/habit_sheet.dart';
@@ -77,7 +78,24 @@ class Sheets {
     showAppSheet<void>(
       context,
       label: context.l.columns,
-      builder: (_) => ColumnsSheet(board: board),
+      builder: (sheet) => ColumnsSheet(
+        board: board,
+        // Das Formular ersetzt die Übersicht: Danach sieht man gleich das Ergebnis (und „Rückgängig“).
+        onEdit: (c) {
+          Navigator.pop(sheet);
+          column(c);
+        },
+      ),
+    );
+  }
+
+  /// Eigene Spalte anlegen (`null`) oder bearbeiten.
+  void column(BoardColumn? c) {
+    final l = context.l;
+    showAppSheet<void>(
+      context,
+      label: c == null ? l.newColumn : l.editColumn,
+      builder: (_) => ColumnSheet(column: c),
     );
   }
 

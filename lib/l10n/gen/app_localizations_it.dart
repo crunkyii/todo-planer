@@ -437,6 +437,45 @@ class AppLocalizationsIt extends AppLocalizations {
   String get columnsPeriods => 'Periodi';
 
   @override
+  String get columnsOwn => 'Colonne personali';
+
+  @override
+  String get addColumn => 'Aggiungi colonna';
+
+  @override
+  String get newColumn => 'Nuova colonna';
+
+  @override
+  String get editColumn => 'Modifica colonna';
+
+  @override
+  String get columnHint => 'es. Scuola';
+
+  @override
+  String get columnStatus => 'Stato';
+
+  @override
+  String get columnOnlyOpen => 'Solo aperte';
+
+  @override
+  String get columnOnlyDone => 'Solo completate';
+
+  @override
+  String get columnText => 'Il testo contiene';
+
+  @override
+  String get columnTextHint => 'es. Matematica';
+
+  @override
+  String get columnFilterNote =>
+      'Tutti i filtri sono facoltativi. Le attività restano anche nelle loro colonne abituali.';
+
+  @override
+  String editNamed(String name) {
+    return 'Modifica “$name”';
+  }
+
+  @override
   String get columnsCategories => 'Categorie come colonna a sé';
 
   @override
