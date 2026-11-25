@@ -11,6 +11,7 @@
 - **Jährliche Aufgaben**: Steht „Geburtstag“, „Jahrestag“ o. Ä. im Titel, entsteht beim Abhaken dieselbe Aufgabe fürs nächste Jahr.
 - **Suche** und **Rückgängig** nach dem Löschen (gelöscht wird im Formular der Aufgabe).
 - **Am PC** stehen die Gruppen als Listen nebeneinander. Unter ⋮ → *Spalten* stellt man ein, wie viele gleichzeitig zu sehen sind, welche Zeiträume es gibt und welche Kategorien eine eigene Spalte bekommen (gilt nur an diesem Gerät). Die Reihenfolge ändert man, indem man die Überschrift einer Spalte kurz gedrückt hält (Maus oder Finger) und sie an die gewünschte Stelle zieht – ein kurzer Klick oder Wisch verschiebt nichts. In einem schmalen Fenster passen weniger Spalten nebeneinander als eingestellt. Am Handy gibt es unter ⋮ → *Spalten* dieselben Zeiträume und Kategorien als Abschnitte; die Reihenfolge ändert man dort mit langem Druck auf eine Überschrift und Ziehen.
+- **Eigene Spalten**: Unter ⋮ → *Spalten* → *Spalte hinzufügen* legt man eine Spalte mit Name und Farbe an. Freiwillige Filter bestimmen, was darin steht: mehrere Kategorien, mehrere Zeiträume, nur offene oder nur erledigte, ein Wort in Titel, Notiz oder Unteraufgabe. Die Aufgaben stehen zusätzlich in ihren bisherigen Spalten. Eigene Spalten gibt es auf allen Geräten; ein- und ausblenden und die Reihenfolge gelten nur an diesem Gerät.
 
 ## Gewohnheiten
 
