@@ -9,23 +9,84 @@ import 'package:timezone/timezone.dart' as tz;
 import '../data/models.dart';
 import '../util/dates.dart';
 
-/// Eine geplante Erinnerung (Aufgabe mit Uhrzeit, noch offen, in der Zukunft).
+/// Eine geplante Benachrichtigung (Aufgabe oder Block, in der Zukunft).
 class Reminder {
-  const Reminder({required this.id, required this.at, required this.title, required this.body});
+  const Reminder({required this.id, required this.at, required this.title, required this.body, this.taskId});
   final int id;
+
+  /// Die Aufgabe, um die es geht (Block ohne Aufgabe: `null`).
+  final String? taskId;
   final DateTime at;
   final String title;
   final String body;
 }
 
-/// Wählt die nächsten offenen Aufgaben mit Uhrzeit aus (höchstens [limit]).
+/// [minutes] vor [time], nach der Uhr gerechnet: „1 Tag vorher“ ist auch über die
+/// Zeitumstellung hinweg dieselbe Uhrzeit.
+DateTime _before(DateTime time, int minutes) =>
+    DateTime(time.year, time.month, time.day, time.hour, time.minute - minutes);
+
+/// So viele Tage im Voraus werden Blöcke geplant. Die App plant bei jedem Start neu.
+const _blockDays = 14;
+
+/// Wählt die nächsten offenen Aufgaben mit Uhrzeit aus, die sich melden sollen (höchstens [limit]).
 List<Reminder> upcomingReminders(Iterable<Task> tasks, String Function(Task) body, {DateTime? now, int limit = 40}) {
   final n = now ?? clock();
-  final list = tasks.where((t) => !t.done && !t.deleted && t.hasTime && t.due.isAfter(n)).toList()
-    ..sort((a, b) => a.due.compareTo(b.due));
+  final list = [
+    for (final t in tasks)
+      if (!t.done && !t.deleted && t.hasTime && t.remind != remindNone)
+        if (_before(t.due, t.remind) case final at when at.isAfter(n)) (t, at),
+  ]..sort((a, b) => a.$2.compareTo(b.$2));
   return [
-    for (final t in list.take(limit))
-      Reminder(id: t.id.hashCode & 0x7fffffff, at: t.due, title: t.title, body: body(t)),
+    for (final (t, at) in list.take(limit))
+      Reminder(id: t.id.hashCode & 0x7fffffff, at: at, title: t.title, body: body(t), taskId: t.id),
+  ];
+}
+
+/// Die nächsten Blöcke, die sich melden sollen (höchstens [limit]). [blocksOn] liefert die
+/// Blöcke eines Tages, [body] bekommt den Block und seinen Tag. Blöcke, deren Aufgabe erledigt
+/// ist ([taskDone]), melden sich nicht.
+List<Reminder> upcomingBlockReminders(
+  List<WeekBlock> Function(DateTime day) blocksOn,
+  String Function(WeekBlock, DateTime day) body, {
+  bool Function(String taskId)? taskDone,
+  DateTime? now,
+  int limit = 60,
+}) {
+  final n = now ?? clock();
+  final end = addDays(n, _blockDays);
+  final list = <(WeekBlock, DateTime, DateTime)>[];
+  // Ein Block mit einer Woche Vorlauf meldet sich schon, wenn er selbst noch weiter weg ist.
+  for (var i = 0; i <= _blockDays + remindMax ~/ (24 * 60); i++) {
+    final day = addDays(sod(n), i);
+    for (final b in blocksOn(day)) {
+      if (b.remind == remindNone) continue;
+      if (b.taskId case final id? when taskDone?.call(id) ?? false) continue;
+      final at = _before(DateTime(day.year, day.month, day.day, 0, b.start), b.remind);
+      if (at.isAfter(n) && at.isBefore(end)) list.add((b, day, at));
+    }
+  }
+  list.sort((a, b) => a.$3.compareTo(b.$3));
+  return [
+    for (final (b, day, at) in list.take(limit))
+      Reminder(
+        id: '${b.id}@${isoDate(day)}'.hashCode & 0x7fffffff,
+        at: at,
+        title: b.name,
+        body: body(b, day),
+        taskId: b.taskId,
+      ),
+  ];
+}
+
+/// Alles zusammen. Meldet sich eine Aufgabe schon selbst genau dann, wenn auch ihr Block
+/// dran wäre, kommt nur die eine Benachrichtigung.
+List<Reminder> mergeReminders(List<Reminder> tasks, List<Reminder> blocks) {
+  final seen = {for (final r in tasks) (r.taskId, r.at)};
+  return [
+    ...tasks,
+    for (final r in blocks)
+      if (r.taskId == null || !seen.contains((r.taskId, r.at))) r,
   ];
 }
 

@@ -260,9 +260,20 @@ class AppServices extends ChangeNotifier {
       unawaited(homeWidgets.push(store, l, themeId: settings.theme));
       unawaited(flick.push(settings.flick ? flickTodayEntries(store, l) : null));
       final f = Fmt(l);
-      final items = upcomingReminders(
-        store.tasks,
-        (t) => l.dayWithTime(store.catOf(t.categoryId).name, f.time(t.dueTime!)),
+      // Kommt die Benachrichtigung schon an einem anderen Tag, steht das Datum dabei.
+      String when(DateTime day, int start, int remind, String time) =>
+          remind > start ? l.dayWithTime(f.wdDayMon(day), time) : time;
+      final items = mergeReminders(
+        upcomingReminders(
+          store.tasks,
+          (t) =>
+              l.dayWithTime(store.catOf(t.categoryId).name, when(t.dueDate, t.dueTime!, t.remind, f.time(t.dueTime!))),
+        ),
+        upcomingBlockReminders(
+          store.blocksOn,
+          (b, day) => when(day, b.start, b.remind, l.rangeDash(f.time(b.start), f.time(b.end))),
+          taskDone: (id) => store.taskById(id)?.done ?? false,
+        ),
       );
       // Nur neu planen, wenn sich an den Erinnerungen wirklich etwas geändert hat
       // (der Store meldet auch Gewohnheiten, Sync-Status usw.).
