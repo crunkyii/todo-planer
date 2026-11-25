@@ -57,6 +57,13 @@ final screens = <Screen>[
     await _tap(t, find.bySemanticsLabel(l.newTask).last);
     expect(find.bySemanticsLabel(l.add), findsOneWidget);
   }),
+  Screen('spalte-neu', (t, l) async {
+    await _tap(t, find.bySemanticsLabel(l.moreOptions).first);
+    await _tap(t, find.text(l.columns));
+    await t.ensureVisible(find.text(l.addColumn));
+    await _tap(t, find.text(l.addColumn));
+    expect(find.text(l.newColumn), findsOneWidget);
+  }),
   Screen('menue', (t, l) async {
     await _tap(t, find.bySemanticsLabel(l.moreOptions).first);
     expect(find.text(l.search), findsOneWidget);
