@@ -13,6 +13,7 @@ flutter test
 | Datei | Was sie prüft |
 |---|---|
 | `test/logic_test.dart`, `test/yearly_holidays_test.dart` | Reine Logik: Datum, Sortierung, Abschnitte, Serien, Feiertage, jährliche Aufgaben |
+| `test/remind_test.dart` | Benachrichtigungen: Planung mit Vorlauf, Blöcke, Speichern, Umstieg von Version 7, Formulare |
 | `test/store_test.dart`, `test/sync_test.dart` | Store, Warteschlange und Abgleich (gegen das Supabase-Double): feldweises Zusammenführen, ältere erledigte Aufgaben nur online |
 | `test/behaviour_test.dart`, `test/widget_test.dart` | Die ganze App wird bedient: Formulare, Menüs, Tastatur, Schriftgrößen, Barrierefreiheit |
 | `test/screens_test.dart` | Bildvergleich jedes Tabs (Goldens in `test/goldens/`) |
