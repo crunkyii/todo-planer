@@ -922,6 +922,48 @@ void main() {
       expect(a.store.blocks.single.taskId, t.id);
     });
 
+    test('Benachrichtigung kommt an und verträgt sich mit einem neuen Titel vom anderen Gerät', () async {
+      final (a, b, ta, tb) = await pair();
+      a.store.updateTask(
+        ta,
+        title: ta.title,
+        categoryId: ta.categoryId,
+        dueDate: ta.dueDate,
+        dueTime: null,
+        subs: const [],
+        remind: 30,
+      );
+      await tick();
+      edit(b, tb, title: 'Neuer Titel');
+      await a.sync.sync();
+      await b.sync.sync();
+      await a.sync.sync();
+      for (final d in [a, b]) {
+        final t = d.store.tasks.single;
+        expect((t.title, t.remind), ('Neuer Titel', 30));
+      }
+      expect(serverTask(ta.id)['remind_min'], 30);
+    });
+
+    test('Server ohne remind_min: die Benachrichtigung bleibt am Gerät, der Rest geht hoch', () async {
+      server.unknownColumns.add('remind_min');
+      final a = await device();
+      final t = a.store.addTask(
+        title: 'Arzt',
+        categoryId: cat(a),
+        dueDate: today(),
+        dueTime: 600,
+        remind: 30,
+        subs: const [],
+      );
+      await a.sync.sync();
+      await a.sync.sync();
+      expect(serverTask(t.id)['title'], 'Arzt');
+      expect(await a.pending(), 0);
+      expect(a.sync.rejected, 0);
+      expect(a.store.taskById(t.id)!.remind, 30);
+    });
+
     test('Block aus einer Aufgabe: die Verbindung kommt auf dem anderen Gerät an', () async {
       final a = await device();
       final t = add(a, 'Referat');
